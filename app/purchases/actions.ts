@@ -10,6 +10,8 @@ import type { PurchaseSaveRequest, PurchaseRpcResponse } from '@/types/purchases
  */
 export async function savePurchases(data: PurchaseSaveRequest) {
   try {
+    console.log('💾 입고 저장 시작:', data)
+    
     const supabase = await createServerClient()
     
     // 세션 확인
@@ -32,12 +34,13 @@ export async function savePurchases(data: PurchaseSaveRequest) {
       return { success: false, message: '입고일을 선택해주세요.' }
     }
     
+    if (!data.branch_id) {
+      return { success: false, message: '지점을 선택해주세요.' }
+    }
+    
     if (data.items.length === 0) {
       return { success: false, message: '입고할 품목이 없습니다.' }
     }
-
-    // branch_id 처리 (시스템 관리자는 null 가능)
-    const branchId = data.branch_id || null
 
     // 각 품목별로 입고 처리
     const results: PurchaseRpcResponse[] = []
@@ -59,10 +62,18 @@ export async function savePurchases(data: PurchaseSaveRequest) {
         continue
       }
 
-      // RPC 함수 호출
+      console.log(`📦 품목 저장 중: ${item.product_name}`, {
+        branch_id: data.branch_id,
+        client_id: data.supplier_id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        unit_cost: item.unit_cost
+      })
+
+      // ✅ 올바른 RPC 함수명
       const { data: rpcData, error } = await supabase
         .rpc('process_purchase_with_layers', {
-          p_branch_id: branchId,
+          p_branch_id: data.branch_id,
           p_client_id: data.supplier_id,
           p_product_id: item.product_id,
           p_quantity: item.quantity,
@@ -74,19 +85,23 @@ export async function savePurchases(data: PurchaseSaveRequest) {
         })
 
       if (error) {
-        console.error('RPC Error:', error)
+        console.error('❌ RPC Error:', error)
         errors.push(`${item.product_name}: ${error.message}`)
       } else if (rpcData && rpcData[0]) {
+        console.log('✅ 저장 성공:', rpcData[0])
         results.push(rpcData[0] as PurchaseRpcResponse)
       }
     }
 
     if (errors.length > 0) {
+      console.error('❌ 에러 발생:', errors)
       return {
         success: false,
         message: `일부 품목 저장 실패:\n${errors.join('\n')}`
       }
     }
+
+    console.log('✅ 모든 품목 저장 완료:', results.length)
 
     revalidatePath('/purchases')
     revalidatePath('/inventory')
@@ -98,7 +113,7 @@ export async function savePurchases(data: PurchaseSaveRequest) {
     }
 
   } catch (error) {
-    console.error('Save purchases error:', error)
+    console.error('❌ Save purchases error:', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '입고 저장 중 오류가 발생했습니다.'
@@ -119,7 +134,6 @@ export async function getProductsList() {
 
     if (error) throw error
 
-    // 반드시 배열 리턴
     return { 
       success: true, 
       data: Array.isArray(data) ? data : [] 
@@ -147,7 +161,6 @@ export async function getSuppliersList() {
 
     if (error) throw error
 
-    // 반드시 배열 리턴
     return { 
       success: true, 
       data: Array.isArray(data) ? data : [] 
@@ -184,7 +197,6 @@ export async function getPurchasesHistory(
 
     if (error) throw error
 
-    // 반드시 배열 리턴
     return { 
       success: true, 
       data: Array.isArray(data) ? data : [] 
@@ -195,6 +207,35 @@ export async function getPurchasesHistory(
       success: false, 
       data: [],
       message: error instanceof Error ? error.message : '입고 내역 조회 실패'
+    }
+  }
+}
+
+/**
+ * 지점 목록 조회 (시스템 관리자용)
+ */
+export async function getBranchesList() {
+  try {
+    const supabase = await createServerClient()
+    
+    const { data, error } = await supabase
+      .from('branches')
+      .select('id, code, name')
+      .eq('is_active', true)
+      .order('code', { ascending: true })
+
+    if (error) throw error
+
+    return { 
+      success: true, 
+      data: Array.isArray(data) ? data : [] 
+    }
+  } catch (error) {
+    console.error('Get branches error:', error)
+    return { 
+      success: false, 
+      data: [],
+      message: error instanceof Error ? error.message : '지점 조회 실패'
     }
   }
 }

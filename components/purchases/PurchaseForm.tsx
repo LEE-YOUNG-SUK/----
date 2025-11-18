@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import PurchaseHistoryTable from './PurchaseHistoryTable'
-import { savePurchases } from '@/app/purchases/actions'
+import { savePurchases, getBranchesList } from '@/app/purchases/actions'
 import type { Product, Client } from '@/types'
 import type { PurchaseGridRow, PurchaseHistory } from '@/types/purchases'
 
@@ -26,6 +26,12 @@ interface SessionData {
   role: string
 }
 
+interface Branch {
+  id: string
+  code: string
+  name: string
+}
+
 interface Props {
   products: Product[]
   suppliers: Client[]
@@ -35,13 +41,8 @@ interface Props {
 
 export function PurchaseForm({ products, suppliers, history, session }: Props) {
   console.log('🎨 PurchaseForm 렌더링')
-  console.log('- products:', Array.isArray(products), products.length)
-  console.log('- suppliers:', Array.isArray(suppliers), suppliers.length)
-  console.log('- history:', Array.isArray(history), history.length)
-  console.log('- session:', session)
   
   if (!Array.isArray(products) || !Array.isArray(suppliers) || !Array.isArray(history)) {
-    console.error('❌ Props가 배열이 아닙니다!')
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-red-600">데이터 형식 오류</div>
@@ -50,6 +51,8 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
   }
   
   const [activeTab, setActiveTab] = useState<'input' | 'history'>('input')
+  const [branches, setBranches] = useState<Branch[]>([])
+  const [selectedBranchId, setSelectedBranchId] = useState(session.branch_id)
   const [supplierId, setSupplierId] = useState('')
   const [purchaseDate, setPurchaseDate] = useState(
     new Date().toISOString().split('T')[0]
@@ -57,6 +60,23 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
   const [referenceNumber, setReferenceNumber] = useState('')
   const [notes, setNotes] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+
+  const isSystemAdmin = session.role === '0000'
+
+  // 시스템 관리자인 경우 지점 목록 조회
+  useEffect(() => {
+    if (isSystemAdmin) {
+      getBranchesList().then((result) => {
+        if (result.success) {
+          setBranches(result.data)
+          // 첫 번째 지점 자동 선택
+          if (result.data.length > 0 && !selectedBranchId) {
+            setSelectedBranchId(result.data[0].id)
+          }
+        }
+      })
+    }
+  }, [isSystemAdmin, selectedBranchId])
 
   const handleSave = async (items: PurchaseGridRow[]) => {
     if (!supplierId) {
@@ -69,8 +89,10 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
       return
     }
 
-    if (!session.branch_id && session.role !== '0000') {
-      alert('지점 정보가 없습니다.')
+    const branchId = isSystemAdmin ? selectedBranchId : session.branch_id
+
+    if (!branchId) {
+      alert('지점을 선택해주세요.')
       return
     }
 
@@ -85,7 +107,7 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
 
     try {
       const result = await savePurchases({
-        branch_id: session.branch_id || null,
+        branch_id: branchId,
         supplier_id: supplierId,
         purchase_date: purchaseDate,
         reference_number: referenceNumber,
@@ -111,8 +133,6 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
       setIsSaving(false)
     }
   }
-
-  console.log('✅ PurchaseForm 렌더링 준비 완료')
 
   return (
     <div className="h-full flex flex-col">
@@ -147,7 +167,29 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
         {activeTab === 'input' ? (
           <div className="h-full flex flex-col">
             <div className="bg-white border-b p-4">
-              <div className="grid grid-cols-4 gap-4">
+              <div className={`grid gap-4 ${isSystemAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
+                {/* 시스템 관리자만 지점 선택 */}
+                {isSystemAdmin && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      지점 <span className="text-red-600">*</span>
+                    </label>
+                    <select
+                      value={selectedBranchId}
+                      onChange={(e) => setSelectedBranchId(e.target.value)}
+                      disabled={isSaving}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                    >
+                      <option value="">선택하세요</option>
+                      {branches.map((branch) => (
+                        <option key={branch.id} value={branch.id}>
+                          {branch.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     공급업체 <span className="text-red-600">*</span>
@@ -160,10 +202,8 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
                   >
                     <option value="">선택하세요</option>
                     {suppliers.map((supplier) => {
-                      // 안전한 렌더링
                       const id = String(supplier.id || '')
                       const name = String(supplier.name || '이름 없음')
-                      
                       return (
                         <option key={id} value={id}>
                           {name}

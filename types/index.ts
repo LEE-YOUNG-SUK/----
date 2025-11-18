@@ -4,7 +4,16 @@
  * 공통 타입 정의
  */
 
-// 사용자 데이터
+// 사용자 (간단한 버전)
+export interface User {
+  id: string
+  username: string
+  display_name: string
+  role: '0000' | '0001' | '0002' | '0003'
+  branch_id: string | null
+}
+
+// 사용자 데이터 (전체 버전)
 export interface UserData {
   user_id: string
   username: string

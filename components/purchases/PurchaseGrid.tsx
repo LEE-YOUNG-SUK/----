@@ -2,29 +2,25 @@
 
 /**
  * 입고 관리 그리드 (AG Grid)
- * 중첩 dynamic import 제거 및 React 렌더러 사용
+ * 품목 자동완성 통합 버전
  */
 
 import { useCallback, useRef, useState, useMemo } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
-import type { ColDef } from 'ag-grid-community'
+import type { ColDef, ICellEditorParams } from 'ag-grid-community'
 import type { Product } from '@/types'
 import type { PurchaseGridRow } from '@/types/purchases'
+import { ProductCellEditor } from './ProductCellEditor'
 
-// 삭제 버튼을 React 컴포넌트로 분리
 const DeleteButtonRenderer = (props: any) => {
-  const onClick = () => {
-    props.handleDeleteRow(props.node.rowIndex)
-  }
-
   return (
     <button
-      onClick={onClick}
-      className="w-full h-full text-red-600 hover:bg-red-50"
+      onClick={() => props.handleDeleteRow(props.node.rowIndex)}
+      className="w-full h-full text-red-600 hover:bg-red-50 transition"
     >
-      삭제
+      ✕ 삭제
     </button>
   )
 }
@@ -39,7 +35,6 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
   const gridRef = useRef<any>(null)
   const [rowData, setRowData] = useState<PurchaseGridRow[]>([createEmptyRow()])
 
-  // 빈 행 생성
   function createEmptyRow(): PurchaseGridRow {
     return {
       id: `temp_${Date.now()}_${Math.random()}`,
@@ -57,19 +52,43 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
     }
   }
 
-  // 행 삭제
   const handleDeleteRow = useCallback((rowIndex: number) => {
     setRowData((prev) => prev.filter((_, index) => index !== rowIndex))
   }, [])
 
-  // 컬럼 정의
+  const handleProductSelect = useCallback((rowIndex: number, product: Product) => {
+    setRowData((prev) => {
+      const newData = [...prev]
+      const currentQty = newData[rowIndex].quantity || 0
+      const unitCost = product.standard_purchase_price || 0
+      
+      newData[rowIndex] = {
+        ...newData[rowIndex],
+        product_id: product.id,
+        product_code: product.code,
+        product_name: product.name,
+        category: product.category || '',
+        unit: product.unit,
+        specification: product.specification || '',
+        manufacturer: product.manufacturer || '',
+        unit_cost: unitCost,
+        total_cost: currentQty * unitCost
+      }
+      return newData
+    })
+
+    setTimeout(() => {
+      gridRef.current?.api?.refreshCells({ force: true })
+    }, 0)
+  }, [])
+
   const columnDefs = useMemo<ColDef<PurchaseGridRow>[]>(() => [
     {
       headerName: 'No',
       valueGetter: 'node.rowIndex + 1',
       width: 60,
       pinned: 'left',
-      cellClass: 'text-center'
+      cellClass: 'text-center font-medium text-gray-600'
     },
     {
       headerName: '품목코드',
@@ -77,7 +96,15 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
       width: 150,
       pinned: 'left',
       editable: true,
-      cellEditor: 'agTextCellEditor'
+      cellEditor: ProductCellEditor,
+      cellEditorParams: (params: ICellEditorParams) => ({
+        products: products,
+        onProductSelect: (product: Product) => {
+          handleProductSelect(params.node.rowIndex!, product)
+        },
+        stopEditing: () => params.api.stopEditing()
+      }),
+      cellClass: 'font-medium text-blue-600'
     },
     {
       headerName: '품목명',
@@ -91,21 +118,21 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
       field: 'specification',
       width: 150,
       editable: false,
-      cellClass: 'bg-gray-50'
+      cellClass: 'bg-gray-50 text-sm'
     },
     {
       headerName: '제조사',
       field: 'manufacturer',
       width: 120,
       editable: false,
-      cellClass: 'bg-gray-50'
+      cellClass: 'bg-gray-50 text-sm'
     },
     {
       headerName: '단위',
       field: 'unit',
       width: 80,
       editable: false,
-      cellClass: 'bg-gray-50 text-center'
+      cellClass: 'bg-gray-50 text-center font-medium'
     },
     {
       headerName: '수량',
@@ -122,6 +149,14 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
         const newValue = parseFloat(params.newValue) || 0
         params.data.quantity = newValue
         params.data.total_cost = newValue * params.data.unit_cost
+        
+        // rowData 상태도 업데이트
+        setRowData(prev => {
+          const newData = [...prev]
+          newData[params.node.rowIndex!] = params.data
+          return newData
+        })
+        
         return true
       }
     },
@@ -140,6 +175,14 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
         const newValue = parseFloat(params.newValue) || 0
         params.data.unit_cost = newValue
         params.data.total_cost = params.data.quantity * newValue
+        
+        // rowData 상태도 업데이트
+        setRowData(prev => {
+          const newData = [...prev]
+          newData[params.node.rowIndex!] = params.data
+          return newData
+        })
+        
         return true
       }
     },
@@ -149,7 +192,7 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
       width: 140,
       editable: false,
       type: 'numericColumn',
-      cellClass: 'bg-blue-50 text-right font-semibold',
+      cellClass: 'bg-blue-50 text-right font-bold text-blue-700',
       valueFormatter: (params) => {
         const value = params.value || 0
         return `₩${value.toLocaleString()}`
@@ -159,7 +202,8 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
       headerName: '비고',
       field: 'notes',
       width: 200,
-      editable: true
+      editable: true,
+      cellClass: 'text-sm'
     },
     {
       headerName: '삭제',
@@ -170,31 +214,35 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
         handleDeleteRow: handleDeleteRow
       }
     }
-  ], [handleDeleteRow])
+  ], [handleDeleteRow, handleProductSelect, products])
 
-  // 셀 편집 완료 시
   const onCellValueChanged = useCallback((params: any) => {
     const { data } = params
     data.total_cost = data.quantity * data.unit_cost
+    
+    // rowData 상태 업데이트
+    setRowData(prev => {
+      const newData = [...prev]
+      newData[params.node.rowIndex] = data
+      return newData
+    })
+    
     params.api.refreshCells({
       rowNodes: [params.node],
       columns: ['total_cost']
     })
   }, [])
 
-  // 행 추가
   const handleAddRow = useCallback(() => {
     setRowData((prev) => [...prev, createEmptyRow()])
   }, [])
 
-  // 전체 삭제
   const handleClearAll = useCallback(() => {
     if (confirm('모든 입력 데이터를 삭제하시겠습니까?')) {
       setRowData([createEmptyRow()])
     }
   }, [])
 
-  // 저장
   const handleSave = useCallback(() => {
     const api = gridRef.current?.api
     if (!api) return
@@ -211,7 +259,6 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
       return
     }
 
-    // 유효성 검사
     const errors: string[] = []
     data.forEach((item, index) => {
       if (!item.product_id) {
@@ -233,11 +280,15 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
     onSave(data)
   }, [onSave])
 
-  // 합계 계산
-  const totalAmount = useMemo(() => 
-    rowData.reduce((sum, row) => sum + (row.total_cost || 0), 0),
-    [rowData]
-  )
+  // 실시간 합계 계산 (rowData 변경 시마다)
+  const totalAmount = useMemo(() => {
+    const sum = rowData.reduce((acc, row) => {
+      const total = (row.quantity || 0) * (row.unit_cost || 0)
+      return acc + total
+    }, 0)
+    console.log('💰 합계 재계산:', sum, rowData)
+    return sum
+  }, [rowData])
   
   const validRowCount = useMemo(() => 
     rowData.filter((row) => row.product_id).length,
@@ -246,49 +297,48 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* 툴바 */}
       <div className="flex items-center justify-between p-4 bg-white border-b">
         <div className="flex items-center gap-2">
           <button
             onClick={handleAddRow}
             disabled={isSaving}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition font-medium shadow-sm"
           >
-            + 행 추가
+            ➕ 행 추가
           </button>
           <button
             onClick={handleClearAll}
             disabled={isSaving}
-            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 transition font-medium shadow-sm"
           >
-            전체 삭제
+            🗑️ 전체 삭제
           </button>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <div className="text-sm">
             <span className="text-gray-600">입력 품목:</span>
-            <span className="ml-2 font-semibold text-blue-600">
-              {validRowCount}개
+            <span className="ml-2 font-bold text-lg text-blue-600">
+              {validRowCount}
             </span>
+            <span className="text-gray-500 ml-1">개</span>
           </div>
           <div className="text-sm">
             <span className="text-gray-600">합계 금액:</span>
-            <span className="ml-2 font-semibold text-red-600">
+            <span className="ml-2 font-bold text-lg text-red-600">
               ₩{totalAmount.toLocaleString()}
             </span>
           </div>
           <button
             onClick={handleSave}
             disabled={isSaving || validRowCount === 0}
-            className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 font-semibold"
+            className="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold shadow-lg"
           >
-            {isSaving ? '저장 중...' : '일괄 저장'}
+            {isSaving ? '💾 저장 중...' : '💾 일괄 저장'}
           </button>
         </div>
       </div>
 
-      {/* 그리드 */}
       <div className="flex-1 ag-theme-alpine">
         <AgGridReact
           ref={gridRef}
@@ -299,7 +349,7 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
             filter: false,
             resizable: true
           }}
-          singleClickEdit={true}
+          singleClickEdit={false}
           stopEditingWhenCellsLoseFocus={true}
           suppressRowClickSelection={true}
           rowSelection="single"
@@ -309,9 +359,12 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
         />
       </div>
 
-      {/* 안내 메시지 */}
-      <div className="p-2 bg-gray-50 border-t text-xs text-gray-600">
-        💡 품목코드 셀을 더블클릭하여 품목을 입력하세요. 수량과 단가를 입력하면 합계가 자동 계산됩니다.
+      <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-t border-blue-200">
+        <div className="flex items-center gap-2 text-sm text-blue-800">
+          <span className="text-lg">💡</span>
+          <span className="font-medium">사용 방법:</span>
+          <span>품목코드 셀을 <strong>더블클릭</strong> → 품목명 검색 → <strong>방향키</strong>로 선택 → <strong>Enter</strong>로 확정</span>
+        </div>
       </div>
     </div>
   )
