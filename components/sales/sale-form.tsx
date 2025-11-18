@@ -262,22 +262,32 @@ export default function SaleForm({ user, customers, branches }: SaleFormProps) {
             )}
 
             {/* 그리드 */}
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden flex flex-col">
               {selectedBranch && (
                 <>
-                  {/* 임시 디버깅 */}
-                  <div className="p-4 bg-yellow-50 text-sm">
-                    <p>🔍 디버깅 정보:</p>
-                    <p>선택된 지점: {selectedBranch}</p>
-                    <p>품목 개수: {products.length}</p>
-                    <p>품목 예시: {products[0]?.name || '없음'}</p>
+                  <div className="flex-1 overflow-hidden">
+                    <SaleGrid
+                      products={products}
+                      onDataChange={handleDataChange}
+                      onTotalChange={handleTotalChange}
+                    />
                   </div>
                   
-                  <SaleGrid
-                    products={products}
-                    onDataChange={handleDataChange}
-                    onTotalChange={handleTotalChange}
-                  />
+                  {/* 합계 및 저장 버튼 */}
+                  <div className="bg-white border-t p-4">
+                    <div className="flex justify-between items-center">
+                      <div className="text-xl font-bold">
+                        총 판매금액: <span className="text-blue-600">₩{totalAmount.toLocaleString()}</span>
+                      </div>
+                      <button
+                        onClick={handleSave}
+                        disabled={loading || !selectedBranch || saleData.length === 0}
+                        className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-bold shadow-lg"
+                      >
+                        {loading ? '💾 저장 중...' : '💾 일괄 저장'}
+                      </button>
+                    </div>
+                  </div>
                 </>
               )}
             </div>

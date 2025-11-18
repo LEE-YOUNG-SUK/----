@@ -1,8 +1,9 @@
 // components/sales/sale-grid.tsx
 'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { AgGridReact } from 'ag-grid-react'
+import type { AgGridReact as AgGridReactType } from 'ag-grid-react'
 import { ColDef, ValueSetterParams, CellStyle } from 'ag-grid-community'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
@@ -29,9 +30,7 @@ const DeleteButtonRenderer = (props: any) => {
 }
 
 export default function SaleGrid({ products, onDataChange, onTotalChange }: SaleGridProps) {
-  console.log('🎨 SaleGrid 렌더링, products:', products)
-  console.log('📊 products 개수:', products.length)
-  
+  const gridRef = useRef<AgGridReactType>(null)
   const [rowData, setRowData] = useState<SaleRow[]>([
     {
       id: uuidv4(),
@@ -227,24 +226,44 @@ export default function SaleGrid({ products, onDataChange, onTotalChange }: Sale
   }), [])
 
   // 행 추가
-  const handleAddRow = () => {
-    setRowData(prev => [...prev, {
-      id: uuidv4(),
-      product_code: '',
-      product_name: '',
-      specification: '',
-      manufacturer: '',
-      unit: '',
-      quantity: 0,
-      unit_price: 0,
-      total_amount: 0,
-      current_stock: 0
-    }])
+const handleAddRow = useCallback(() => {
+  console.log('🔵 행 추가 버튼 클릭됨!')
+  console.log('📊 현재 rowData:', rowData)
+  console.log('🎯 gridRef:', gridRef.current)
+  
+  // 편집 모드 강제 종료
+  try {
+    gridRef.current?.api.stopEditing(false)
+    console.log('✅ 편집 종료 성공')
+  } catch (error) {
+    console.error('❌ 편집 종료 실패:', error)
   }
+  
+  // 안전하게 행 추가
+    setTimeout(() => {
+        console.log('➕ 행 추가 실행')
+        setRowData(prev => {
+        const newData = [...prev, {
+            id: uuidv4(),
+            product_code: '',
+            product_name: '',
+            specification: '',
+            manufacturer: '',
+            unit: '',
+            quantity: 0,
+            unit_price: 0,
+            total_amount: 0,
+            current_stock: 0
+        }]
+        console.log('✅ 새 rowData:', newData)
+        return newData
+        })
+    }, 10)
+    }, [])
 
   return (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center">
+    <div className="h-full flex flex-col p-4">
+      <div className="flex justify-between items-center mb-2">
         <button
           onClick={handleAddRow}
           className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -253,7 +272,7 @@ export default function SaleGrid({ products, onDataChange, onTotalChange }: Sale
         </button>
       </div>
 
-      <div className="ag-theme-alpine" style={{ height: 400, width: '100%' }}>
+      <div className="ag-theme-alpine flex-1">
         <AgGridReact
           rowData={rowData}
           columnDefs={columnDefs}
@@ -261,9 +280,8 @@ export default function SaleGrid({ products, onDataChange, onTotalChange }: Sale
           domLayout="normal"
           suppressMovableColumns={true}
           animateRows={true}
-          components={{
-            productCellEditor: ProductCellEditor
-          }}
+          singleClickEdit={false}
+          stopEditingWhenCellsLoseFocus={true}
         />
       </div>
     </div>
