@@ -1,65 +1,167 @@
-import Image from "next/image";
+import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
+import { createServerClient } from '@/lib/supabase/server'
+import { UserData } from '@/types'
+import { NavigationWrapper } from '@/components/NavigationWrapper'
+import { ROLE_LABELS, ROLE_ICONS } from '@/types/permissions'
 
-export default function Home() {
+async function getSession(): Promise<UserData | null> {
+  try {
+    const cookieStore = await cookies()
+    const token = cookieStore.get('erp_session_token')?.value
+    
+    if (!token) return null
+    
+    const supabase = await createServerClient()
+    const { data, error } = await supabase.rpc('verify_session', {
+      p_token: token
+    })
+    
+    if (error || !data || data.length === 0 || !data[0].valid) return null
+    
+    const session = data[0]
+    
+    return {
+      user_id: session.user_id,
+      username: session.username,
+      display_name: session.display_name,
+      role: session.role as '0000' | '0001' | '0002' | '0003',
+      branch_id: session.branch_id || null,
+      branch_name: session.branch_name || null
+    }
+  } catch (error) {
+    return null
+  }
+}
+
+export default async function DashboardPage() {
+  const session = await getSession()
+  if (!session) redirect('/login')
+  
+  const isAdmin = session.role === '0000'
+  const isBranchUser = ['0001', '0002', '0003'].includes(session.role)
+  
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+    <div className="min-h-screen bg-gray-50">
+      <NavigationWrapper user={session} />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          
+          {/* 환영 메시지 */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {'환영합니다, '}{session.display_name}{'님! 👋'}
+            </h2>
+            <p className="text-gray-600">
+              DR.Evers ERP 시스템에 성공적으로 로그인하셨습니다.
+            </p>
+          </div>
+          
+          {/* 사용자 정보 */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {'📋 사용자 정보'}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <p className="text-sm text-blue-600 mb-1">아이디</p>
+                <p className="text-lg font-medium text-blue-900">{session.username}</p>
+              </div>
+              <div className="bg-blue-50 rounded-lg p-4">
+                <p className="text-sm text-blue-600 mb-1">이름</p>
+                <p className="text-lg font-medium text-blue-900">{session.display_name}</p>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-4">
+                <p className="text-sm text-purple-600 mb-1">역할</p>
+                <p className="text-lg font-medium text-purple-900">
+                  {ROLE_ICONS[session.role]} {ROLE_LABELS[session.role]}
+                </p>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4">
+                <p className="text-sm text-green-600 mb-1">소속 지점</p>
+                <p className="text-lg font-medium text-green-900">
+                  {session.branch_name || '전체 지점'}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {/* 권한 안내 */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow p-6 border border-blue-200">
+            <h3 className="text-lg font-semibold text-blue-900 mb-3">
+              {'🔐 권한 정보'}
+            </h3>
+            
+            {isAdmin && (
+              <div className="space-y-2 text-sm">
+                <p className="text-blue-800">{'✅ 모든 지점 데이터 접근 가능'}</p>
+                <p className="text-blue-800">{'✅ 사용자 관리 권한'}</p>
+                <p className="text-blue-800">{'✅ 거래처/품목 생성/수정/삭제 권한'}</p>
+                <p className="text-blue-800">{'✅ 모든 메뉴 접근 가능'}</p>
+              </div>
+            )}
+            
+            {isBranchUser && (
+              <div className="space-y-2 text-sm">
+                <p className="text-blue-800">{'✅ 소속 지점 데이터만 접근 가능'}</p>
+                <p className="text-blue-800">{'✅ 입고/판매 전체 권한 (CRUD)'}</p>
+                <p className="text-blue-800">{'✅ 재고 조회 권한'}</p>
+                <p className="text-blue-800">{'⚠️ 거래처/품목 조회만 가능 (수정 불가)'}</p>
+                <p className="text-blue-800">{'❌ 사용자 관리 불가'}</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Phase 3 완료 */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+            <h3 className="font-semibold text-green-900 mb-2">
+              {'✅ Phase 3 완료!'}
+            </h3>
+            <p className="text-green-700 text-sm mb-2">
+              권한 시스템이 정상적으로 작동합니다.
+            </p>
+            <ul className="text-green-600 text-sm space-y-1 ml-6 list-disc">
+              <li>4단계 역할 기반 권한</li>
+              <li>권한별 메뉴 표시</li>
+              <li>네비게이션 바</li>
+              <li>권한 체크 시스템</li>
+            </ul>
+            <p className="text-green-600 text-sm mt-3 font-medium">
+              {'🎯 다음: Phase 4 - 재고 현황 페이지'}
+            </p>
+          </div>
+          
+          {/* 빠른 링크 */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {'🚀 빠른 시작'}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              
+              <a href="/purchases" className="block p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition border border-blue-200">
+                <div className="text-2xl mb-2">{'📥'}</div>
+                <div className="font-medium text-blue-900">입고 관리</div>
+                <div className="text-sm text-blue-600">상품 입고 등록</div>
+              </a>
+              
+              <a href="/sales" className="block p-4 bg-green-50 rounded-lg hover:bg-green-100 transition border border-green-200">
+                <div className="text-2xl mb-2">{'📤'}</div>
+                <div className="font-medium text-green-900">판매 관리</div>
+                <div className="text-sm text-green-600">상품 판매 등록</div>
+              </a>
+              
+              <a href="/inventory" className="block p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition border border-purple-200">
+                <div className="text-2xl mb-2">{'📦'}</div>
+                <div className="font-medium text-purple-900">재고 현황</div>
+                <div className="text-sm text-purple-600">실시간 재고 조회</div>
+              </a>
+              
+            </div>
+          </div>
+          
         </div>
       </main>
     </div>
-  );
+  )
 }
