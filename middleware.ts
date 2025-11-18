@@ -4,11 +4,12 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // 정적 파일 제외
+  // 정적 파일 및 API 제외
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
-    pathname.includes('.')
+    pathname.includes('.') ||
+    pathname === '/favicon.ico'
   ) {
     return NextResponse.next()
   }
@@ -31,11 +32,19 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
   
+  // 정상적으로 페이지 접근 허용
   return NextResponse.next()
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\..*|api).*)',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public files (public folder)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

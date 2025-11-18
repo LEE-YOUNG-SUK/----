@@ -1,9 +1,5 @@
 'use server'
 
-/**
- * 입고 관리 Server Actions
- */
-
 import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
@@ -18,9 +14,9 @@ export async function savePurchases(data: PurchaseSaveRequest) {
     
     // 세션 확인
     const cookieStore = await cookies()
-    const session = cookieStore.get('session')
+    const sessionCookie = cookieStore.get('erp_session_token')
     
-    if (!session) {
+    if (!sessionCookie) {
       return { 
         success: false, 
         message: '인증되지 않은 사용자입니다.' 
@@ -40,12 +36,14 @@ export async function savePurchases(data: PurchaseSaveRequest) {
       return { success: false, message: '입고할 품목이 없습니다.' }
     }
 
+    // branch_id 처리 (시스템 관리자는 null 가능)
+    const branchId = data.branch_id || null
+
     // 각 품목별로 입고 처리
     const results: PurchaseRpcResponse[] = []
     const errors: string[] = []
 
     for (const item of data.items) {
-      // 품목 검증
       if (!item.product_id) {
         errors.push(`품목을 선택해주세요. (행: ${item.product_code || '미입력'})`)
         continue
@@ -64,7 +62,7 @@ export async function savePurchases(data: PurchaseSaveRequest) {
       // RPC 함수 호출
       const { data: rpcData, error } = await supabase
         .rpc('process_purchase_with_layers', {
-          p_branch_id: data.branch_id,
+          p_branch_id: branchId,
           p_client_id: data.supplier_id,
           p_product_id: item.product_id,
           p_quantity: item.quantity,
@@ -83,7 +81,6 @@ export async function savePurchases(data: PurchaseSaveRequest) {
       }
     }
 
-    // 에러가 있으면 실패 처리
     if (errors.length > 0) {
       return {
         success: false,
@@ -91,7 +88,6 @@ export async function savePurchases(data: PurchaseSaveRequest) {
       }
     }
 
-    // 성공
     revalidatePath('/purchases')
     revalidatePath('/inventory')
     
@@ -111,7 +107,7 @@ export async function savePurchases(data: PurchaseSaveRequest) {
 }
 
 /**
- * 품목 목록 조회 (자동완성용)
+ * 품목 목록 조회
  */
 export async function getProductsList() {
   try {
@@ -123,7 +119,11 @@ export async function getProductsList() {
 
     if (error) throw error
 
-    return { success: true, data: data || [] }
+    // 반드시 배열 리턴
+    return { 
+      success: true, 
+      data: Array.isArray(data) ? data : [] 
+    }
   } catch (error) {
     console.error('Get products error:', error)
     return { 
@@ -147,7 +147,11 @@ export async function getSuppliersList() {
 
     if (error) throw error
 
-    return { success: true, data: data || [] }
+    // 반드시 배열 리턴
+    return { 
+      success: true, 
+      data: Array.isArray(data) ? data : [] 
+    }
   } catch (error) {
     console.error('Get suppliers error:', error)
     return { 
@@ -180,7 +184,11 @@ export async function getPurchasesHistory(
 
     if (error) throw error
 
-    return { success: true, data: data || [] }
+    // 반드시 배열 리턴
+    return { 
+      success: true, 
+      data: Array.isArray(data) ? data : [] 
+    }
   } catch (error) {
     console.error('Get purchases history error:', error)
     return { 

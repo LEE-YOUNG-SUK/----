@@ -2,16 +2,32 @@
 
 /**
  * 입고 관리 그리드 (AG Grid)
- * CSS import 오류 해결 버전
+ * 중첩 dynamic import 제거 및 React 렌더러 사용
  */
 
-import { useCallback, useRef, useState, useMemo, useEffect } from 'react'
+import { useCallback, useRef, useState, useMemo } from 'react'
+import { AgGridReact } from 'ag-grid-react'
+import 'ag-grid-community/styles/ag-grid.css'
+import 'ag-grid-community/styles/ag-theme-alpine.css'
 import type { ColDef } from 'ag-grid-community'
 import type { Product } from '@/types'
 import type { PurchaseGridRow } from '@/types/purchases'
 
-// AG Grid 동적 import
-let AgGridReact: any = null
+// 삭제 버튼을 React 컴포넌트로 분리
+const DeleteButtonRenderer = (props: any) => {
+  const onClick = () => {
+    props.handleDeleteRow(props.node.rowIndex)
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className="w-full h-full text-red-600 hover:bg-red-50"
+    >
+      삭제
+    </button>
+  )
+}
 
 interface Props {
   products: Product[]
@@ -22,41 +38,6 @@ interface Props {
 export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
   const gridRef = useRef<any>(null)
   const [rowData, setRowData] = useState<PurchaseGridRow[]>([createEmptyRow()])
-  const [gridReady, setGridReady] = useState(false)
-  const [loadError, setLoadError] = useState<string | null>(null)
-
-  // AG Grid 동적 로드
-  useEffect(() => {
-    const loadAgGrid = async () => {
-      try {
-        // AG Grid React 모듈 로드
-        const agGridModule = await import('ag-grid-react')
-        AgGridReact = agGridModule.AgGridReact
-        
-        // CSS를 동적으로 로드 (TypeScript 오류 없이)
-        if (typeof window !== 'undefined') {
-          // ag-grid.css
-          const link1 = document.createElement('link')
-          link1.rel = 'stylesheet'
-          link1.href = 'https://cdn.jsdelivr.net/npm/ag-grid-community@32.3.3/styles/ag-grid.css'
-          document.head.appendChild(link1)
-          
-          // ag-theme-alpine.css
-          const link2 = document.createElement('link')
-          link2.rel = 'stylesheet'
-          link2.href = 'https://cdn.jsdelivr.net/npm/ag-grid-community@32.3.3/styles/ag-theme-alpine.css'
-          document.head.appendChild(link2)
-        }
-        
-        setGridReady(true)
-      } catch (error) {
-        console.error('AG Grid 로드 실패:', error)
-        setLoadError('그리드를 불러올 수 없습니다.')
-      }
-    }
-    
-    loadAgGrid()
-  }, [])
 
   // 빈 행 생성
   function createEmptyRow(): PurchaseGridRow {
@@ -75,6 +56,11 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
       notes: ''
     }
   }
+
+  // 행 삭제
+  const handleDeleteRow = useCallback((rowIndex: number) => {
+    setRowData((prev) => prev.filter((_, index) => index !== rowIndex))
+  }, [])
 
   // 컬럼 정의
   const columnDefs = useMemo<ColDef<PurchaseGridRow>[]>(() => [
@@ -179,15 +165,12 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
       headerName: '삭제',
       width: 80,
       pinned: 'right',
-      cellRenderer: (params: any) => {
-        const button = document.createElement('button')
-        button.textContent = '삭제'
-        button.className = 'w-full h-full text-red-600 hover:bg-red-50'
-        button.onclick = () => handleDeleteRow(params.node.rowIndex)
-        return button
+      cellRenderer: DeleteButtonRenderer,
+      cellRendererParams: {
+        handleDeleteRow: handleDeleteRow
       }
     }
-  ], [])
+  ], [handleDeleteRow])
 
   // 셀 편집 완료 시
   const onCellValueChanged = useCallback((params: any) => {
@@ -202,11 +185,6 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
   // 행 추가
   const handleAddRow = useCallback(() => {
     setRowData((prev) => [...prev, createEmptyRow()])
-  }, [])
-
-  // 행 삭제
-  const handleDeleteRow = useCallback((rowIndex: number) => {
-    setRowData((prev) => prev.filter((_, index) => index !== rowIndex))
   }, [])
 
   // 전체 삭제
@@ -265,33 +243,6 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
     rowData.filter((row) => row.product_id).length,
     [rowData]
   )
-
-  // 에러 표시
-  if (loadError) {
-    return (
-      <div className="flex items-center justify-center h-full bg-red-50">
-        <div className="text-center p-8">
-          <div className="text-6xl mb-4">⚠️</div>
-          <p className="text-red-800 font-semibold mb-2">{loadError}</p>
-          <p className="text-red-600 text-sm">
-            인터넷 연결을 확인하거나 페이지를 새로고침 해주세요.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  // AG Grid 로딩 중
-  if (!gridReady || !AgGridReact) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">그리드 로딩 중...</p>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="flex flex-col h-full">

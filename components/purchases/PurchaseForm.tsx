@@ -1,18 +1,12 @@
 'use client'
 
-/**
- * 입고 입력 폼 (헤더 정보 + 그리드)
- * 동적 import로 AG Grid SSR 문제 해결
- */
-
-import { useState, Suspense } from 'react'
+import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import PurchaseHistoryTable from './PurchaseHistoryTable'
 import { savePurchases } from '@/app/purchases/actions'
 import type { Product, Client } from '@/types'
 import type { PurchaseGridRow, PurchaseHistory } from '@/types/purchases'
 
-// PurchaseGrid 동적 import (SSR 비활성화)
 const PurchaseGrid = dynamic(() => import('./PurchaseGrid'), {
   ssr: false,
   loading: () => (
@@ -25,19 +19,36 @@ const PurchaseGrid = dynamic(() => import('./PurchaseGrid'), {
   )
 })
 
+interface SessionData {
+  user_id: string
+  branch_id: string
+  branch_name: string
+  role: string
+}
+
 interface Props {
   products: Product[]
   suppliers: Client[]
   history: PurchaseHistory[]
-  session: {
-    user_id: string
-    branch_id: string | null
-    branch_name: string | null
-    role: string
-  }
+  session: SessionData
 }
 
 export function PurchaseForm({ products, suppliers, history, session }: Props) {
+  console.log('🎨 PurchaseForm 렌더링')
+  console.log('- products:', Array.isArray(products), products.length)
+  console.log('- suppliers:', Array.isArray(suppliers), suppliers.length)
+  console.log('- history:', Array.isArray(history), history.length)
+  console.log('- session:', session)
+  
+  if (!Array.isArray(products) || !Array.isArray(suppliers) || !Array.isArray(history)) {
+    console.error('❌ Props가 배열이 아닙니다!')
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-red-600">데이터 형식 오류</div>
+      </div>
+    )
+  }
+  
   const [activeTab, setActiveTab] = useState<'input' | 'history'>('input')
   const [supplierId, setSupplierId] = useState('')
   const [purchaseDate, setPurchaseDate] = useState(
@@ -47,9 +58,7 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
   const [notes, setNotes] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
-  // 저장 처리
   const handleSave = async (items: PurchaseGridRow[]) => {
-    // 헤더 정보 검증
     if (!supplierId) {
       alert('공급업체를 선택해주세요.')
       return
@@ -60,12 +69,11 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
       return
     }
 
-    if (!session.branch_id) {
+    if (!session.branch_id && session.role !== '0000') {
       alert('지점 정보가 없습니다.')
       return
     }
 
-    // 확인
     const totalAmount = items.reduce((sum, item) => sum + item.total_cost, 0)
     const confirmed = confirm(
       `${items.length}개 품목, 총 ₩${totalAmount.toLocaleString()}원을 입고 처리하시겠습니까?`
@@ -77,7 +85,7 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
 
     try {
       const result = await savePurchases({
-        branch_id: session.branch_id,
+        branch_id: session.branch_id || null,
         supplier_id: supplierId,
         purchase_date: purchaseDate,
         reference_number: referenceNumber,
@@ -88,16 +96,10 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
 
       if (result.success) {
         alert(result.message || '입고 처리가 완료되었습니다.')
-        
-        // 폼 초기화
         setSupplierId('')
         setReferenceNumber('')
         setNotes('')
-        
-        // 탭 전환
         setActiveTab('history')
-        
-        // 페이지 새로고침
         window.location.reload()
       } else {
         alert(result.message || '입고 처리 중 오류가 발생했습니다.')
@@ -110,12 +112,14 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
     }
   }
 
+  console.log('✅ PurchaseForm 렌더링 준비 완료')
+
   return (
     <div className="h-full flex flex-col">
-      {/* 탭 */}
       <div className="bg-white border-b">
         <div className="flex">
           <button
+            type="button"
             onClick={() => setActiveTab('input')}
             className={`px-6 py-3 font-medium border-b-2 transition-colors ${
               activeTab === 'input'
@@ -126,6 +130,7 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
             입고 입력
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('history')}
             className={`px-6 py-3 font-medium border-b-2 transition-colors ${
               activeTab === 'history'
@@ -138,11 +143,9 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
         </div>
       </div>
 
-      {/* 컨텐츠 */}
       <div className="flex-1 overflow-hidden">
         {activeTab === 'input' ? (
           <div className="h-full flex flex-col">
-            {/* 헤더 정보 입력 */}
             <div className="bg-white border-b p-4">
               <div className="grid grid-cols-4 gap-4">
                 <div>
@@ -156,11 +159,17 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                   >
                     <option value="">선택하세요</option>
-                    {suppliers.map((supplier) => (
-                      <option key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </option>
-                    ))}
+                    {suppliers.map((supplier) => {
+                      // 안전한 렌더링
+                      const id = String(supplier.id || '')
+                      const name = String(supplier.name || '이름 없음')
+                      
+                      return (
+                        <option key={id} value={id}>
+                          {name}
+                        </option>
+                      )
+                    })}
                   </select>
                 </div>
 
@@ -207,29 +216,19 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
               </div>
             </div>
 
-            {/* 그리드 */}
             <div className="flex-1 overflow-hidden">
-              <Suspense fallback={
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-                    <p className="text-gray-600">그리드 로딩 중...</p>
-                  </div>
-                </div>
-              }>
-                <PurchaseGrid
-                  products={products}
-                  onSave={handleSave}
-                  isSaving={isSaving}
-                />
-              </Suspense>
+              <PurchaseGrid
+                products={products}
+                onSave={handleSave}
+                isSaving={isSaving}
+              />
             </div>
           </div>
         ) : (
           <div className="h-full p-4">
             <PurchaseHistoryTable
               data={history}
-              branchName={session.branch_name}
+              branchName={session.branch_name || '전체 지점'}
             />
           </div>
         )}
