@@ -1,59 +1,86 @@
-// types/sales.ts
-export interface SaleRow {
-  id: string;
-  product_code: string;
-  product_name: string;
-  specification: string;
-  manufacturer: string;
-  unit: string;
-  quantity: number;
-  unit_price: number;
-  total_amount: number;
-  current_stock: number; // 현재 재고
-  cost_of_goods?: number; // FIFO 원가 (저장 후)
-  profit?: number; // 이익 (저장 후)
-}
+/**
+ * 판매 관리 타입 정의
+ * 입고 관리(purchases.ts) 구조 100% 적용
+ */
 
-export interface SaleFormData {
-  branch_id: string;
-  customer_id: string;
-  sale_date: string;
-  reference_number?: string;
-  notes?: string;
-  items: SaleRow[];
-}
-
-export interface SaleHistory {
-  id: string;
-  sale_date: string;
-  customer_name: string;
-  product_name: string;
-  quantity: number;
-  unit_price: number;
-  total_amount: number;
-  cost_of_goods: number;
-  profit: number;
-  profit_rate: number;
-  reference_number?: string;
-  notes?: string;
-  created_by_name: string;
-  created_at: string;
-}
-
-export interface Customer {
-  id: string;
-  code: string;
-  name: string;
-  type: string;
-}
-
+// 재고 포함 품목 (판매용)
 export interface ProductWithStock {
-  id: string;
-  code: string;
-  name: string;
-  specification: string;
-  manufacturer: string;
-  unit: string;
-  standard_sale_price: number;
-  current_stock: number; // 현재 재고 수량
+  id: string
+  code: string
+  name: string
+  category: string | null
+  unit: string
+  specification: string | null
+  manufacturer: string | null
+  standard_sale_price: number
+  current_stock: number  // 판매만의 특별 필드!
+}
+
+// 판매 그리드 행 (PurchaseGridRow 패턴)
+export interface SaleGridRow {
+  id: string  // temp_${Date.now()}_${Math.random()}
+  product_id: string | null
+  product_code: string
+  product_name: string
+  category: string
+  unit: string
+  specification: string
+  manufacturer: string
+  current_stock: number  // 재고 수량
+  quantity: number
+  unit_price: number
+  total_amount: number
+  notes: string
+}
+
+// 판매 저장 요청
+export interface SaleSaveRequest {
+  branch_id: string
+  customer_id: string
+  sale_date: string
+  reference_number: string
+  notes: string
+  items: SaleGridRow[]
+  created_by: string
+}
+
+// 판매 내역
+export interface SaleHistory {
+  id: string
+  sale_date: string
+  branch_name: string
+  customer_name: string
+  product_code: string
+  product_name: string
+  unit: string
+  quantity: number
+  unit_price: number
+  total_amount: number
+  cost_of_goods: number
+  profit: number
+  profit_margin: number
+  reference_number: string | null
+  created_by_name: string
+  created_at: string
+}
+
+// 고객 (거래처)
+export interface Customer {
+  id: string
+  code: string
+  name: string
+  contact_person?: string
+  phone?: string
+  email?: string
+}
+
+// RPC 응답
+export interface SaleRpcResponse {
+  sale_id: string
+  product_id: string
+  quantity: number
+  unit_price: number
+  cost_of_goods: number
+  profit: number
+  message: string
 }

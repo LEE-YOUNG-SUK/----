@@ -51,12 +51,10 @@ export async function savePurchases(data: PurchaseSaveRequest) {
         errors.push(`품목을 선택해주세요. (행: ${item.product_code || '미입력'})`)
         continue
       }
-      
       if (item.quantity <= 0) {
         errors.push(`수량은 0보다 커야 합니다. (품목: ${item.product_name})`)
         continue
       }
-      
       if (item.unit_cost <= 0) {
         errors.push(`단가는 0보다 커야 합니다. (품목: ${item.product_name})`)
         continue
@@ -70,7 +68,7 @@ export async function savePurchases(data: PurchaseSaveRequest) {
         unit_cost: item.unit_cost
       })
 
-      // ✅ 올바른 RPC 함수명
+      // ✅ RPC 함수만 호출 (재고 레이어는 DB에서 처리)
       const { data: rpcData, error } = await supabase
         .rpc('process_purchase_with_layers', {
           p_branch_id: data.branch_id,
