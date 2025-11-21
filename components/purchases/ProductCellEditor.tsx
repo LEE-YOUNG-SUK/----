@@ -180,10 +180,10 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
                   <div className="text-sm font-bold text-green-600">
                     ₩{product.standard_purchase_price?.toLocaleString() || 0}
                   </div>
-                  {product.last_purchase_price && 
-                   product.last_purchase_price !== product.standard_purchase_price && (
+                  {(product as any).last_purchase_price && 
+                   (product as any).last_purchase_price !== product.standard_purchase_price && (
                     <div className="text-xs text-gray-400 line-through">
-                      ₩{product.last_purchase_price.toLocaleString()}
+                      ₩{(product as any).last_purchase_price.toLocaleString()}
                     </div>
                   )}
                 </div>

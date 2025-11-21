@@ -17,7 +17,7 @@ export interface ProductAutoCompleteRef {
   getValue: () => string
 }
 
-export const ProductAutoComplete = forwardRef<ProductAutoCompleteRef, Props>(
+export const ProductAutoComplete = forwardRef<ProductAutoCompleteRef, ProductAutoCompleteProps>(
   ({ value, products, onValueChange }, ref) => {
     const [inputValue, setInputValue] = useState(value || '')
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([])

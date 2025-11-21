@@ -153,7 +153,10 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
         // rowData 상태도 업데이트
         setRowData(prev => {
           const newData = [...prev]
-          newData[params.node.rowIndex!] = params.data
+          const rowIndex = params.node?.rowIndex
+          if (rowIndex !== undefined && rowIndex !== null) {
+            newData[rowIndex] = params.data
+          }
           return newData
         })
         
@@ -179,7 +182,10 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
         // rowData 상태도 업데이트
         setRowData(prev => {
           const newData = [...prev]
-          newData[params.node.rowIndex!] = params.data
+          const rowIndex = params.node?.rowIndex
+          if (rowIndex !== undefined && rowIndex !== null) {
+            newData[rowIndex] = params.data
+          }
           return newData
         })
         
