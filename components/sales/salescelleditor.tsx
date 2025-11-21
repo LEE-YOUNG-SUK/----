@@ -33,7 +33,6 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
   // AG Grid에서 값을 가져갈 때 사용
   useImperativeHandle(ref, () => ({
     getValue: () => {
-      console.log('getValue called, returning:', selectedProduct ? selectedProduct.code : inputValue); // Debug log
       return selectedProduct ? selectedProduct.code : inputValue;
     },
     isCancelAfterEnd: () => false,
@@ -80,7 +79,6 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
 
   // 품목 선택
   const handleSelect = (product: ProductWithStock) => {
-    console.log('🎯 handleSelect called with product:', product)
     isSelectingRef.current = true
     setInputValue(product.code)
     setSelectedProduct(product)
@@ -91,7 +89,6 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
     
     // 편집 종료
     setTimeout(() => {
-      console.log('✅ Stopping editor')
       stopEditing()
       isSelectingRef.current = false
     }, 100)

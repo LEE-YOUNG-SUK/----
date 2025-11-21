@@ -40,8 +40,6 @@ interface Props {
 }
 
 export function PurchaseForm({ products, suppliers, history, session }: Props) {
-  console.log('🎨 PurchaseForm 렌더링')
-  
   if (!Array.isArray(products) || !Array.isArray(suppliers) || !Array.isArray(history)) {
     return (
       <div className="flex items-center justify-center h-full">

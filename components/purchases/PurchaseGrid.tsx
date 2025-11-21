@@ -292,7 +292,6 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
       const total = (row.quantity || 0) * (row.unit_cost || 0)
       return acc + total
     }, 0)
-    console.log('💰 합계 재계산:', sum, rowData)
     return sum
   }, [rowData])
   
@@ -357,8 +356,10 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
           }}
           singleClickEdit={false}
           stopEditingWhenCellsLoseFocus={true}
-          suppressRowClickSelection={true}
-          rowSelection="single"
+          rowSelection={{
+            mode: 'singleRow',
+            enableClickSelection: false
+          }}
           animateRows={true}
           enableCellTextSelection={true}
           onCellValueChanged={onCellValueChanged}

@@ -50,8 +50,6 @@ interface Props {
 }
 
 export function SaleForm({ products: initialProducts, customers, history, session }: Props) {
-  // console.log('🎨 SaleForm 렌더링')
-  
   if (!Array.isArray(initialProducts) || !Array.isArray(customers) || !Array.isArray(history)) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -210,7 +208,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
                       지점 <span className="text-red-600">*</span>
                     </label>
                     <select
-                      value={selectedBranchId}
+                      value={selectedBranchId || ''}
                       onChange={(e) => handleBranchChange(e.target.value)}
                       disabled={isSaving}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"

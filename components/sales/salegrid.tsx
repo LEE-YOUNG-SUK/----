@@ -57,8 +57,6 @@ export default function SaleGrid({ products, onSave, isSaving }: Props) {
   }, [])
 
   const handleProductSelect = useCallback((rowIndex: number, product: ProductWithStock) => {
-    console.log('handleProductSelect called:', { rowIndex, product }); // Debug log
-
     setRowData((prev) => {
       const newData = [...prev];
       const currentQty = newData[rowIndex].quantity || 0;
@@ -78,12 +76,10 @@ export default function SaleGrid({ products, onSave, isSaving }: Props) {
         total_amount: currentQty * unitPrice,
       };
 
-      console.log('Updated rowData:', newData[rowIndex]); // Debug log
       return newData;
     })
 
     setTimeout(() => {
-      console.log('Refreshing grid cells'); // Debug log
       gridRef.current?.api?.refreshCells({ force: true })
     }, 0)
   }, [])

@@ -9,7 +9,6 @@ import type { Client } from '@/types'
  */
 export async function getClients() {
   try {
-    console.log('📊 [Clients Actions] getClients 시작')
     const supabase = await createServerClient()
     
     const { data, error } = await supabase
@@ -21,7 +20,6 @@ export async function getClients() {
       return []
     }
     
-    console.log('✅ [Clients Actions] 거래처 조회 성공:', data?.length || 0)
     return Array.isArray(data) ? data : []
   } catch (error) {
     console.error('❌ [Clients Actions] 거래처 조회 실패:', error)

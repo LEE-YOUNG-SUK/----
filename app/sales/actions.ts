@@ -15,8 +15,6 @@ import type { SaleSaveRequest, SaleRpcResponse } from '@/types/sales'
  */
 export async function saveSales(data: SaleSaveRequest) {
   try {
-    console.log('💾 판매 저장 시작:', data)
-    
     const supabase = await createServerClient()
     
     // 세션 확인
@@ -110,8 +108,6 @@ export async function saveSales(data: SaleSaveRequest) {
         message: `일부 품목 저장 실패:\n${errors.join('\n')}`
       }
     }
-
-    console.log('✅ 모든 품목 저장 완료:', results.length)
 
     revalidatePath('/sales')
     revalidatePath('/inventory')

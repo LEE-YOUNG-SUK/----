@@ -15,9 +15,6 @@ export default function LoginPage() {
     setError('')
     
     try {
-      console.log('🔐 로그인 시도:', username)
-      
-      // 1. Supabase 인증
       const { data, error: rpcError } = await supabase.rpc('authenticate_user', {
         p_username: username,
         p_password: password,
@@ -30,8 +27,6 @@ export default function LoginPage() {
       
       const result = data[0]
       if (!result.success) throw new Error(result.message)
-      
-      console.log('✅ 인증 성공')
       
       // 2. 세션 저장
       const res = await fetch('/api/auth/login', {
@@ -51,8 +46,6 @@ export default function LoginPage() {
       })
       
       if (!res.ok) throw new Error('세션 저장 실패')
-      
-      console.log('✅ 세션 저장 완료')
       
       // 3. 페이지 이동
       window.location.href = '/'

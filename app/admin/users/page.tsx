@@ -9,16 +9,12 @@ import UserManagement from '@/components/admin/users/UserManagement'
 export const dynamic = 'force-dynamic'
 
 async function getSession() {
-  console.log('🔑 [Users] getSession 시작')
   const cookieStore = await cookies()
   const token = cookieStore.get('erp_session_token')?.value
 
   if (!token) {
-    console.log('❌ [Users] 토큰 없음')
     redirect('/login')
   }
-
-  console.log('✅ [Users] 토큰 확인')
 
   const supabase = await createServerClient()
   const { data: sessionData } = await supabase.rpc('verify_session', { 
@@ -26,11 +22,8 @@ async function getSession() {
   })
 
   if (!sessionData?.[0]?.valid) {
-    console.log('❌ [Users] 세션 무효')
     redirect('/login')
   }
-
-  console.log('✅ [Users] 세션 유효:', sessionData[0].username)
 
   const session = sessionData[0]
 
@@ -48,12 +41,7 @@ export default async function UsersPage() {
   const userData = await getSession()
   const permissions = new PermissionChecker(userData.role)
 
-  // 권한 체크 - 시스템 관리자만 접근 가능
-  console.log('🔍 Users Page - User Role:', userData.role)
-  console.log('🔍 Users Page - Can Read:', permissions.can('users_management', 'read'))
-  
   if (!permissions.can('users_management', 'read')) {
-    console.log('❌ Users Page - Access Denied, redirecting to /')
     redirect('/')
   }
 

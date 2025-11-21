@@ -9,7 +9,6 @@ import { cookies } from 'next/headers'
  */
 export async function getUsers() {
   try {
-    console.log('📊 [Users Actions] getUsers 시작')
     const supabase = await createServerClient()
     
     // RPC 함수를 사용하여 RLS 우회
@@ -39,7 +38,6 @@ export async function getUsers() {
         return []
       }
       
-      console.log('✅ [Users Actions] 사용자 조회 성공 (직접):', data?.length || 0)
       return data.map((user: any) => ({
         id: user.id,
         username: user.username,
@@ -53,7 +51,6 @@ export async function getUsers() {
       }))
     }
     
-    console.log('✅ [Users Actions] RPC로 사용자 조회 성공:', usersData?.length || 0)
     return usersData || []
   } catch (error) {
     console.error('❌ [Users Actions] 사용자 조회 실패:', error)
@@ -66,7 +63,6 @@ export async function getUsers() {
  */
 export async function getBranches() {
   try {
-    console.log('📊 [Users Actions] getBranches 시작')
     const supabase = await createServerClient()
     
     const { data, error } = await supabase
@@ -80,7 +76,6 @@ export async function getBranches() {
       return []
     }
     
-    console.log('✅ [Users Actions] 지점 조회 성공:', data?.length || 0)
     return data
   } catch (error) {
     console.error('❌ [Users Actions] 지점 조회 실패:', error)

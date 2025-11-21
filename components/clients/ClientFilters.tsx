@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import type { Client } from '@/types'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
 import { Input } from '../ui/Input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/Select'
 import { Button } from '../ui/Button'
 
 interface ClientFiltersProps {
@@ -48,7 +47,7 @@ export default function ClientFilters({ clients, onFilterChange }: ClientFilters
   }, [clients, searchTerm, typeFilter, statusFilter])
 
   // 필터 변경 시 부모에게 전달
-  useMemo(() => {
+  useEffect(() => {
     onFilterChange(filtered)
   }, [filtered, onFilterChange])
 
@@ -60,28 +59,26 @@ export default function ClientFilters({ clients, onFilterChange }: ClientFilters
 
   return (
     <>
-      <Select value={typeFilter} onValueChange={setTypeFilter}>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="전체 유형" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">전체 유형</SelectItem>
-          <SelectItem value="supplier">공급업체</SelectItem>
-          <SelectItem value="customer">고객</SelectItem>
-          <SelectItem value="both">공급업체 + 고객</SelectItem>
-        </SelectContent>
-      </Select>
+      <select
+        value={typeFilter}
+        onChange={(e) => setTypeFilter(e.target.value)}
+        className="w-[180px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      >
+        <option value="all">전체 유형</option>
+        <option value="supplier">공급업체</option>
+        <option value="customer">고객</option>
+        <option value="both">공급업체 + 고객</option>
+      </select>
 
-      <Select value={statusFilter} onValueChange={setStatusFilter}>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="전체 상태" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">전체 상태</SelectItem>
-          <SelectItem value="active">활성</SelectItem>
-          <SelectItem value="inactive">비활성</SelectItem>
-        </SelectContent>
-      </Select>
+      <select
+        value={statusFilter}
+        onChange={(e) => setStatusFilter(e.target.value)}
+        className="w-[180px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      >
+        <option value="all">전체 상태</option>
+        <option value="active">활성</option>
+        <option value="inactive">비활성</option>
+      </select>
 
       <Input
         placeholder="🔍 검색 (코드, 상호명, 대표자)"

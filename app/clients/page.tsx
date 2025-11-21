@@ -9,16 +9,12 @@ import ClientManagement from '@/components/clients/ClientManagement'
 export const dynamic = 'force-dynamic'
 
 async function getSession() {
-  console.log('🔑 [Clients] getSession 시작')
   const cookieStore = await cookies()
   const token = cookieStore.get('erp_session_token')?.value
 
   if (!token) {
-    console.log('❌ [Clients] 토큰 없음')
     redirect('/login')
   }
-
-  console.log('✅ [Clients] 토큰 확인')
 
   const supabase = await createServerClient()
   const { data: sessionData } = await supabase.rpc('verify_session', { 
@@ -26,11 +22,8 @@ async function getSession() {
   })
 
   if (!sessionData?.[0]?.valid) {
-    console.log('❌ [Clients] 세션 무효')
     redirect('/login')
   }
-
-  console.log('✅ [Clients] 세션 유효:', sessionData[0].username)
 
   const session = sessionData[0]
 
@@ -48,19 +41,11 @@ export default async function ClientsPage() {
   const userData = await getSession()
   const permissions = new PermissionChecker(userData.role)
 
-  // 권한 체크
-  console.log('🔍 Clients Page - User Role:', userData.role)
-  console.log('🔍 Clients Page - Can Read:', permissions.can('clients_management', 'read'))
-  
   if (!permissions.can('clients_management', 'read')) {
-    console.log('❌ Clients Page - Access Denied, redirecting to /')
     redirect('/')
   }
 
-  console.log('📊 [Clients] 거래처 데이터 조회 시작...')
   const clients = await getClients()
-  console.log('📊 [Clients] 조회된 거래처 수:', clients?.length || 0)
-  console.log('📊 [Clients] 첫 번째 거래처:', clients?.[0])
 
   return (
     <div className="min-h-screen bg-gray-50">

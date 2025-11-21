@@ -10,8 +10,6 @@ import type { PurchaseSaveRequest, PurchaseRpcResponse } from '@/types/purchases
  */
 export async function savePurchases(data: PurchaseSaveRequest) {
   try {
-    console.log('💾 입고 저장 시작:', data)
-    
     const supabase = await createServerClient()
     
     // 세션 확인
@@ -60,15 +58,7 @@ export async function savePurchases(data: PurchaseSaveRequest) {
         continue
       }
 
-      console.log(`📦 품목 저장 중: ${item.product_name}`, {
-        branch_id: data.branch_id,
-        client_id: data.supplier_id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        unit_cost: item.unit_cost
-      })
-
-      // ✅ RPC 함수만 호출 (재고 레이어는 DB에서 처리)
+      // RPC 함수 호출 (재고 레이어는 DB에서 처리)
       const { data: rpcData, error } = await supabase
         .rpc('process_purchase_with_layers', {
           p_branch_id: data.branch_id,
@@ -86,7 +76,6 @@ export async function savePurchases(data: PurchaseSaveRequest) {
         console.error('❌ RPC Error:', error)
         errors.push(`${item.product_name}: ${error.message}`)
       } else if (rpcData && rpcData[0]) {
-        console.log('✅ 저장 성공:', rpcData[0])
         results.push(rpcData[0] as PurchaseRpcResponse)
       }
     }
@@ -98,8 +87,6 @@ export async function savePurchases(data: PurchaseSaveRequest) {
         message: `일부 품목 저장 실패:\n${errors.join('\n')}`
       }
     }
-
-    console.log('✅ 모든 품목 저장 완료:', results.length)
 
     revalidatePath('/purchases')
     revalidatePath('/inventory')

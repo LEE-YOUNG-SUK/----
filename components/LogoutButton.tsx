@@ -13,8 +13,6 @@ export default function LogoutButton() {
     setLoading(true)
     
     try {
-      console.log('🚪 로그아웃 요청')
-      
       const response = await fetch('/api/auth/logout', {
         method: 'POST',
         headers: {
@@ -25,17 +23,15 @@ export default function LogoutButton() {
       const data = await response.json()
       
       if (!response.ok) {
-        console.error('❌ 로그아웃 실패:', data)
+        console.error('로그아웃 실패:', data)
         throw new Error(data.error || '로그아웃 실패')
       }
-      
-      console.log('✅ 로그아웃 API 성공')
       
       // 쿠키가 삭제되었으므로 로그인 페이지로 이동
       window.location.href = '/login'
       
     } catch (error: any) {
-      console.error('❌ 로그아웃 에러:', error)
+      console.error('로그아웃 에러:', error)
       alert('로그아웃에 실패했습니다: ' + error.message)
       setLoading(false)
     }
