@@ -44,6 +44,10 @@
 #### **8. users_rpc_functions.sql**
 - `get_all_users()` - 사용자 전체 조회
 
+#### **9. purchases_sales_rpc_functions.sql**
+- `get_purchases_list()` - 입고 내역 조회 (지점, 기간 필터)
+- `get_sales_list()` - 판매 내역 조회 (지점, 기간 필터)
+
 ---
 
 ## 🚀 초기 설정 가이드
@@ -67,6 +71,7 @@ products_table.sql
 clients_rpc_functions.sql
 products_rpc_functions.sql
 users_rpc_functions.sql
+purchases_sales_rpc_functions.sql
 
 -- 6. RLS 비활성화 (마지막에 실행!)
 disable_all_rls.sql

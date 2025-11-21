@@ -20,10 +20,10 @@ export default function PurchaseHistoryTable({ data, branchName }: PurchaseHisto
   // 검색 필터링
   const filteredData = data.filter(
     (item) =>
-      item.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.reference_number.toLowerCase().includes(searchTerm.toLowerCase())
+      (item.product_code || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.product_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.client_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.reference_number || '').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   // 페이지네이션
@@ -106,8 +106,8 @@ export default function PurchaseHistoryTable({ data, branchName }: PurchaseHisto
                 </td>
               </tr>
             ) : (
-              paginatedData.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50">
+              paginatedData.map((item, index) => (
+                <tr key={`${item.id}-${item.product_id}-${index}`} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm text-gray-900">
                     {new Date(item.purchase_date).toLocaleDateString('ko-KR')}
                   </td>

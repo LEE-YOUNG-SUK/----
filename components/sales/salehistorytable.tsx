@@ -31,10 +31,10 @@ export default function SaleHistoryTable({ data: initialData, branchName }: Prop
     const search = searchTerm.toLowerCase()
     return data.filter(
       (item) =>
-        item.product_code.toLowerCase().includes(search) ||
-        item.product_name.toLowerCase().includes(search) ||
-        item.customer_name.toLowerCase().includes(search) ||
-        (item.reference_number && item.reference_number.toLowerCase().includes(search))
+        (item.product_code || '').toLowerCase().includes(search) ||
+        (item.product_name || '').toLowerCase().includes(search) ||
+        (item.customer_name || '').toLowerCase().includes(search) ||
+        (item.reference_number || '').toLowerCase().includes(search)
     )
   }, [data, searchTerm])
 

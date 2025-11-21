@@ -225,35 +225,20 @@ export async function getSalesHistory(
   try {
     const supabase = await createServerClient()
     
-    // RPC 함수가 없을 수 있으므로 빈 배열 반환
-    try {
-      const { data, error } = await supabase
-        .rpc('get_sales_list', {
-          p_branch_id: branchId,
-          p_start_date: startDate || null,
-          p_end_date: endDate || null
-        })
-        .order('sale_date', { ascending: false })
-        .order('created_at', { ascending: false })
+    const { data, error } = await supabase
+      .rpc('get_sales_list', {
+        p_branch_id: branchId,
+        p_start_date: startDate || null,
+        p_end_date: endDate || null
+      })
+      .order('sale_date', { ascending: false })
+      .order('created_at', { ascending: false })
 
-      if (error) {
-        console.warn('get_sales_list RPC 함수 없음 또는 오류:', error.message)
-        return { 
-          success: true, 
-          data: [] 
-        }
-      }
+    if (error) throw error
 
-      return { 
-        success: true, 
-        data: Array.isArray(data) ? data : [] 
-      }
-    } catch (rpcError) {
-      console.warn('RPC 함수 호출 실패, 빈 배열 반환:', rpcError)
-      return { 
-        success: true, 
-        data: [] 
-      }
+    return { 
+      success: true, 
+      data: Array.isArray(data) ? data : [] 
     }
   } catch (error) {
     console.error('Get sales history error:', error)

@@ -50,8 +50,8 @@ export default function UserManagement({
       setFilteredUsers(users)
     } else {
       const filtered = users.filter(user =>
-        user.username.toLowerCase().includes(term.toLowerCase()) ||
-        user.display_name.toLowerCase().includes(term.toLowerCase())
+        (user.username || '').toLowerCase().includes(term.toLowerCase()) ||
+        (user.display_name || '').toLowerCase().includes(term.toLowerCase())
       )
       setFilteredUsers(filtered)
     }

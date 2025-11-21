@@ -72,8 +72,8 @@ export function InventoryTable({ initialData, userRole, branchId }: Props) {
   // 필터링
   const filteredData = data.filter(item => {
     const matchesSearch = 
-      item.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.product_name.toLowerCase().includes(searchTerm.toLowerCase())
+      (item.product_code || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.product_name || '').toLowerCase().includes(searchTerm.toLowerCase())
     
     const status = calculateStockStatus(item.current_quantity, item.min_stock_level || 0)
     const matchesStatus = !statusFilter || status === statusFilter

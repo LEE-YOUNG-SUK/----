@@ -39,15 +39,14 @@ export default async function SalesPage() {
     branch_name: session.branch_name || null
   }
 
-  const [customersResult] = await Promise.all([
-    getCustomersList()
+  const [productsResult, customersResult, historyResult] = await Promise.all([
+    getProductsWithStock(userSession.branch_id || ''),
+    getCustomersList(),
+    getSalesHistory(userSession.branch_id)
   ])
-  
-  const productsResult = { success: true, data: [], message: '' }
-  const historyResult = { success: true, data: [], message: '' }
 
   // 실패 처리
-  if (!productsResult.success || !customersResult.success || !historyResult.success) {
+  if (!productsResult.success || !customersResult.success) {
     return (
       <div className="min-h-screen bg-gray-50">
         <NavigationWrapper user={userSession} />
@@ -55,6 +54,7 @@ export default async function SalesPage() {
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <h2 className="text-red-800 font-bold text-lg mb-2">데이터 로딩 실패</h2>
             <ul className="text-red-700 space-y-1">
+              {!productsResult.success && <li>• 품목 목록: {productsResult.message}</li>}
               {!customersResult.success && <li>• 고객 목록: {customersResult.message}</li>}
             </ul>
           </div>
@@ -63,9 +63,28 @@ export default async function SalesPage() {
     )
   }
 
-  const serializedProducts = JSON.parse(JSON.stringify(productsResult.data))
-  const serializedCustomers = JSON.parse(JSON.stringify(customersResult.data))
-  const serializedHistory = JSON.parse(JSON.stringify(historyResult.data))
+  let products, customers, history
+  
+  try {
+    products = JSON.parse(JSON.stringify(productsResult.data || []))
+  } catch (e) {
+    console.error('products 직렬화 실패:', e)
+    products = []
+  }
+  
+  try {
+    customers = JSON.parse(JSON.stringify(customersResult.data || []))
+  } catch (e) {
+    console.error('customers 직렬화 실패:', e)
+    customers = []
+  }
+  
+  try {
+    history = JSON.parse(JSON.stringify(historyResult.data || []))
+  } catch (e) {
+    console.error('history 직렬화 실패:', e)
+    history = []
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -81,9 +100,9 @@ export default async function SalesPage() {
 
         <div className="bg-white rounded-lg shadow-lg h-[calc(100vh-220px)]">
           <SaleForm
-            products={serializedProducts}
-            customers={serializedCustomers}
-            history={serializedHistory}
+            products={products}
+            customers={customers}
+            history={history}
             session={userSession}
           />
         </div>
