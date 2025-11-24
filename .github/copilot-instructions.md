@@ -1,7 +1,7 @@
 # Copilot Instructions for drevers-erp-next
 
 ## 프로젝트 개요
-Next.js 15 App Router 기반 ERP 시스템. 입고/판매/재고를 **FIFO(선입선출)** 원가 계층으로 관리하며, 역할 기반 권한 시스템(4단계)과 Supabase RPC 중심 아키텍처를 사용합니다.
+Next.js 16 App Router 기반 ERP 시스템. 입고/판매/재고를 **FIFO(선입선출)** 원가 계층으로 관리하며, 역할 기반 권한 시스템(4단계)과 Supabase RPC 중심 아키텍처를 사용합니다.
 
 **핵심 도메인**: 사용자(`users`), 지점(`branches`), 거래처(`clients`), 품목(`products`), 입고(`purchases`), 판매(`sales`), 재고(`inventory`)
 
@@ -174,3 +174,35 @@ supabase gen types typescript --local > types/supabase.ts
 - 2025년 1월 디버깅: 입고/판매 데이터 로딩 실패 → RPC 함수가 TEXT 반환했으나 DB는 UUID
 - 해결: `database/uuid_rpc_functions.sql` 생성 (UUID 반환 버전)
 - 검증: `database/simple_check.sql`로 테이블 타입 확인
+
+## Supabase 클라이언트 패턴
+
+### 클라이언트 vs 서버 사용법
+- **서버 컴포넌트/Server Actions**: `lib/supabase/server.ts`의 `createServerClient()` 사용
+  ```typescript
+  import { createServerClient } from '@/lib/supabase/server'
+  const supabase = await createServerClient()
+  ```
+- **클라이언트 컴포넌트**: `lib/supabase/client.ts`의 `supabase` export 사용
+  ```typescript
+  import { supabase } from '@/lib/supabase/client'
+  ```
+
+### RPC 호출 패턴
+```typescript
+// 단일 레코드 조회
+const { data, error } = await supabase.rpc('verify_session', { p_token: token })
+if (data?.[0]?.valid) { ... }
+
+// 리스트 조회 (필터 파라미터)
+const { data, error } = await supabase.rpc('get_purchases_list', {
+  p_branch_id: branchId || null,
+  p_start_date: startDate,
+  p_end_date: endDate
+})
+
+// FIFO 처리 (트랜잭션 포함)
+const { data, error } = await supabase.rpc('process_sale_with_fifo', {
+  p_branch_id, p_client_id, p_product_id, p_quantity, p_unit_price, ...
+})
+```
