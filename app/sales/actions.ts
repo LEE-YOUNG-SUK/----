@@ -236,9 +236,29 @@ export async function getSalesHistory(
 
     if (error) throw error
 
+    // RPC 결과를 SaleHistory 타입에 맞게 변환
+    const mappedData = (data || []).map((item: any) => ({
+      id: item.id,
+      sale_date: item.sale_date,
+      branch_name: item.branch_name || '',
+      customer_name: item.client_name || '', // client_name → customer_name
+      product_code: item.product_code || '',
+      product_name: item.product_name || '',
+      unit: item.unit || '',
+      quantity: item.quantity || 0,
+      unit_price: item.unit_price || 0,
+      total_amount: item.total_price || 0, // total_price → total_amount
+      cost_of_goods: item.cost_of_goods_sold || 0, // cost_of_goods_sold → cost_of_goods
+      profit: item.profit || 0,
+      profit_margin: item.total_price > 0 ? ((item.profit || 0) / item.total_price) * 100 : 0,
+      reference_number: item.reference_number || null,
+      created_by_name: '', // RPC에서 제공하지 않음
+      created_at: item.created_at
+    }))
+
     return { 
       success: true, 
-      data: Array.isArray(data) ? data : [] 
+      data: mappedData
     }
   } catch (error) {
     console.error('Get sales history error:', error)
