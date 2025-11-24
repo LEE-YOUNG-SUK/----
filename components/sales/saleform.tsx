@@ -200,7 +200,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
         {activeTab === 'input' ? (
           <div className="h-full flex flex-col">
             <div className="bg-white border-b p-4">
-              <div className={`grid gap-4 ${isSystemAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
+              <div className={`grid gap-4 grid-cols-1 md:grid-cols-2 ${isSystemAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
                 {/* 시스템 관리자만 지점 선택 */}
                 {isSystemAdmin && (
                   <div>

@@ -48,25 +48,14 @@ export default function ProductManagement({
   }
 
   return (
-    <div className="space-y-6">
-      {/* 필터 및 버튼 */}
-      <div className="flex items-center gap-4">
-        <ProductFilters 
-          products={products}
-          onFilterChange={setFilteredProducts}
-        />
-        {permissions.canCreate && (
-          <Button onClick={handleAddNew} size="lg" className="whitespace-nowrap">
-            ➕ 새 품목 추가
-          </Button>
-        )}
-      </div>
-
-      {/* 테이블 */}
+    <>
       <ProductTable
-        products={filteredProducts}
+        products={products}
+        filteredProducts={filteredProducts}
+        onFilterChange={setFilteredProducts}
         permissions={permissions}
         onEdit={handleEdit}
+        onAddNew={handleAddNew}
       />
 
       {/* 폼 모달 */}
@@ -77,6 +66,6 @@ export default function ProductManagement({
           onSuccess={handleSuccess}
         />
       )}
-    </div>
+    </>
   )
 }

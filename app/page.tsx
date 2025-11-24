@@ -4,6 +4,8 @@ import { createServerClient } from '@/lib/supabase/server'
 import { UserData } from '@/types'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import { ROLE_LABELS, ROLE_ICONS } from '@/types/permissions'
+import { PageLayout } from '@/components/shared/PageLayout'
+import { ContentCard } from '@/components/shared/ContentCard'
 
 async function getSession(): Promise<UserData | null> {
   try {
@@ -42,27 +44,23 @@ export default async function DashboardPage() {
   const isBranchUser = ['0001', '0002', '0003'].includes(session.role)
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       <NavigationWrapper user={session} />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <PageLayout>
         <div className="space-y-6">
           
           {/* 환영 메시지 */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <ContentCard>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               {'환영합니다, '}{session.display_name}{'님! 👋'}
             </h2>
             <p className="text-gray-600">
               DR.Evers ERP 시스템에 성공적으로 로그인하셨습니다.
             </p>
-          </div>
+          </ContentCard>
           
           {/* 사용자 정보 */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {'📋 사용자 정보'}
-            </h3>
+          <ContentCard title="📋 사용자 정보">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-blue-50 rounded-lg p-4">
                 <p className="text-sm text-blue-600 mb-1">아이디</p>
@@ -85,10 +83,10 @@ export default async function DashboardPage() {
                 </p>
               </div>
             </div>
-          </div>
+          </ContentCard>
           
           {/* 권한 안내 */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow p-6 border border-blue-200">
+          <ContentCard className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
             <h3 className="text-lg font-semibold text-blue-900 mb-3">
               {'🔐 권한 정보'}
             </h3>
@@ -111,10 +109,10 @@ export default async function DashboardPage() {
                 <p className="text-blue-800">{'❌ 사용자 관리 불가'}</p>
               </div>
             )}
-          </div>
+          </ContentCard>
           
           {/* Phase 3 완료 */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+          <ContentCard className="bg-green-50 border-green-200">
             <h3 className="font-semibold text-green-900 mb-2">
               {'✅ Phase 3 완료!'}
             </h3>
@@ -130,13 +128,10 @@ export default async function DashboardPage() {
             <p className="text-green-600 text-sm mt-3 font-medium">
               {'🎯 다음: Phase 4 - 재고 현황 페이지'}
             </p>
-          </div>
+          </ContentCard>
           
           {/* 빠른 링크 */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {'🚀 빠른 시작'}
-            </h3>
+          <ContentCard title="🚀 빠른 시작">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               
               <a href="/purchases" className="block p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition border border-blue-200">
@@ -158,10 +153,10 @@ export default async function DashboardPage() {
               </a>
               
             </div>
-          </div>
+          </ContentCard>
           
         </div>
-      </main>
-    </div>
+      </PageLayout>
+    </>
   )
 }

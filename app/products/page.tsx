@@ -5,6 +5,7 @@ import { PermissionChecker } from '@/lib/permissions'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import { getProducts } from './actions'
 import ProductManagement from '@/components/products/ProductManagement'
+import { ContentCard } from '@/components/shared/ContentCard'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,29 +49,39 @@ export default async function ProductsPage() {
   const products = await getProducts()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       <NavigationWrapper user={userData} />
-      
-      <main className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">품목 관리</h1>
-          <p className="text-sm text-gray-600 mt-2">
-            품목 정보를 등록하고 관리합니다
-          </p>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="space-y-6">
+            <ContentCard>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">📋 품목 관리</h1>
+                  <p className="text-sm text-gray-600 mt-1">
+                    품목 정보를 등록하고 관리합니다
+                  </p>
+                </div>
+                <div className="text-left sm:text-right">
+                  <div className="text-sm text-gray-600">
+                    {userData.role === '0000' ? '전체 지점' : userData.branch_name}
+                  </div>
+                </div>
+              </div>
+            </ContentCard>
 
-        <div className="bg-white rounded-lg shadow-lg">
-          <ProductManagement 
-            initialProducts={products} 
-            userData={userData}
-            permissions={{
-              canCreate: permissions.can('products_management', 'create'),
-              canUpdate: permissions.can('products_management', 'update'),
-              canDelete: permissions.can('products_management', 'delete')
-            }}
-          />
+            <ProductManagement 
+              initialProducts={products} 
+              userData={userData}
+              permissions={{
+                canCreate: permissions.can('products_management', 'create'),
+                canUpdate: permissions.can('products_management', 'update'),
+                canDelete: permissions.can('products_management', 'delete')
+              }}
+            />
+          </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   )
 }

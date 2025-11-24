@@ -37,6 +37,7 @@ export interface Branch {
   contact_person: string | null
   phone: string | null
   email: string | null
+  business_number: string | null
   is_active: boolean
   created_at: string
   updated_at: string

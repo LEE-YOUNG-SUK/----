@@ -1,23 +1,33 @@
 'use client'
 
+import { useState } from 'react'
 import type { Product } from '@/types'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/Table'
-import { Badge } from '../ui/Badge'
+import { ContentCard } from '@/components/shared/ContentCard'
 import { Button } from '../ui/Button'
 import { deleteProduct } from '@/app/products/actions'
-import { useState } from 'react'
+import ProductFilters from './ProductFilters'
 
 interface ProductTableProps {
   products: Product[]
+  filteredProducts: Product[]
+  onFilterChange: (filtered: Product[]) => void
   permissions: {
+    canCreate: boolean
     canUpdate: boolean
     canDelete: boolean
   }
   onEdit: (product: Product) => void
+  onAddNew: () => void
 }
 
-export default function ProductTable({ products, permissions, onEdit }: ProductTableProps) {
+export default function ProductTable({ 
+  products, 
+  filteredProducts,
+  onFilterChange,
+  permissions, 
+  onEdit,
+  onAddNew 
+}: ProductTableProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const formatPrice = (price: number | null) => {
@@ -50,91 +60,116 @@ export default function ProductTable({ products, permissions, onEdit }: ProductT
     }
   }
 
-  if (products.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-10 text-center text-muted-foreground">
-          검색 결과가 없습니다
-        </CardContent>
-      </Card>
-    )
-  }
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>품목 목록</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>품목코드</TableHead>
-                <TableHead>품명</TableHead>
-                <TableHead>카테고리</TableHead>
-                <TableHead>단위</TableHead>
-                <TableHead className="text-right">표준구매가</TableHead>
-                <TableHead className="text-right">표준판매가</TableHead>
-                <TableHead>제조사</TableHead>
-                <TableHead>상태</TableHead>
-                <TableHead>등록일</TableHead>
-                <TableHead className="text-right">관리</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.code}</TableCell>
-                  <TableCell>{product.name}</TableCell>
-                  <TableCell>
+    <ContentCard>
+      {/* 필터 및 버튼 */}
+      <div className="mb-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+          <ProductFilters 
+            products={products}
+            onFilterChange={onFilterChange}
+          />
+          {permissions.canCreate && (
+            <Button onClick={onAddNew} size="lg" className="whitespace-nowrap">
+              ➕ 새 품목 추가
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* 테이블 */}
+      <div className="overflow-x-auto -mx-4 sm:-mx-6">
+        <table className="w-full min-w-[1100px]">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">품목코드</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">품명</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">카테고리</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">단위</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">표준구매가</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">표준판매가</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제조사</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">등록일</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">관리</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredProducts.length === 0 ? (
+              <tr>
+                <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
+                  검색 결과가 없습니다
+                </td>
+              </tr>
+            ) : (
+              filteredProducts.map((product) => (
+                <tr key={product.id} className="hover:bg-gray-50 transition">
+                  <td className="px-4 py-3">
+                    <span className="font-mono text-sm font-medium text-gray-900">{product.code}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm font-medium text-gray-900">{product.name}</span>
+                  </td>
+                  <td className="px-4 py-3">
                     {product.category ? (
-                      <Badge variant="secondary">{product.category}</Badge>
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell>{product.unit}</TableCell>
-                  <TableCell className="text-right">
-                    {formatPrice(product.standard_purchase_price)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {formatPrice(product.standard_sale_price)}
-                  </TableCell>
-                  <TableCell>{product.manufacturer || '-'}</TableCell>
-                  <TableCell>
-                    <Badge variant={product.is_active ? 'default' : 'secondary'}>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        {product.category}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-gray-500">-</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm text-gray-700">{product.unit}</span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-sm text-gray-700">{formatPrice(product.standard_purchase_price)}</span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-sm text-gray-700">{formatPrice(product.standard_sale_price)}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm text-gray-700">{product.manufacturer || '-'}</span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      product.is_active 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
                       {product.is_active ? '✅ 활성' : '❌ 비활성'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{formatDate(product.created_at)}</TableCell>
-                  <TableCell className="text-right">
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm text-gray-700">{formatDate(product.created_at)}</span>
+                  </td>
+                  <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       {permissions.canUpdate && (
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <button
                           onClick={() => onEdit(product)}
+                          className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition"
                         >
                           ✏️ 수정
-                        </Button>
+                        </button>
                       )}
                       {permissions.canDelete && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
+                        <button
                           onClick={() => handleDelete(product)}
                           disabled={deletingId === product.id}
+                          className="px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {deletingId === product.id ? '⏳' : '🗑️'} 삭제
-                        </Button>
+                          {deletingId === product.id ? '⏳ 삭제NULL' : '🗑️ 삭제'}
+                        </button>
                       )}
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </ContentCard>
   )
 }

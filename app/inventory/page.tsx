@@ -5,6 +5,7 @@ import { UserData } from '@/types'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import { InventoryStats } from '@/components/inventory/InventoryStats'
 import { InventoryTable } from '@/components/inventory/InventoryTable'
+import { ContentCard } from '@/components/shared/ContentCard'
 
 interface InventoryItem {
   branch_id: string
@@ -84,52 +85,50 @@ export default async function InventoryPage() {
   const summaryData = (summary as InventorySummary[]) || []
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       <NavigationWrapper user={session} />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
-          
-          {/* 헤더 */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {'📦 재고 현황'}
-              </h1>
-              <p className="mt-2 text-gray-600">
-                실시간 재고 조회 및 FIFO 레이어 분석
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-600">
-                {session.role === '0000' ? '전체 지점' : session.branch_name}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {new Date().toLocaleString('ko-KR')}
-              </p>
-            </div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="space-y-6">
+            <ContentCard>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">📦 재고 현황</h1>
+                  <p className="text-sm text-gray-600 mt-1">
+                    실시간 재고 조회 및 FIFO 레이어 분석
+                  </p>
+                </div>
+                <div className="text-left sm:text-right">
+                  <div className="text-sm text-gray-600">
+                    {session.role === '0000' ? '전체 지점' : session.branch_name}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {new Date().toLocaleString('ko-KR')}
+                  </div>
+                </div>
+              </div>
+            </ContentCard>
+            
+            {/* 요약 통계 */}
+            <InventoryStats summary={summaryData[0] || null} />
+            
+            {/* 재고 테이블 */}
+            {invError ? (
+              <ContentCard className="bg-red-50 border-red-200">
+                <p className="text-red-800">
+                  {'❌ 재고 데이터를 불러오는데 실패했습니다: '}{invError.message}
+                </p>
+              </ContentCard>
+            ) : (
+              <InventoryTable
+                initialData={inventoryData}
+                userRole={session.role}
+                branchId={session.branch_id}
+              />
+            )}
           </div>
-          
-          {/* 요약 통계 */}
-          <InventoryStats summary={summaryData[0] || null} />
-          
-          {/* 재고 테이블 */}
-          {invError ? (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-              <p className="text-red-800">
-                {'❌ 재고 데이터를 불러오는데 실패했습니다: '}{invError.message}
-              </p>
-            </div>
-          ) : (
-            <InventoryTable
-              initialData={inventoryData}
-              userRole={session.role}
-              branchId={session.branch_id}
-            />
-          )}
-          
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   )
 }

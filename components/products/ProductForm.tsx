@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Label } from '../ui/Label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/Select'
 import { Checkbox } from '../ui/Checkbox'
 
 interface ProductFormProps {
@@ -81,17 +80,17 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-[900px] max-h-[90vh] overflow-y-auto mx-4">
         <DialogHeader>
           <DialogTitle>{isEdit ? '품목 수정' : '새 품목 추가'}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* 기본 정보 */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold">📋 기본 정보</h3>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="code">품목 코드 *</Label>
                 <Input
@@ -121,7 +120,7 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="category">카테고리</Label>
                 <Input
@@ -134,25 +133,23 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
 
               <div className="space-y-2">
                 <Label htmlFor="unit">단위 *</Label>
-                <Select
+                <select
+                  id="unit"
                   value={formData.unit}
-                  onValueChange={(value) => setFormData({ ...formData, unit: value })}
+                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="EA">EA (개)</SelectItem>
-                    <SelectItem value="BOX">BOX (박스)</SelectItem>
-                    <SelectItem value="KG">KG (킬로그램)</SelectItem>
-                    <SelectItem value="L">L (리터)</SelectItem>
-                    <SelectItem value="SET">SET (세트)</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <option value="EA">EA (개)</option>
+                  <option value="BOX">BOX (박스)</option>
+                  <option value="KG">KG (킬로그램)</option>
+                  <option value="L">L (리터)</option>
+                  <option value="SET">SET (세트)</option>
+                </select>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="specification">규격/사양</Label>
                 <Input
@@ -174,7 +171,7 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="barcode">바코드</Label>
                 <Input
@@ -205,7 +202,7 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
           <div className="space-y-4">
             <h3 className="text-sm font-semibold">💰 가격 정보</h3>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="standard_purchase_price">표준 구매가 (원)</Label>
                 <Input
@@ -249,9 +246,6 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
               활성 상태
             </Label>
           </div>
-          <p className="text-xs text-muted-foreground ml-6">
-            비활성 시 입고/판매 품목 선택에 표시되지 않음
-          </p>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>

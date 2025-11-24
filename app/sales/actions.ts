@@ -131,7 +131,7 @@ export async function saveSales(data: SaleSaveRequest) {
  * 전체 품목 목록 조회 (재고 포함)
  * 입고 관리처럼 전체 품목 표시
  */
-export async function getProductsWithStock(branchId: string) {
+export async function getProductsWithStock(branchId: string | null) {
   try {
     const supabase = await createServerClient()
 
@@ -142,12 +142,18 @@ export async function getProductsWithStock(branchId: string) {
 
     if (productsError) throw productsError
 
-    // 2. 해당 지점의 재고 조회 (product_id별 합계)
-    const { data: inventoryData, error: inventoryError } = await supabase
+    // 2. 재고 조회 (지점별 또는 전체)
+    let inventoryQuery = supabase
       .from('inventory_layers')
       .select('product_id, remaining_quantity')
-      .eq('branch_id', branchId)
       .gt('remaining_quantity', 0)
+    
+    // branch_id가 있으면 해당 지점만, 없으면 전체 지점 재고 합계
+    if (branchId) {
+      inventoryQuery = inventoryQuery.eq('branch_id', branchId)
+    }
+
+    const { data: inventoryData, error: inventoryError } = await inventoryQuery
 
     if (inventoryError) throw inventoryError
 

@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import { PurchaseForm } from '@/components/purchases/PurchaseForm'
 import { getProductsList, getSuppliersList, getPurchasesHistory } from './actions'
+import { PageLayout } from '@/components/shared/PageLayout'
+import { ContentCard } from '@/components/shared/ContentCard'
 
 export default async function PurchasesPage() {
   const cookieStore = await cookies()
@@ -42,14 +44,14 @@ export default async function PurchasesPage() {
 
   if (!productsResult.success || !suppliersResult.success) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <>
         <NavigationWrapper user={userSession} />
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <PageLayout>
+          <ContentCard className="bg-red-50 border-red-200">
             <p className="text-red-800">데이터 조회 중 오류가 발생했습니다.</p>
-          </div>
-        </div>
-      </div>
+          </ContentCard>
+        </PageLayout>
+      </>
     )
   }
 
@@ -84,38 +86,41 @@ export default async function PurchasesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       <NavigationWrapper user={userSession} />
-      
-      <div className="h-[calc(100vh-64px)] flex flex-col">
-        <div className="bg-white border-b px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">📥 입고 관리</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                품목별 입고 데이터를 입력하고 FIFO 재고 레이어를 생성합니다
-              </p>
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-600">
-                {userSession.role === '0000' ? '전체 지점' : userSession.branch_name}
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="h-[calc(100vh-140px)] flex flex-col">
+            <ContentCard className="mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">📥 입고 관리</h1>
+                  <p className="text-sm text-gray-600 mt-1">
+                    품목별 입고 데이터를 입력하고 FIFO 재고 레이어를 생성합니다
+                  </p>
+                </div>
+                <div className="text-left sm:text-right">
+                  <div className="text-sm text-gray-600">
+                    {userSession.role === '0000' ? '전체 지점' : userSession.branch_name}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    품목: {products.length}개 | 공급업체: {suppliers.length}개
+                  </div>
+                </div>
               </div>
-              <div className="text-xs text-gray-500 mt-1">
-                품목: {products.length}개 | 공급업체: {suppliers.length}개
-              </div>
+            </ContentCard>
+
+            <div className="flex-1 overflow-hidden">
+              <PurchaseForm
+                products={products}
+                suppliers={suppliers}
+                history={history}
+                session={formSession}
+              />
             </div>
           </div>
         </div>
-
-        <div className="flex-1 overflow-hidden">
-          <PurchaseForm
-            products={products}
-            suppliers={suppliers}
-            history={history}
-            session={formSession}
-          />
-        </div>
       </div>
-    </div>
+    </>
   )
 }

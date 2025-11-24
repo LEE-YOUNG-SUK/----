@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '../../ui/Button'
 import { Input } from '../../ui/Input'
 import { Label } from '../../ui/Label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/Select'
 import { Checkbox } from '../../ui/Checkbox'
 
 interface UserWithBranch {
@@ -185,42 +184,38 @@ export default function UserForm({ user, branches, onClose, onSuccess }: UserFor
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="role">권한 *</Label>
-                <Select
+                <select
+                  id="role"
                   value={formData.role}
-                  onValueChange={(value) => setFormData({ ...formData, role: value })}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0000">시스템 관리자</SelectItem>
-                    <SelectItem value="0001">원장</SelectItem>
-                    <SelectItem value="0002">매니저</SelectItem>
-                    <SelectItem value="0003">직원</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <option value="0000">시스템 관리자</option>
+                  <option value="0001">원장</option>
+                  <option value="0002">매니저</option>
+                  <option value="0003">직원</option>
+                </select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="branch_id">
                   소속 지점 {isBranchRequired && '*'}
                 </Label>
-                <Select
+                <select
+                  id="branch_id"
                   value={formData.branch_id}
-                  onValueChange={(value) => setFormData({ ...formData, branch_id: value })}
+                  onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required={isBranchRequired}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="선택하세요" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">없음</SelectItem>
-                    {branches.map(branch => (
-                      <SelectItem key={branch.id} value={branch.id}>
-                        {branch.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <option value="">선택하세요</option>
+                  {branches.map(branch => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
                 {isBranchRequired && (
                   <p className="text-xs text-muted-foreground">
                     원장/매니저/직원은 필수 선택

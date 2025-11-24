@@ -3,8 +3,8 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import { PermissionChecker } from '@/lib/permissions'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
-import { getUsers, getBranches } from './actions'
-import UserManagement from '@/components/admin/users/UserManagement'
+import { getBranchesList } from './actions'
+import BranchManagement from '@/components/admin/branches/BranchManagement'
 import { ContentCard } from '@/components/shared/ContentCard'
 
 export const dynamic = 'force-dynamic'
@@ -38,16 +38,15 @@ async function getSession() {
   }
 }
 
-export default async function UsersPage() {
+export default async function BranchesPage() {
   const userData = await getSession()
   const permissions = new PermissionChecker(userData.role)
-
-  if (!permissions.can('users_management', 'read')) {
+  
+  if (!permissions.can('branches_management', 'read')) {
     redirect('/')
   }
 
-  const users = await getUsers()
-  const branches = await getBranches()
+  const { data: branches } = await getBranchesList()
 
   return (
     <>
@@ -58,31 +57,28 @@ export default async function UsersPage() {
             <ContentCard>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">👥 사용자 관리</h1>
+                  <h1 className="text-2xl font-bold text-gray-900">🏬 지점 관리</h1>
                   <p className="text-sm text-gray-600 mt-1">
-                    시스템 사용자를 등록하고 관리합니다
+                    지점 정보를 등록하고 관리합니다
                   </p>
                 </div>
                 <div className="text-left sm:text-right">
                   <div className="text-sm text-gray-600">
-                    {userData.role === '0000' ? '시스템 관리자' : userData.branch_name}
+                    {userData.display_name} ({userData.role === '0000' ? '시스템 관리자' : userData.branch_name})
                   </div>
                 </div>
               </div>
             </ContentCard>
 
-            <ContentCard>
-              <UserManagement 
-                initialUsers={users} 
-                branches={branches}
-                currentUser={userData}
-                permissions={{
-                  canCreate: permissions.can('users_management', 'create'),
-                  canUpdate: permissions.can('users_management', 'update'),
-                  canDelete: permissions.can('users_management', 'delete')
-                }}
-              />
-            </ContentCard>
+            <BranchManagement 
+              branches={branches || []} 
+              userData={userData}
+              permissions={{
+                canCreate: permissions.can('branches_management', 'create'),
+                canUpdate: permissions.can('branches_management', 'update'),
+                canDelete: permissions.can('branches_management', 'delete')
+              }}
+            />
           </div>
         </div>
       </div>

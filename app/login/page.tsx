@@ -59,48 +59,18 @@ export default function LoginPage() {
   }
   
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(to bottom right, #dbeafe, #e0e7ff, #f3e8ff)'
-    }}>
-      <div style={{
-        maxWidth: '28rem',
-        width: '100%',
-        margin: '0 1rem'
-      }}>
-        <div style={{
-          background: 'white',
-          borderRadius: '1rem',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-          padding: '2rem'
-        }}>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 px-4">
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8">
           {/* 헤더 */}
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <div style={{
-              display: 'inline-block',
-              padding: '0.75rem',
-              background: '#dbeafe',
-              borderRadius: '9999px',
-              marginBottom: '1rem'
-            }}>
-              <span style={{ fontSize: '2.5rem' }}>🏥</span>
+          <div className="text-center mb-8">
+            <div className="inline-block p-3 bg-blue-50 rounded-full mb-4">
+              <span className="text-4xl">🏥</span>
             </div>
-            <h1 style={{
-              fontSize: '1.875rem',
-              fontWeight: 'bold',
-              color: '#111827',
-              margin: 0
-            }}>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               DR.Evers ERP
             </h1>
-            <p style={{
-              marginTop: '0.5rem',
-              color: '#6b7280',
-              margin: '0.5rem 0 0 0'
-            }}>
+            <p className="mt-2 text-gray-600">
               재고관리 시스템
             </p>
           </div>
@@ -108,14 +78,8 @@ export default function LoginPage() {
           {/* 폼 */}
           <form onSubmit={handleSubmit}>
             {/* 아이디 */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{
-                display: 'block',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-                color: '#374151',
-                marginBottom: '0.5rem'
-              }}>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 아이디
               </label>
               <input
@@ -126,26 +90,13 @@ export default function LoginPage() {
                 autoFocus
                 disabled={loading}
                 placeholder="아이디를 입력하세요"
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '0.5rem',
-                  fontSize: '1rem',
-                  boxSizing: 'border-box'
-                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 transition"
               />
             </div>
             
             {/* 비밀번호 */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{
-                display: 'block',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-                color: '#374151',
-                marginBottom: '0.5rem'
-              }}>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 비밀번호
               </label>
               <input
@@ -155,31 +106,14 @@ export default function LoginPage() {
                 required
                 disabled={loading}
                 placeholder="비밀번호를 입력하세요"
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '0.5rem',
-                  fontSize: '1rem',
-                  boxSizing: 'border-box'
-                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 transition"
               />
             </div>
             
             {/* 에러 */}
             {error && (
-              <div style={{
-                background: '#fef2f2',
-                border: '1px solid #fecaca',
-                borderRadius: '0.5rem',
-                padding: '1rem',
-                marginBottom: '1.5rem'
-              }}>
-                <p style={{
-                  color: '#991b1b',
-                  fontSize: '0.875rem',
-                  margin: 0
-                }}>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-red-800 text-sm">
                   ❌ {error}
                 </p>
               </div>
@@ -189,70 +123,32 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              style={{
-                width: '100%',
-                padding: '0.75rem 1rem',
-                background: loading ? '#9ca3af' : '#2563eb',
-                color: 'white',
-                fontWeight: '500',
-                borderRadius: '0.5rem',
-                border: 'none',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontSize: '1rem'
-              }}
+              className={`w-full py-3 px-4 text-white font-medium rounded-lg transition ${
+                loading 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
             >
               {loading ? '로그인 중...' : '로그인'}
             </button>
           </form>
           
           {/* 안내 */}
-          <div style={{
-            marginTop: '2rem',
-            background: '#eff6ff',
-            border: '1px solid #bfdbfe',
-            borderRadius: '0.5rem',
-            padding: '1rem'
-          }}>
-            <p style={{
-              color: '#1e40af',
-              fontSize: '0.875rem',
-              fontWeight: '500',
-              margin: '0 0 0.5rem 0'
-            }}>
+          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-blue-900 text-sm font-medium mb-2">
               💡 초기 관리자 계정
             </p>
-            <p style={{
-              color: '#1e40af',
-              fontSize: '0.875rem',
-              margin: '0.25rem 0'
-            }}>
-              아이디: <code style={{
-                background: '#dbeafe',
-                padding: '0.125rem 0.5rem',
-                borderRadius: '0.25rem'
-              }}>admin</code>
+            <p className="text-blue-800 text-sm my-1">
+              아이디: <code className="bg-blue-100 px-2 py-0.5 rounded">admin</code>
             </p>
-            <p style={{
-              color: '#1e40af',
-              fontSize: '0.875rem',
-              margin: '0.25rem 0'
-            }}>
-              비밀번호: <code style={{
-                background: '#dbeafe',
-                padding: '0.125rem 0.5rem',
-                borderRadius: '0.25rem'
-              }}>admin1234</code>
+            <p className="text-blue-800 text-sm my-1">
+              비밀번호: <code className="bg-blue-100 px-2 py-0.5 rounded">admin1234</code>
             </p>
           </div>
         </div>
         
-        <p style={{
-          marginTop: '1.5rem',
-          textAlign: 'center',
-          fontSize: '0.875rem',
-          color: '#6b7280'
-        }}>
-          Next.js 15 + TypeScript + Supabase
+        <p className="mt-6 text-center text-sm text-gray-600">
+          Next.js 16 + TypeScript + Supabase
         </p>
       </div>
     </div>

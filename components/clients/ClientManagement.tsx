@@ -48,25 +48,14 @@ export default function ClientManagement({
   }
 
   return (
-    <div className="space-y-6">
-      {/* 필터 및 버튼 */}
-      <div className="flex items-center gap-4">
-        <ClientFilters 
-          clients={clients}
-          onFilterChange={setFilteredClients}
-        />
-        {permissions.canCreate && (
-          <Button onClick={handleAddNew} size="lg" className="whitespace-nowrap">
-            ➕ 새 거래처 추가
-          </Button>
-        )}
-      </div>
-
-      {/* 테이블 */}
+    <>
       <ClientTable
-        clients={filteredClients}
+        clients={clients}
+        filteredClients={filteredClients}
+        onFilterChange={setFilteredClients}
         permissions={permissions}
         onEdit={handleEdit}
+        onAddNew={handleAddNew}
       />
 
       {/* 폼 모달 */}
@@ -77,6 +66,6 @@ export default function ClientManagement({
           onSuccess={handleSuccess}
         />
       )}
-    </div>
+    </>
   )
 }

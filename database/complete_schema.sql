@@ -311,10 +311,28 @@ COMMENT ON COLUMN public.users.role IS '권한 (0000: 시스템관리자, 0001: 
 COMMENT ON COLUMN public.users.branch_id IS '소속 지점 ID';
 COMMENT ON COLUMN public.users.is_active IS '활성 상태';
 
+
+-- business_number 컬럼 추가 (없으면)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'branches' 
+        AND column_name = 'business_number'
+        AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE public.branches ADD COLUMN business_number TEXT;
+        RAISE NOTICE 'business_number 컬럼을 추가했습니다.';
+    ELSE
+        RAISE NOTICE 'business_number 컬럼이 이미 존재합니다.';
+    END IF;
+END $$;
+
 COMMENT ON TABLE public.branches IS '지점 정보';
 COMMENT ON COLUMN public.branches.id IS '지점 ID';
 COMMENT ON COLUMN public.branches.code IS '지점 코드';
 COMMENT ON COLUMN public.branches.name IS '지점명';
+COMMENT ON COLUMN public.branches.business_number IS '사업자번호';
 COMMENT ON COLUMN public.branches.is_active IS '활성 상태';
 
 -- ============================================

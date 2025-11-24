@@ -1,23 +1,33 @@
 'use client'
 
+import { useState } from 'react'
 import type { Client } from '@/types'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/Table'
-import { Badge } from '../ui/Badge'
+import { ContentCard } from '@/components/shared/ContentCard'
 import { Button } from '../ui/Button'
 import { deleteClient } from '@/app/clients/actions'
-import { useState } from 'react'
+import ClientFilters from './ClientFilters'
 
 interface ClientTableProps {
   clients: Client[]
+  filteredClients: Client[]
+  onFilterChange: (filtered: Client[]) => void
   permissions: {
+    canCreate: boolean
     canUpdate: boolean
     canDelete: boolean
   }
   onEdit: (client: Client) => void
+  onAddNew: () => void
 }
 
-export default function ClientTable({ clients, permissions, onEdit }: ClientTableProps) {
+export default function ClientTable({ 
+  clients, 
+  filteredClients,
+  onFilterChange,
+  permissions, 
+  onEdit,
+  onAddNew 
+}: ClientTableProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const getTypeText = (type: string) => {
@@ -29,13 +39,13 @@ export default function ClientTable({ clients, permissions, onEdit }: ClientTabl
     }
   }
 
-  const getTypeBadgeVariant = (type: string) => {
-    switch (type) {
-      case 'supplier': return 'default'
-      case 'customer': return 'secondary'
-      case 'both': return 'outline'
-      default: return 'default'
+  const getTypeBadge = (type: string) => {
+    const badges = {
+      'supplier': 'bg-blue-100 text-blue-800',
+      'customer': 'bg-green-100 text-green-800',
+      'both': 'bg-purple-100 text-purple-800'
     }
+    return badges[type as keyof typeof badges] || 'bg-gray-100 text-gray-800'
   }
 
   const formatDate = (dateString: string) => {
@@ -71,87 +81,112 @@ export default function ClientTable({ clients, permissions, onEdit }: ClientTabl
     }
   }
 
-  if (clients.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-10 text-center text-muted-foreground">
-          검색 결과가 없습니다
-        </CardContent>
-      </Card>
-    )
-  }
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>거래처 목록</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>거래처코드</TableHead>
-                <TableHead>상호명</TableHead>
-                <TableHead>유형</TableHead>
-                <TableHead>대표자</TableHead>
-                <TableHead>연락처</TableHead>
-                <TableHead>이메일</TableHead>
-                <TableHead>사업자번호</TableHead>
-                <TableHead>상태</TableHead>
-                <TableHead>등록일</TableHead>
-                <TableHead className="text-right">관리</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {clients.map((client) => (
-                <TableRow key={client.id}>
-                  <TableCell className="font-medium">{client.code}</TableCell>
-                  <TableCell>{client.name}</TableCell>
-                  <TableCell>
-                    <Badge variant={getTypeBadgeVariant(client.type) as any}>
+    <ContentCard>
+      {/* 필터 및 버튼 */}
+      <div className="mb-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+          <ClientFilters 
+            clients={clients}
+            onFilterChange={onFilterChange}
+          />
+          {permissions.canCreate && (
+            <Button onClick={onAddNew} size="lg" className="whitespace-nowrap">
+              ➕ 새 거래처 추가
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* 테이블 */}
+      <div className="overflow-x-auto -mx-4 sm:-mx-6">
+        <table className="w-full min-w-[1100px]">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">거래처코드</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상호명</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">유형</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">대표자</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">연락처</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">이메일</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">사업자번호</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">등록일</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">관리</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredClients.length === 0 ? (
+              <tr>
+                <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
+                  검색 결과가 없습니다
+                </td>
+              </tr>
+            ) : (
+              filteredClients.map((client) => (
+                <tr key={client.id} className="hover:bg-gray-50 transition">
+                  <td className="px-4 py-3">
+                    <span className="font-mono text-sm font-medium text-gray-900">{client.code}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm font-medium text-gray-900">{client.name}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeBadge(client.type)}`}>
                       {getTypeText(client.type)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{client.contact_person || '-'}</TableCell>
-                  <TableCell>{client.phone || '-'}</TableCell>
-                  <TableCell>{client.email || '-'}</TableCell>
-                  <TableCell>{formatTaxId(client.tax_id)}</TableCell>
-                  <TableCell>
-                    <Badge variant={client.is_active ? 'default' : 'secondary'}>
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm text-gray-700">{client.contact_person || '-'}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm text-gray-700">{client.phone || '-'}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm text-gray-700">{client.email || '-'}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm text-gray-700">{formatTaxId(client.tax_id)}</span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      client.is_active 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
                       {client.is_active ? '✅ 활성' : '❌ 비활성'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{formatDate(client.created_at)}</TableCell>
-                  <TableCell className="text-right">
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm text-gray-700">{formatDate(client.created_at)}</span>
+                  </td>
+                  <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       {permissions.canUpdate && (
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <button
                           onClick={() => onEdit(client)}
+                          className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition"
                         >
                           ✏️ 수정
-                        </Button>
+                        </button>
                       )}
                       {permissions.canDelete && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
+                        <button
                           onClick={() => handleDelete(client)}
                           disabled={deletingId === client.id}
+                          className="px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {deletingId === client.id ? '⏳' : '🗑️'} 삭제
-                        </Button>
+                          {deletingId === client.id ? '⏳ 삭제중' : '🗑️ 삭제'}
+                        </button>
                       )}
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </ContentCard>
   )
 }

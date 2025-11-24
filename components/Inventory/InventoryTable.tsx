@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { InventoryLayerModal } from './InventoryLayerModal'
+import { ContentCard } from '@/components/shared/ContentCard'
 
 interface InventoryItem {
   branch_id: string
@@ -83,10 +84,10 @@ export function InventoryTable({ initialData, userRole, branchId }: Props) {
   
   return (
     <>
-      <div className="bg-white rounded-lg shadow">
+      <ContentCard>
         {/* 검색 및 필터 */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex flex-col md:flex-row gap-4">
+        <div className="mb-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <input
                 type="text"
@@ -113,8 +114,8 @@ export function InventoryTable({ initialData, userRole, branchId }: Props) {
         </div>
         
         {/* 테이블 */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="overflow-x-auto -mx-4 sm:-mx-6">
+          <table className="w-full min-w-[900px]">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">품목코드</th>
@@ -191,7 +192,7 @@ export function InventoryTable({ initialData, userRole, branchId }: Props) {
             </tbody>
           </table>
         </div>
-      </div>
+      </ContentCard>
       
       {selectedItem && (
         <InventoryLayerModal

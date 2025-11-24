@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Label } from '../ui/Label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/Select'
 import { Textarea } from '../ui/Textarea'
 import { Checkbox } from '../ui/Checkbox'
 
@@ -131,19 +130,17 @@ export default function ClientForm({ client, onClose, onSuccess }: ClientFormPro
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="type">거래처 유형 *</Label>
-                <Select
+                <select
+                  id="type"
                   value={formData.type}
-                  onValueChange={(value) => setFormData({ ...formData, type: value as 'supplier' | 'customer' | 'both' })}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value as 'supplier' | 'customer' | 'both' })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="supplier">공급업체</SelectItem>
-                    <SelectItem value="customer">고객</SelectItem>
-                    <SelectItem value="both">공급업체 + 고객</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <option value="supplier">공급업체</option>
+                  <option value="customer">고객</option>
+                  <option value="both">공급업체 + 고객</option>
+                </select>
                 <p className="text-xs text-muted-foreground">
                   입고와 판매 모두 거래 시 '공급업체 + 고객' 선택
                 </p>

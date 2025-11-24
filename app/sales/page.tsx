@@ -8,6 +8,9 @@ import { redirect } from 'next/navigation'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import { SaleForm } from '@/components/sales/saleform'
 import { getProductsWithStock, getCustomersList, getSalesHistory } from './actions'
+import { PageLayout } from '@/components/shared/PageLayout'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { ContentCard } from '@/components/shared/ContentCard'
 
 export default async function SalesPage() {
   const cookieStore = await cookies()
@@ -40,7 +43,7 @@ export default async function SalesPage() {
   }
 
   const [productsResult, customersResult, historyResult] = await Promise.all([
-    getProductsWithStock(userSession.branch_id || ''),
+    getProductsWithStock(userSession.branch_id),
     getCustomersList(),
     getSalesHistory(userSession.branch_id)
   ])
@@ -48,18 +51,18 @@ export default async function SalesPage() {
   // 실패 처리
   if (!productsResult.success || !customersResult.success) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <>
         <NavigationWrapper user={userSession} />
-        <main className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+        <PageLayout>
+          <ContentCard className="bg-red-50 border-red-200">
             <h2 className="text-red-800 font-bold text-lg mb-2">데이터 로딩 실패</h2>
             <ul className="text-red-700 space-y-1">
               {!productsResult.success && <li>• 품목 목록: {productsResult.message}</li>}
               {!customersResult.success && <li>• 고객 목록: {customersResult.message}</li>}
             </ul>
-          </div>
-        </main>
-      </div>
+          </ContentCard>
+        </PageLayout>
+      </>
     )
   }
 
@@ -87,26 +90,41 @@ export default async function SalesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       <NavigationWrapper user={userSession} />
-      
-      <main className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">판매 관리</h1>
-          <p className="text-sm text-gray-600 mt-2">
-            품목을 판매하고 FIFO 원가가 자동으로 계산됩니다
-          </p>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="h-[calc(100vh-140px)] flex flex-col">
+            <ContentCard className="mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">📤 판매 관리</h1>
+                  <p className="text-sm text-gray-600 mt-1">
+                    품목을 판매하고 FIFO 원가가 자동으로 계산됩니다
+                  </p>
+                </div>
+                <div className="text-left sm:text-right">
+                  <div className="text-sm text-gray-600">
+                    {userSession.role === '0000' ? '전체 지점' : userSession.branch_name}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    품목: {products.length}개 | 고객: {customers.length}개
+                  </div>
+                </div>
+              </div>
+            </ContentCard>
 
-        <div className="bg-white rounded-lg shadow-lg h-[calc(100vh-220px)]">
-          <SaleForm
-            products={products}
-            customers={customers}
-            history={history}
-            session={userSession}
-          />
+            <div className="flex-1 overflow-hidden">
+              <SaleForm
+                products={products}
+                customers={customers}
+                history={history}
+                session={userSession}
+              />
+            </div>
+          </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   )
 }

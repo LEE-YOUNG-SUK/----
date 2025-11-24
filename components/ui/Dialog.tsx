@@ -29,8 +29,10 @@ export interface DialogContentProps {
 
 export const DialogContent = ({ children, className = '' }: DialogContentProps) => {
   return (
-    <div className={`bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto ${className}`}>
-      {children}
+    <div className={`bg-white rounded-lg shadow-xl w-full ${className}`}>
+      <div className="px-6 py-4">
+        {children}
+      </div>
     </div>
   );
 };
