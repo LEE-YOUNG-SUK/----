@@ -163,7 +163,6 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
         setCustomerId('')
         setReferenceNumber('')
         setNotes('')
-        setActiveTab('history')
         window.location.reload()
       } else {
         alert(result.message || '판매 처리 중 오류가 발생했습니다.')

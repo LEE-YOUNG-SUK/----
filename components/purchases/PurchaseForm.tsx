@@ -122,7 +122,6 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
         setSupplierId('')
         setReferenceNumber('')
         setNotes('')
-        setActiveTab('history')
         window.location.reload()
       } else {
         alert(result.message || '입고 처리 중 오류가 발생했습니다.')

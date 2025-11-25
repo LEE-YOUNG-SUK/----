@@ -109,28 +109,42 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     setRowData((prev) => prev.filter((_, index) => index !== rowIndex))
   }, [])
 
-  const handleProductSelect = useCallback((rowIndex: number, product: Product) => {
-    setRowData((prev) => {
-      const newData = [...prev]
-      if (newData[rowIndex]) {
-        newData[rowIndex] = {
-          ...newData[rowIndex],
-          product_id: product.id,
-          product_code: product.code,
-          product_name: product.name,
-          category: product.category || '',
-          unit: product.unit,
-          specification: product.specification || '',
-          manufacturer: product.manufacturer || ''
-        }
+  // RowNode 기반 불변 업데이트 패턴 (정렬/필터 안전)
+  const handleProductSelect = useCallback((rowNode: any, product: Product) => {
+    const targetId = rowNode?.data?.id
+    if (!targetId) return
+    
+    setRowData(prev => prev.map(r => {
+      if (r.id !== targetId) return r
+      
+      // 전체 객체 새로 생성 (불변 업데이트)
+      const updated: PurchaseGridRow = {
+        ...r,
+        product_id: product.id,
+        product_code: product.code,
+        product_name: product.name,
+        category: product.category || '',
+        unit: product.unit,
+        specification: product.specification || '',
+        manufacturer: product.manufacturer || ''
       }
-      return newData
-    })
-
+      
+      // 자동계산 적용
+      calculatePrices(updated, taxIncluded)
+      return updated
+    }))
+    
+    // 선택한 행만 강제 리프레시
     setTimeout(() => {
-      gridRef.current?.api?.refreshCells({ force: true })
+      if (gridRef.current?.api && rowNode) {
+        gridRef.current.api.refreshCells({
+          force: true,
+          rowNodes: [rowNode],
+          columns: ['product_code', 'product_name', 'unit', 'specification', 'manufacturer', 'supply_price', 'tax_amount', 'total_price']
+        })
+      }
     }, 0)
-  }, [])
+  }, [taxIncluded])
 
   const columnDefs = useMemo<ColDef<PurchaseGridRow>[]>(() => [
     {
@@ -150,7 +164,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       cellEditorParams: (params: ICellEditorParams) => ({
         products: products,
         onProductSelect: (product: Product) => {
-          handleProductSelect(params.node.rowIndex!, product)
+          handleProductSelect(params.node, product)
         },
         stopEditing: () => params.api.stopEditing()
       }),
@@ -194,25 +208,6 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       valueFormatter: (params) => {
         const value = params.value || 0
         return value.toLocaleString()
-      },
-      valueSetter: (params) => {
-        const newValue = parseFloat(params.newValue) || 0
-        params.data.quantity = newValue
-        
-        // 자동계산
-        calculatePrices(params.data, taxIncluded)
-        
-        // rowData 상태도 업데이트
-        setRowData(prev => {
-          const newData = [...prev]
-          const rowIndex = params.node?.rowIndex
-          if (rowIndex !== undefined && rowIndex !== null) {
-            newData[rowIndex] = params.data
-          }
-          return newData
-        })
-        
-        return true
       }
     },
     {
@@ -225,25 +220,6 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       valueFormatter: (params) => {
         const value = params.value || 0
         return `₩${value.toLocaleString()}`
-      },
-      valueSetter: (params) => {
-        const newValue = parseFloat(params.newValue) || 0
-        params.data.unit_cost = newValue
-        
-        // 자동계산
-        calculatePrices(params.data, taxIncluded)
-        
-        // rowData 상태도 업데이트
-        setRowData(prev => {
-          const newData = [...prev]
-          const rowIndex = params.node?.rowIndex
-          if (rowIndex !== undefined && rowIndex !== null) {
-            newData[rowIndex] = params.data
-          }
-          return newData
-        })
-        
-        return true
       }
     },
     {
@@ -306,12 +282,10 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     // 자동계산 적용
     calculatePrices(data, taxIncluded)
     
-    // rowData 상태 업데이트
-    setRowData(prev => {
-      const newData = [...prev]
-      newData[params.node.rowIndex] = data
-      return newData
-    })
+    // rowData 상태 업데이트 (id 기반 불변 업데이트)
+    setRowData(prev => prev.map(r => 
+      r.id === data.id ? data : r
+    ))
     
     // 계산된 필드들 새로고침
     params.api.refreshCells({
@@ -367,14 +341,10 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     onSave(data)
   }, [onSave])
 
-  // 실시간 합계 계산 (rowData 변경 시마다)
-  const totalAmount = useMemo(() => {
-    const sum = rowData.reduce((acc, row) => {
-      const total = (row.quantity || 0) * (row.unit_cost || 0)
-      return acc + total
-    }, 0)
-    return sum
-  }, [rowData])
+  // 실시간 합계 계산 - total_price 사용 (부가세 반영된 최종 금액)
+  const totalAmount = useMemo(() => 
+    rowData.reduce((acc, row) => acc + (row.total_price || 0), 0),
+  [rowData])
   
   const validRowCount = useMemo(() => 
     rowData.filter((row) => row.product_id).length,
@@ -431,18 +401,14 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
           rowData={rowData}
           columnDefs={columnDefs}
           defaultColDef={{
-            sortable: false,
-            filter: false,
+            sortable: true,
             resizable: true
           }}
           singleClickEdit={false}
           stopEditingWhenCellsLoseFocus={true}
-          rowSelection={{
-            mode: 'singleRow',
-            enableClickSelection: false
-          }}
-          animateRows={true}
-          enableCellTextSelection={true}
+          suppressMovableColumns={true}
+          rowHeight={40}
+          headerHeight={45}
           onCellValueChanged={onCellValueChanged}
         />
       </div>
