@@ -69,6 +69,8 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
   const [referenceNumber, setReferenceNumber] = useState('')
   const [notes, setNotes] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  // 부가세 구분 (true: 포함, false: 미포함)
+  const [taxIncluded, setTaxIncluded] = useState(true)
 
   const isSystemAdmin = session.role === '0000'
 
@@ -111,7 +113,14 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
     loadProductsForBranch(branchId)
   }
 
+  // 저장 시 행은 이미 그리드에서 계산된 supply_price, tax_amount, total_price 사용
   const handleSave = async (items: SaleGridRow[]) => {
+    const itemsWithCalc = items.map(item => ({
+      ...item,
+      // total_amount는 표시용이므로 total_price와 동기화
+      total_amount: item.total_price
+    }))
+
     if (!customerId) {
       alert('고객을 선택해주세요.')
       return
@@ -129,7 +138,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
       return
     }
 
-    const totalAmount = items.reduce((sum, item) => sum + item.total_amount, 0)
+    const totalAmount = itemsWithCalc.reduce((sum, item) => sum + item.total_price, 0)
     const confirmed = confirm(
       `${items.length}개 품목, 총 ₩${totalAmount.toLocaleString()}원을 판매 처리하시겠습니까?`
     )
@@ -145,7 +154,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
         sale_date: saleDate,
         reference_number: referenceNumber,
         notes: notes,
-        items: items,
+        items: itemsWithCalc,
         created_by: session.user_id
       })
 
@@ -200,7 +209,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
         {activeTab === 'input' ? (
           <div className="h-full flex flex-col">
             <div className="bg-white border-b p-4">
-              <div className={`grid gap-4 grid-cols-1 md:grid-cols-2 ${isSystemAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
+              <div className={`grid gap-4 grid-cols-1 md:grid-cols-2 ${isSystemAdmin ? 'lg:grid-cols-6' : 'lg:grid-cols-5'}`}>
                 {/* 시스템 관리자만 지점 선택 */}
                 {isSystemAdmin && (
                   <div>
@@ -261,6 +270,21 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                    부가세 구분 <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    value={taxIncluded ? 'included' : 'excluded'}
+                    onChange={(e) => setTaxIncluded(e.target.value === 'included')}
+                    disabled={isSaving}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  >
+                    <option value="included">부가세 포함</option>
+                    <option value="excluded">부가세 미포함</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     참조번호
                   </label>
                   <input
@@ -294,6 +318,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
                 products={products}
                 onSave={handleSave}
                 isSaving={isSaving}
+                taxIncluded={taxIncluded}
               />
             </div>
           </div>

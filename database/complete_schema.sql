@@ -661,6 +661,7 @@ CREATE TABLE IF NOT EXISTS public.purchases (
     created_by TEXT,
     updated_at TIMESTAMPTZ,
     updated_by TEXT
+    ,tax_amount NUMERIC(15, 2) DEFAULT 0
 );
 
 -- 인덱스 생성
@@ -704,6 +705,7 @@ CREATE TABLE IF NOT EXISTS public.sales (
     created_by TEXT,
     updated_at TIMESTAMPTZ,
     updated_by TEXT
+    ,tax_amount NUMERIC(15, 2) DEFAULT 0
 );
 
 -- 인덱스 생성

@@ -5,7 +5,7 @@
  * 품목 자동완성 통합 버전
  */
 
-import { useCallback, useRef, useState, useMemo } from 'react'
+import { useCallback, useRef, useState, useMemo, useEffect } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
@@ -29,11 +29,44 @@ interface Props {
   products: Product[]
   onSave: (items: PurchaseGridRow[]) => void
   isSaving: boolean
+  taxIncluded: boolean // 부가세 포함 여부
 }
 
-export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
+export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }: Props) {
   const gridRef = useRef<any>(null)
   const [rowData, setRowData] = useState<PurchaseGridRow[]>([createEmptyRow()])
+
+  /**
+   * 자동계산 함수: 수량 * 단가 → 공급가, 부가세, 합계 계산
+   * @param row - 계산할 행 데이터
+   * @param isTaxIncluded - 부가세 포함 여부
+   */
+  function calculatePrices(row: PurchaseGridRow, isTaxIncluded: boolean) {
+    const quantity = row.quantity || 0
+    const unitCost = row.unit_cost || 0
+    
+    if (isTaxIncluded) {
+      // 부가세 포함: 수량 * 단가 = 합계
+      const totalPrice = quantity * unitCost
+      const supplyPrice = Math.round(totalPrice / 1.1) // 공급가 (반올림)
+      const taxAmount = totalPrice - supplyPrice // 부가세 (차액, 자동으로 정수)
+      
+      row.total_price = totalPrice
+      row.supply_price = supplyPrice
+      row.tax_amount = taxAmount
+      row.total_cost = totalPrice // 기존 필드 호환
+    } else {
+      // 부가세 미포함: 수량 * 단가 = 공급가
+      const supplyPrice = quantity * unitCost
+      const taxAmount = Math.round(supplyPrice * 0.1) // 부가세 10% (반올림)
+      const totalPrice = supplyPrice + taxAmount
+      
+      row.supply_price = supplyPrice
+      row.tax_amount = taxAmount
+      row.total_price = totalPrice
+      row.total_cost = totalPrice // 기존 필드 호환
+    }
+  }
 
   function createEmptyRow(): PurchaseGridRow {
     return {
@@ -45,12 +78,32 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
       unit: '',
       quantity: 0,
       unit_cost: 0,
+      supply_price: 0,
+      tax_amount: 0,
+      total_price: 0,
       total_cost: 0,
       specification: '',
       manufacturer: '',
       notes: ''
     }
   }
+
+  // 부가세 구분 변경 시 전체 행 재계산
+  useEffect(() => {
+    if (rowData.length > 0) {
+      const updatedData = rowData.map(row => {
+        const updatedRow = { ...row }
+        calculatePrices(updatedRow, taxIncluded)
+        return updatedRow
+      })
+      setRowData(updatedData)
+      
+      // 그리드 새로고침
+      setTimeout(() => {
+        gridRef.current?.api?.refreshCells({ force: true })
+      }, 0)
+    }
+  }, [taxIncluded])
 
   const handleDeleteRow = useCallback((rowIndex: number) => {
     setRowData((prev) => prev.filter((_, index) => index !== rowIndex))
@@ -59,20 +112,17 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
   const handleProductSelect = useCallback((rowIndex: number, product: Product) => {
     setRowData((prev) => {
       const newData = [...prev]
-      const currentQty = newData[rowIndex].quantity || 0
-      const unitCost = product.standard_purchase_price || 0
-      
-      newData[rowIndex] = {
-        ...newData[rowIndex],
-        product_id: product.id,
-        product_code: product.code,
-        product_name: product.name,
-        category: product.category || '',
-        unit: product.unit,
-        specification: product.specification || '',
-        manufacturer: product.manufacturer || '',
-        unit_cost: unitCost,
-        total_cost: currentQty * unitCost
+      if (newData[rowIndex]) {
+        newData[rowIndex] = {
+          ...newData[rowIndex],
+          product_id: product.id,
+          product_code: product.code,
+          product_name: product.name,
+          category: product.category || '',
+          unit: product.unit,
+          specification: product.specification || '',
+          manufacturer: product.manufacturer || ''
+        }
       }
       return newData
     })
@@ -148,7 +198,9 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
       valueSetter: (params) => {
         const newValue = parseFloat(params.newValue) || 0
         params.data.quantity = newValue
-        params.data.total_cost = newValue * params.data.unit_cost
+        
+        // 자동계산
+        calculatePrices(params.data, taxIncluded)
         
         // rowData 상태도 업데이트
         setRowData(prev => {
@@ -177,7 +229,9 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
       valueSetter: (params) => {
         const newValue = parseFloat(params.newValue) || 0
         params.data.unit_cost = newValue
-        params.data.total_cost = params.data.quantity * newValue
+        
+        // 자동계산
+        calculatePrices(params.data, taxIncluded)
         
         // rowData 상태도 업데이트
         setRowData(prev => {
@@ -193,8 +247,32 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
       }
     },
     {
+      headerName: '공급가',
+      field: 'supply_price',
+      width: 130,
+      editable: false,
+      type: 'numericColumn',
+      cellClass: 'bg-gray-50 text-right font-medium',
+      valueFormatter: (params) => {
+        const value = params.value || 0
+        return `₩${value.toLocaleString()}`
+      }
+    },
+    {
+      headerName: '부가세',
+      field: 'tax_amount',
+      width: 120,
+      editable: false,
+      type: 'numericColumn',
+      cellClass: 'bg-gray-50 text-right font-medium text-orange-600',
+      valueFormatter: (params) => {
+        const value = params.value || 0
+        return `₩${value.toLocaleString()}`
+      }
+    },
+    {
       headerName: '합계',
-      field: 'total_cost',
+      field: 'total_price',
       width: 140,
       editable: false,
       type: 'numericColumn',
@@ -224,7 +302,9 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
 
   const onCellValueChanged = useCallback((params: any) => {
     const { data } = params
-    data.total_cost = data.quantity * data.unit_cost
+    
+    // 자동계산 적용
+    calculatePrices(data, taxIncluded)
     
     // rowData 상태 업데이트
     setRowData(prev => {
@@ -233,11 +313,12 @@ export default function PurchaseGrid({ products, onSave, isSaving }: Props) {
       return newData
     })
     
+    // 계산된 필드들 새로고침
     params.api.refreshCells({
       rowNodes: [params.node],
-      columns: ['total_cost']
+      columns: ['supply_price', 'tax_amount', 'total_price', 'total_cost']
     })
-  }, [])
+  }, [taxIncluded])
 
   const handleAddRow = useCallback(() => {
     setRowData((prev) => [...prev, createEmptyRow()])

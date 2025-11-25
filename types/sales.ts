@@ -28,8 +28,11 @@ export interface SaleGridRow {
   manufacturer: string
   current_stock: number  // 재고 수량
   quantity: number
-  unit_price: number
-  total_amount: number
+  unit_price: number      // 사용자 입력 단가
+  supply_price: number    // 공급가 (자동계산)
+  tax_amount: number      // 부가세 (자동계산, 정수)
+  total_price: number     // 합계 (자동계산)
+  total_amount: number    // 기존 호환성 유지
   notes: string
 }
 
@@ -42,6 +45,7 @@ export interface SaleSaveRequest {
   notes: string
   items: SaleGridRow[]
   created_by: string
+    tax_amount?: number; // 부가세 (선택, 일괄입력용)
 }
 
 // 판매 내역
@@ -62,6 +66,7 @@ export interface SaleHistory {
   reference_number: string | null
   created_by_name: string
   created_at: string
+    tax_amount?: number; // 부가세 (선택)
 }
 
 // 고객 (거래처)

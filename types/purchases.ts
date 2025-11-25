@@ -17,8 +17,11 @@ export interface PurchaseGridRow {
   category: string
   unit: string
   quantity: number
-  unit_cost: number
-  total_cost: number
+  unit_cost: number // 사용자 입력 단가
+  supply_price: number // 공급가 (자동계산)
+  tax_amount: number // 부가세 (자동계산, 정수)
+  total_price: number // 합계 (자동계산)
+  total_cost: number // 기존 호환성 유지
   specification: string
   manufacturer: string
   notes: string
@@ -35,6 +38,7 @@ export interface PurchaseSaveRequest {
   notes: string
   items: PurchaseGridRow[]
   created_by: string
+    tax_amount?: number; // 부가세 (선택, 일괄입력용)
 }
 
 /**
@@ -58,6 +62,7 @@ export interface PurchaseHistory {
   notes: string
   created_at: string
   created_by: string
+    tax_amount?: number; // 부가세 (선택)
 }
 
 /**

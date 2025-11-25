@@ -58,6 +58,8 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
   const [referenceNumber, setReferenceNumber] = useState('')
   const [notes, setNotes] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  // 부가세 구분 (true: 포함, false: 미포함)
+  const [taxIncluded, setTaxIncluded] = useState(true)
 
   const isSystemAdmin = session.role === '0000'
 
@@ -77,6 +79,7 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
   }, [isSystemAdmin, selectedBranchId])
 
   const handleSave = async (items: PurchaseGridRow[]) => {
+    // PurchaseGrid에서 이미 계산 완료된 데이터 사용
     if (!supplierId) {
       alert('공급업체를 선택해주세요.')
       return
@@ -165,7 +168,7 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
         {activeTab === 'input' ? (
           <div className="h-full flex flex-col">
             <div className="bg-white border-b p-4">
-              <div className={`grid gap-4 grid-cols-1 md:grid-cols-2 ${isSystemAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
+              <div className={`grid gap-4 grid-cols-1 md:grid-cols-2 ${isSystemAdmin ? 'lg:grid-cols-6' : 'lg:grid-cols-5'}`}>
                 {/* 시스템 관리자만 지점 선택 */}
                 {isSystemAdmin && (
                   <div>
@@ -226,6 +229,21 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                    부가세 구분 <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    value={taxIncluded ? 'included' : 'excluded'}
+                    onChange={(e) => setTaxIncluded(e.target.value === 'included')}
+                    disabled={isSaving}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  >
+                    <option value="included">부가세 포함</option>
+                    <option value="excluded">부가세 미포함</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     참조번호
                   </label>
                   <input
@@ -259,6 +277,7 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
                 products={products}
                 onSave={handleSave}
                 isSaving={isSaving}
+                taxIncluded={taxIncluded}
               />
             </div>
           </div>

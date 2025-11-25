@@ -1,11 +1,9 @@
-'use client'
-
+"use client"
 /**
  * 판매 관리 그리드 (AG Grid)
- * 입고 관리(PurchaseGrid) 구조 100% 적용
+ * 입고 그리드 VAT 계산 패턴 적용
  */
-
-import { useCallback, useRef, useState, useMemo } from 'react'
+import { useCallback, useRef, useState, useMemo, useEffect } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
@@ -13,24 +11,23 @@ import type { ColDef, ICellEditorParams } from 'ag-grid-community'
 import type { ProductWithStock, SaleGridRow } from '@/types/sales'
 import { ProductCellEditor } from './salescelleditor'
 
-const DeleteButtonRenderer = (props: any) => {
-  return (
-    <button
-      onClick={() => props.handleDeleteRow(props.node.rowIndex)}
-      className="w-full h-full text-red-600 hover:bg-red-50 transition"
-    >
-      ✕ 삭제
-    </button>
-  )
-}
+const DeleteButtonRenderer = (props: any) => (
+  <button
+    onClick={() => props.handleDeleteRow(props.node.rowIndex)}
+    className="w-full h-full text-red-600 hover:bg-red-50 transition"
+  >
+    ✕ 삭제
+  </button>
+)
 
 interface Props {
   products: ProductWithStock[]
   onSave: (items: SaleGridRow[]) => void
   isSaving: boolean
+  taxIncluded: boolean
 }
 
-export default function SaleGrid({ products, onSave, isSaving }: Props) {
+export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Props) {
   const gridRef = useRef<any>(null)
   const [rowData, setRowData] = useState<SaleGridRow[]>([createEmptyRow()])
 
@@ -47,23 +44,58 @@ export default function SaleGrid({ products, onSave, isSaving }: Props) {
       current_stock: 0,
       quantity: 0,
       unit_price: 0,
+      supply_price: 0,
+      tax_amount: 0,
+      total_price: 0,
       total_amount: 0,
       notes: ''
     }
   }
 
+  function calculatePrices(row: SaleGridRow, isTaxIncluded: boolean) {
+    const qty = row.quantity || 0
+    const unit = row.unit_price || 0
+    if (isTaxIncluded) {
+      const total = qty * unit
+      const supply = Math.round(total / 1.1)
+      const tax = total - supply
+      row.supply_price = supply
+      row.tax_amount = tax
+      row.total_price = total
+      row.total_amount = total
+    } else {
+      const supply = qty * unit
+      const tax = Math.round(supply * 0.1)
+      const total = supply + tax
+      row.supply_price = supply
+      row.tax_amount = tax
+      row.total_price = total
+      row.total_amount = total
+    }
+  }
+
+  // 부가세 구분 변경 시 전체 재계산
+  useEffect(() => {
+    setRowData(prev => prev.map(r => {
+      const copy = { ...r }
+      calculatePrices(copy, taxIncluded)
+      return copy
+    }))
+    setTimeout(() => gridRef.current?.api?.refreshCells({ force: true }), 0)
+  }, [taxIncluded])
+
   const handleDeleteRow = useCallback((rowIndex: number) => {
-    setRowData((prev) => prev.filter((_, index) => index !== rowIndex))
+    setRowData(prev => prev.filter((_, i) => i !== rowIndex))
   }, [])
 
-  const handleProductSelect = useCallback((rowIndex: number, product: ProductWithStock) => {
-    setRowData((prev) => {
-      const newData = [...prev];
-      const currentQty = newData[rowIndex].quantity || 0;
-      const unitPrice = product.standard_sale_price || 0;
-      
-      newData[rowIndex] = {
-        ...newData[rowIndex],
+  // 행 인덱스 기반 직접 변경 → 정렬/필터 후 잘못된 행 갱신 가능성 있으므로 RowNode와 id를 기준으로 불변 업데이트
+  const handleProductSelect = useCallback((rowNode: any, product: ProductWithStock) => {
+    const targetId = rowNode?.data?.id
+    if (!targetId) return
+    setRowData(prev => prev.map(r => {
+      if (r.id !== targetId) return r
+      const updated: SaleGridRow = {
+        ...r,
         product_id: product.id,
         product_code: product.code,
         product_name: product.name,
@@ -72,17 +104,22 @@ export default function SaleGrid({ products, onSave, isSaving }: Props) {
         specification: product.specification || '',
         manufacturer: product.manufacturer || '',
         current_stock: product.current_stock,
-        unit_price: unitPrice,
-        total_amount: currentQty * unitPrice,
-      };
-
-      return newData;
-    })
-
+        unit_price: product.standard_sale_price || 0
+      }
+      calculatePrices(updated, taxIncluded)
+      return updated
+    }))
+    // 선택한 행만 강제 리프레시 (rowNode 그대로 사용)
     setTimeout(() => {
-      gridRef.current?.api?.refreshCells({ force: true })
+      if (gridRef.current?.api && rowNode) {
+        gridRef.current.api.refreshCells({
+          force: true,
+          rowNodes: [rowNode],
+          columns: ['product_code','product_name','unit','current_stock','unit_price','supply_price','tax_amount','total_price']
+        })
+      }
     }, 0)
-  }, [])
+  }, [taxIncluded])
 
   const columnDefs = useMemo<ColDef<SaleGridRow>[]>(() => [
     {
@@ -102,10 +139,18 @@ export default function SaleGrid({ products, onSave, isSaving }: Props) {
       cellEditorParams: (params: ICellEditorParams) => ({
         products: products,
         onProductSelect: (product: ProductWithStock) => {
-          handleProductSelect(params.node.rowIndex!, product)
+          handleProductSelect(params.node, product)
         },
         stopEditing: () => params.api.stopEditing()
       }),
+      valueSetter: (params) => {
+        // 품목 선택 시 코드가 제대로 설정되도록 보장
+        if (params.newValue && params.newValue !== params.oldValue) {
+          params.data.product_code = params.newValue
+          return true
+        }
+        return false
+      },
       cellClass: 'font-medium text-blue-600'
     },
     {
@@ -178,16 +223,31 @@ export default function SaleGrid({ products, onSave, isSaving }: Props) {
       }
     },
     {
+      headerName: '공급가',
+      field: 'supply_price',
+      width: 130,
+      editable: false,
+      type: 'numericColumn',
+      cellClass: 'bg-gray-50 text-right font-medium',
+      valueFormatter: p => `₩${(p.value || 0).toLocaleString()}`
+    },
+    {
+      headerName: '부가세',
+      field: 'tax_amount',
+      width: 120,
+      editable: false,
+      type: 'numericColumn',
+      cellClass: 'bg-gray-50 text-right font-medium text-orange-600',
+      valueFormatter: p => `₩${(p.value || 0).toLocaleString()}`
+    },
+    {
       headerName: '합계',
-      field: 'total_amount',
+      field: 'total_price',
       width: 140,
       editable: false,
       type: 'numericColumn',
       cellClass: 'bg-blue-50 text-right font-bold text-blue-700',
-      valueFormatter: (params) => {
-        const value = params.value || 0
-        return `₩${value.toLocaleString()}`
-      }
+      valueFormatter: p => `₩${(p.value || 0).toLocaleString()}`
     },
     {
       headerName: '비고',
@@ -208,28 +268,18 @@ export default function SaleGrid({ products, onSave, isSaving }: Props) {
   ], [handleDeleteRow, handleProductSelect, products])
 
   const onCellValueChanged = useCallback((params: any) => {
-    const { data, node } = params
-
-    // Update total_amount based on quantity and unit_price
-    data.total_amount = data.quantity * data.unit_price
-
-    if (node && node.rowIndex !== null && node.rowIndex !== undefined) {
-      setRowData((prev) => {
-        const newData = [...prev]
-        newData[node.rowIndex as number] = {
-          ...newData[node.rowIndex as number],
-          ...data, // Ensure all fields are updated
-        }
-        return newData
-      })
-    }
-
-    // Refresh only the updated row and total_amount column
+    const { data } = params
+    calculatePrices(data, taxIncluded)
+    setRowData(prev => {
+      const copy = [...prev]
+      copy[params.node.rowIndex] = data
+      return copy
+    })
     params.api.refreshCells({
       rowNodes: [params.node],
-      columns: ['total_amount'],
+      columns: ['supply_price','tax_amount','total_price','total_amount']
     })
-  }, [])
+  }, [taxIncluded])
 
   const handleAddRow = useCallback(() => {
     setRowData((prev) => [...prev, createEmptyRow()])
@@ -281,13 +331,7 @@ export default function SaleGrid({ products, onSave, isSaving }: Props) {
     onSave(data)
   }, [onSave])
 
-  const totalAmount = useMemo(() => {
-    const sum = rowData.reduce((acc, row) => {
-      const total = (row.quantity || 0) * (row.unit_price || 0)
-      return acc + total
-    }, 0)
-    return sum
-  }, [rowData])
+  const totalAmount = useMemo(() => rowData.reduce((acc, r) => acc + (r.total_price || 0), 0), [rowData])
   
   const validRowCount = useMemo(() => 
     rowData.filter((row) => row.product_id).length,

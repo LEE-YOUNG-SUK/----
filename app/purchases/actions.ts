@@ -66,10 +66,13 @@ export async function savePurchases(data: PurchaseSaveRequest) {
           p_product_id: item.product_id,
           p_quantity: item.quantity,
           p_unit_cost: item.unit_cost,
+          p_supply_price: item.supply_price,      // 추가: 공급가
+          p_tax_amount: item.tax_amount ?? 0,     // 부가세
+          p_total_price: item.total_price,        // 추가: 합계
           p_purchase_date: data.purchase_date,
+          p_created_by: data.created_by,
           p_reference_number: data.reference_number || '',
-          p_notes: item.notes || data.notes || '',
-          p_created_by: data.created_by
+          p_notes: item.notes || data.notes || ''
         })
 
       if (error) {

@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
@@ -16,18 +16,14 @@ export function middleware(request: NextRequest) {
   
   // 세션 토큰 확인
   const sessionToken = request.cookies.get('erp_session_token')
+  const isLoginPage = pathname === '/login'
   
   // 로그인 페이지 처리
-  if (pathname === '/login') {
+  if (isLoginPage) {
     // 이미 로그인되어 있으면 홈으로
     if (sessionToken) {
       return NextResponse.redirect(new URL('/', request.url))
     }
-    return NextResponse.next()
-  }
-  
-  // 루트 페이지는 세션 검증을 page.tsx에 위임 (무한 리디렉션 방지)
-  if (pathname === '/') {
     return NextResponse.next()
   }
   
