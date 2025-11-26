@@ -35,9 +35,9 @@ export default function PurchaseHistoryTable({ data, branchName }: PurchaseHisto
   const totalAmount = filteredData.reduce((sum, item) => sum + item.total_cost, 0)
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg shadow">
+    <div className="flex flex-col h-full">
       {/* 헤더 */}
-      <div className="p-4 border-b">
+      <div className="p-3 sm:p-4 bg-white border-b flex-shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <h2 className="text-lg sm:text-xl font-bold text-gray-900">
             입고 내역
@@ -64,9 +64,55 @@ export default function PurchaseHistoryTable({ data, branchName }: PurchaseHisto
         />
       </div>
 
-      {/* 테이블 */}
-      <div className="flex-1 overflow-auto">
-        <div className="overflow-x-auto">
+      {/* 모바일 카드뷰 (767px 이하) */}
+      <div className="md:hidden flex-1 overflow-y-auto bg-white">
+        {paginatedData.length === 0 ? (
+          <div className="px-4 py-12 text-center text-gray-500">
+            {searchTerm ? '검색 결과가 없습니다.' : '입고 내역이 없습니다.'}
+          </div>
+        ) : (
+          paginatedData.map((item, index) => (
+            <div key={`${item.id}-${item.product_id}-${index}`} className="p-4 hover:bg-gray-50 transition">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <p className="text-sm font-medium text-blue-600">{item.product_code}</p>
+                  <p className="text-base font-semibold text-gray-900 mt-1">{item.product_name}</p>
+                </div>
+                <p className="text-xs text-gray-500">
+                  {new Date(item.purchase_date).toLocaleDateString('ko-KR')}
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <p className="text-gray-600">공급업체</p>
+                  <p className="font-medium text-gray-900">{item.client_name}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">수량</p>
+                  <p className="font-medium text-gray-900">{item.quantity.toLocaleString()} {item.unit}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">단가</p>
+                  <p className="text-gray-900">₩{item.unit_cost.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">합계</p>
+                  <p className="font-bold text-blue-700">₩{item.total_cost.toLocaleString()}</p>
+                </div>
+              </div>
+              
+              {item.reference_number && (
+                <p className="mt-2 text-xs text-gray-500">참조: {item.reference_number}</p>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* 데스크톱 테이블 (768px 이상) */}
+      <div className="hidden md:block flex-1 overflow-y-auto bg-white">
+        <div className="overflow-x-auto min-h-0">
           <table className="w-full min-w-[800px]">
           <thead className="bg-gray-50 sticky top-0">
             <tr>
@@ -146,7 +192,7 @@ export default function PurchaseHistoryTable({ data, branchName }: PurchaseHisto
 
       {/* 페이지네이션 */}
       {totalPages > 1 && (
-        <div className="px-4 sm:px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-white flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="text-sm text-gray-600 text-center sm:text-left">
             전체 {filteredData.length}건 중 {(currentPage - 1) * itemsPerPage + 1}-
             {Math.min(currentPage * itemsPerPage, filteredData.length)}건 표시

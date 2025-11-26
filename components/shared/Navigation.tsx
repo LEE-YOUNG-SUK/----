@@ -151,7 +151,8 @@ export function Navigation({ user, onLogout }: Props) {
           {/* 모바일 햄버거 버튼 (767px 이하) */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100"
+            className="md:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+            aria-label="메뉴 열기/닫기"
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {mobileMenuOpen ? (
@@ -163,53 +164,59 @@ export function Navigation({ user, onLogout }: Props) {
           </button>
         </div>
 
-        {/* 모바일 메뉴 (767px 이하) */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 py-4">
-            <div className="space-y-1">
-              {visibleMenuItems.map((item) => {
-                const isActive = pathname === item.href
-                
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`
-                      block px-3 py-2 rounded-md text-base font-medium transition
-                      ${isActive 
-                        ? 'bg-blue-100 text-blue-700' 
-                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                      }
-                    `}
-                  >
-                    <span className="mr-2">{item.icon}</span>
-                    {item.label}
-                  </Link>
-                )
-              })}
-            </div>
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="px-3 mb-3">
-                <p className="text-sm font-medium text-gray-900">
-                  {user.display_name}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {ROLE_LABELS[user.role]} • {user.branch_name || '전체'}
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false)
-                  onLogout()
-                }}
-                className="w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md transition"
-              >
-                로그아웃
-              </button>
-            </div>
+        {/* 모바일 메뉴 (767px 이하) - 애니메이션 추가 */}
+        <div 
+          className={`md:hidden border-t border-gray-200 overflow-hidden transition-all duration-300 ease-in-out ${
+            mobileMenuOpen ? 'max-h-screen opacity-100 py-4' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="space-y-1">
+            {visibleMenuItems.map((item, index) => {
+              const isActive = pathname === item.href
+              
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`
+                    block px-3 py-2 rounded-md text-base font-medium transition-all
+                    ${isActive 
+                      ? 'bg-blue-100 text-blue-700' 
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    }
+                  `}
+                  style={{
+                    animationDelay: `${index * 50}ms`,
+                    animation: mobileMenuOpen ? 'slideIn 0.3s ease-out forwards' : 'none'
+                  }}
+                >
+                  <span className="mr-2">{item.icon}</span>
+                  {item.label}
+                </Link>
+              )
+            })}
           </div>
-        )}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="px-3 mb-3">
+              <p className="text-sm font-medium text-gray-900">
+                {user.display_name}
+              </p>
+              <p className="text-xs text-gray-500">
+                {ROLE_LABELS[user.role]} • {user.branch_name || '전체'}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false)
+                onLogout()
+              }}
+              className="w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md transition"
+            >
+              로그아웃
+            </button>
+          </div>
+        </div>
       </div>
     </nav>
   )

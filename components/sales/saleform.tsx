@@ -8,7 +8,12 @@
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import SaleHistoryTable from './salehistorytable'
+import MobileSaleInput from './MobileSaleInput'
 import { saveSales, getBranchesList, getProductsWithStock } from '@/app/sales/actions'
+import { TabNav } from '@/components/shared/TabNav'
+import { FormGrid } from '@/components/shared/FormGrid'
+import { FormField } from '@/components/shared/FormField'
+import { useIsMobile } from '@/hooks/useMediaQuery'
 import type { ProductWithStock, SaleGridRow, SaleHistory } from '@/types/sales'
 
 const SaleGrid = dynamic(() => import('./salegrid'), {
@@ -71,6 +76,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
   const [isSaving, setIsSaving] = useState(false)
   // 부가세 구분 (true: 포함, false: 미포함)
   const [taxIncluded, setTaxIncluded] = useState(true)
+  const isMobile = useIsMobile()
 
   const isSystemAdmin = session.role === '0000'
 
@@ -177,44 +183,23 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
 
   return (
     <div className="h-full flex flex-col">
-      <div className="bg-white border-b">
-        <div className="flex">
-          <button
-            type="button"
-            onClick={() => setActiveTab('input')}
-            className={`px-6 py-3 font-medium border-b-2 transition-colors ${
-              activeTab === 'input'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            판매 입력
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('history')}
-            className={`px-6 py-3 font-medium border-b-2 transition-colors ${
-              activeTab === 'history'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            판매 내역 ({history.length})
-          </button>
-        </div>
-      </div>
+      <TabNav
+        tabs={[
+          { id: 'input', label: '판매 입력' },
+          { id: 'history', label: '판매 내역', count: history.length }
+        ]}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+      />
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-auto">
         {activeTab === 'input' ? (
-          <div className="h-full flex flex-col">
-            <div className="bg-white border-b p-4">
-              <div className={`grid gap-4 grid-cols-1 md:grid-cols-2 ${isSystemAdmin ? 'lg:grid-cols-6' : 'lg:grid-cols-5'}`}>
+          <div className="flex flex-col h-full">
+            <div className="bg-white border-b p-3 sm:p-4 flex-shrink-0">
+              <FormGrid columns={isSystemAdmin ? 6 : 5}>
                 {/* 시스템 관리자만 지점 선택 */}
                 {isSystemAdmin && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      지점 <span className="text-red-600">*</span>
-                    </label>
+                  <FormField label="지점" required>
                     <select
                       value={selectedBranchId || ''}
                       onChange={(e) => handleBranchChange(e.target.value)}
@@ -228,13 +213,10 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
                         </option>
                       ))}
                     </select>
-                  </div>
+                  </FormField>
                 )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    고객 <span className="text-red-600">*</span>
-                  </label>
+                <FormField label="고객" required>
                   <select
                     value={customerId}
                     onChange={(e) => setCustomerId(e.target.value)}
@@ -252,12 +234,9 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
                       )
                     })}
                   </select>
-                </div>
+                </FormField>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    판매일 <span className="text-red-600">*</span>
-                  </label>
+                <FormField label="판매일" required>
                   <input
                     type="date"
                     value={saleDate}
@@ -265,12 +244,9 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
                     disabled={isSaving}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                   />
-                </div>
+                </FormField>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    부가세 구분 <span className="text-red-600">*</span>
-                  </label>
+                <FormField label="부가세 구분" required>
                   <select
                     value={taxIncluded ? 'included' : 'excluded'}
                     onChange={(e) => setTaxIncluded(e.target.value === 'included')}
@@ -280,12 +256,9 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
                     <option value="included">부가세 포함</option>
                     <option value="excluded">부가세 미포함</option>
                   </select>
-                </div>
+                </FormField>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    참조번호
-                  </label>
+                <FormField label="참조번호">
                   <input
                     type="text"
                     value={referenceNumber}
@@ -294,12 +267,9 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
                     placeholder="전표번호, 주문번호 등"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                   />
-                </div>
+                </FormField>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    비고
-                  </label>
+                <FormField label="비고">
                   <input
                     type="text"
                     value={notes}
@@ -308,11 +278,12 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
                     placeholder="메모 입력"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                   />
-                </div>
-              </div>
+                </FormField>
+              </FormGrid>
             </div>
 
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 h-full">
+              {/* 임시: 항상 그리드 표시 (디버깅용) */}
               <SaleGrid
                 products={products}
                 onSave={handleSave}
@@ -322,7 +293,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
             </div>
           </div>
         ) : (
-          <div className="h-full p-4">
+          <div className="h-full">
             <SaleHistoryTable
               data={history}
               branchName={session.branch_name || '전체 지점'}

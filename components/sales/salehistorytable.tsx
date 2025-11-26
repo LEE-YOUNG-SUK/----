@@ -6,6 +6,7 @@
  */
 
 import { useState, useMemo, useEffect } from 'react'
+import { StatCard } from '@/components/shared/StatCard'
 import type { SaleHistory } from '@/types/sales'
 
 interface Props {
@@ -53,10 +54,10 @@ export default function SaleHistoryTable({ data: initialData, branchName }: Prop
 
   // 통계 계산
   const stats = useMemo(() => {
-    const totalQuantity = filteredData.reduce((sum, item) => sum + item.quantity, 0)
-    const totalAmount = filteredData.reduce((sum, item) => sum + item.total_amount, 0)
-    const totalCost = filteredData.reduce((sum, item) => sum + item.cost_of_goods, 0)
-    const totalProfit = filteredData.reduce((sum, item) => sum + item.profit, 0)
+    const totalQuantity = filteredData.reduce((sum, item) => sum + (item.quantity || 0), 0)
+    const totalAmount = filteredData.reduce((sum, item) => sum + (item.total_amount || 0), 0)
+    const totalCost = filteredData.reduce((sum, item) => sum + (item.cost_of_goods || 0), 0)
+    const totalProfit = filteredData.reduce((sum, item) => sum + (item.profit || 0), 0)
     const avgProfitMargin = totalAmount > 0 ? (totalProfit / totalAmount) * 100 : 0
 
     return {
@@ -70,9 +71,9 @@ export default function SaleHistoryTable({ data: initialData, branchName }: Prop
   }, [filteredData])
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className="flex flex-col h-full">
       {/* 헤더 */}
-      <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+      <div className="px-3 sm:px-6 py-3 sm:py-4 bg-white border-b border-gray-200 flex-shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">판매 내역</h3>
@@ -94,33 +95,67 @@ export default function SaleHistoryTable({ data: initialData, branchName }: Prop
       </div>
 
       {/* 통계 요약 */}
-      <div className="px-4 sm:px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 text-sm">
-          <div>
-            <p className="text-gray-600">판매 건수</p>
-            <p className="text-lg font-bold text-blue-600">{stats.count.toLocaleString()}건</p>
-          </div>
-          <div>
-            <p className="text-gray-600">판매 수량</p>
-            <p className="text-lg font-bold text-blue-600">{stats.totalQuantity.toLocaleString()}</p>
-          </div>
-          <div>
-            <p className="text-gray-600">판매 금액</p>
-            <p className="text-lg font-bold text-blue-600">₩{stats.totalAmount.toLocaleString()}</p>
-          </div>
-          <div>
-            <p className="text-gray-600">총 이익</p>
-            <p className="text-lg font-bold text-green-600">₩{stats.totalProfit.toLocaleString()}</p>
-          </div>
-          <div>
-            <p className="text-gray-600">평균 이익률</p>
-            <p className="text-lg font-bold text-green-600">{stats.avgProfitMargin.toFixed(1)}%</p>
-          </div>
+      <div className="px-3 sm:px-6 py-3 sm:py-4 bg-gray-50 border-b border-gray-200 flex-shrink-0">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <StatCard label="판매 건수" value={stats.count} unit="건" variant="primary" />
+          <StatCard label="판매 수량" value={stats.totalQuantity} variant="primary" />
+          <StatCard label="판매 금액" value={`₩${stats.totalAmount.toLocaleString()}`} variant="primary" />
+          <StatCard label="총 이익" value={`₩${stats.totalProfit.toLocaleString()}`} variant="success" />
+          <StatCard label="평균 이익률" value={`${stats.avgProfitMargin.toFixed(1)}%`} variant="success" />
         </div>
       </div>
 
-      {/* 테이블 */}
-      <div className="overflow-x-auto">
+      {/* 모바일 카드뷰 (767px 이하) */}
+      <div className="md:hidden flex-1 overflow-y-auto bg-white">
+        {paginatedData.length === 0 ? (
+          <div className="px-4 py-12 text-center text-gray-500">
+            {searchTerm ? '검색 결과가 없습니다.' : '판매 내역이 없습니다.'}
+          </div>
+        ) : (
+          paginatedData.map((item, index) => (
+            <div key={`${item.id}-${index}`} className="p-4 hover:bg-gray-50 transition">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <p className="text-sm font-medium text-blue-600">{item.product_code}</p>
+                  <p className="text-base font-semibold text-gray-900 mt-1">{item.product_name}</p>
+                </div>
+                <p className="text-xs text-gray-500">
+                  {new Date(item.sale_date).toLocaleDateString('ko-KR')}
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <p className="text-gray-600">고객</p>
+                  <p className="font-medium text-gray-900">{item.customer_name}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">수량</p>
+                  <p className="font-medium text-gray-900">{(item.quantity || 0).toLocaleString()} {item.unit}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">합계</p>
+                  <p className="font-bold text-blue-700">₩{(item.total_amount || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">이익</p>
+                  <p className={`font-bold ${(item.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ₩{(item.profit || 0).toLocaleString()} ({(item.profit_margin || 0).toFixed(1)}%)
+                  </p>
+                </div>
+              </div>
+              
+              {item.reference_number && (
+                <p className="mt-2 text-xs text-gray-500">참조: {item.reference_number}</p>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* 데스크톱 테이블 (768px 이상) */}
+      <div className="hidden md:block flex-1 overflow-y-auto bg-white">
+        <div className="overflow-x-auto min-h-0">
         <table className="min-w-full min-w-[1000px] divide-y divide-gray-200">
           <thead className="bg-gray-100">
             <tr>
@@ -190,23 +225,23 @@ export default function SaleHistoryTable({ data: initialData, branchName }: Prop
                   <td className="px-4 py-3 text-sm text-center text-gray-700 font-medium">
                     {item.unit}
                   </td>
-                  <td className="px-4 py-3 text-sm text-right font-medium text-gray-900">
-                    {item.quantity.toLocaleString()}
+                  <td className="px-4 py-3 text-sm text-right text-gray-900">
+                    {(item.quantity || 0).toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-sm text-right text-gray-700">
-                    ₩{item.unit_price.toLocaleString()}
+                  <td className="px-4 py-3 text-sm text-right text-gray-900">
+                    ₩{(item.unit_price || 0).toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-sm text-right font-bold text-blue-700">
-                    ₩{item.total_amount.toLocaleString()}
+                  <td className="px-4 py-3 text-sm text-right font-semibold text-blue-600">
+                    ₩{(item.total_amount || 0).toLocaleString()}
                   </td>
                   <td className="px-4 py-3 text-sm text-right text-gray-600">
-                    ₩{item.cost_of_goods.toLocaleString()}
+                    ₩{(item.cost_of_goods || 0).toLocaleString()}
                   </td>
                   <td className="px-4 py-3 text-sm text-right font-bold text-green-600">
-                    ₩{item.profit.toLocaleString()}
+                    ₩{(item.profit || 0).toLocaleString()}
                   </td>
                   <td className="px-4 py-3 text-sm text-right font-medium text-green-700">
-                    {item.profit_margin.toFixed(1)}%
+                    {(item.profit_margin || 0).toFixed(1)}%
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
                     {item.reference_number || '-'}
@@ -216,11 +251,12 @@ export default function SaleHistoryTable({ data: initialData, branchName }: Prop
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* 페이지네이션 */}
       {totalPages > 1 && (
-        <div className="px-4 sm:px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-white flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="text-sm text-gray-600 text-center sm:text-left">
             전체 {filteredData.length}건 중 {(currentPage - 1) * itemsPerPage + 1}-
             {Math.min(currentPage * itemsPerPage, filteredData.length)}건 표시

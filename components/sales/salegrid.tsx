@@ -29,10 +29,31 @@ interface Props {
 
 export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Props) {
   const gridRef = useRef<any>(null)
-  const [rowData, setRowData] = useState<SaleGridRow[]>([createEmptyRow()])
+  const [rowData, setRowData] = useState<SaleGridRow[]>(() => {
+    // 기본 5개 행 생성
+    return Array.from({ length: 5 }, (_, index) => ({
+      id: `temp_${Date.now()}_${index}`,
+      product_id: null,
+      product_code: '',
+      product_name: '',
+      category: '',
+      unit: '',
+      specification: '',
+      manufacturer: '',
+      current_stock: 0,
+      quantity: 0,
+      unit_price: 0,
+      supply_price: 0,
+      tax_amount: 0,
+      total_price: 0,
+      total_amount: 0,
+      notes: ''
+    }))
+  })
 
-  function createEmptyRow(): SaleGridRow {
-    return {
+  // 빈 행 생성 (안정적인 참조를 위해 useMemo 사용)
+  const createEmptyRow = useMemo(() => {
+    return (): SaleGridRow => ({
       id: `temp_${Date.now()}_${Math.random()}`,
       product_id: null,
       product_code: '',
@@ -49,8 +70,8 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
       total_price: 0,
       total_amount: 0,
       notes: ''
-    }
-  }
+    })
+  }, [])
 
   function calculatePrices(row: SaleGridRow, isTaxIncluded: boolean) {
     const qty = row.quantity || 0
@@ -282,14 +303,21 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
   }, [taxIncluded])
 
   const handleAddRow = useCallback(() => {
-    setRowData((prev) => [...prev, createEmptyRow()])
-  }, [])
+    console.log('행 추가 버튼 클릭됨')
+    const newRow = createEmptyRow()
+    console.log('새 행 생성:', newRow)
+    setRowData((prev) => {
+      const updated = [...prev, newRow]
+      console.log('업데이트된 행 수:', updated.length)
+      return updated
+    })
+  }, [createEmptyRow])
 
   const handleClearAll = useCallback(() => {
     if (confirm('모든 입력 데이터를 삭제하시겠습니까?')) {
       setRowData([createEmptyRow()])
     }
-  }, [])
+  }, [createEmptyRow])
 
   const handleSave = useCallback(() => {
     const api = gridRef.current?.api
@@ -382,14 +410,15 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
         </div>
       </div>
 
-      <div className="flex-1 ag-theme-alpine">
+      <div className="flex-1 ag-theme-alpine" style={{ minHeight: '300px' }}>
         <AgGridReact
           ref={gridRef}
           rowData={rowData}
           columnDefs={columnDefs}
           defaultColDef={{
             sortable: true,
-            resizable: true
+            resizable: true,
+            minWidth: 100
           }}
           onCellValueChanged={onCellValueChanged}
           stopEditingWhenCellsLoseFocus={true}
@@ -398,6 +427,17 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
           rowHeight={40}
           headerHeight={45}
         />
+      </div>
+
+      <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-t border-blue-200">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-xs sm:text-sm text-blue-800">
+          <span className="text-lg">💡</span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+            <span className="font-medium">사용 방법:</span>
+            <span className="hidden sm:inline">품목코드 셀을 <strong>더블클릭</strong> → 품목명 검색 → <strong>방향키</strong>로 선택 → <strong>Enter</strong>로 확정</span>
+            <span className="sm:hidden">품목코드 셀 <strong>더블클릭</strong> → 검색 → <strong>Enter</strong> 확정</span>
+          </div>
+        </div>
       </div>
     </div>
   )
