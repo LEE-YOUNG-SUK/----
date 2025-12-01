@@ -3,12 +3,14 @@
 import { useRouter } from 'next/navigation'
 import { Navigation } from './shared/Navigation'
 import { UserData } from '@/types'
+import { ReactNode } from 'react'
 
 interface Props {
   user: UserData
+  children?: ReactNode
 }
 
-export function NavigationWrapper({ user }: Props) {
+export function NavigationWrapper({ user, children }: Props) {
   const router = useRouter()
   
   const handleLogout = async () => {
@@ -25,5 +27,10 @@ export function NavigationWrapper({ user }: Props) {
     }
   }
   
-  return <Navigation user={user} onLogout={handleLogout} />
+  return (
+    <>
+      <Navigation user={user} onLogout={handleLogout} />
+      {children}
+    </>
+  )
 }

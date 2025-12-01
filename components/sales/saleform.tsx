@@ -297,6 +297,9 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
             <SaleHistoryTable
               data={history}
               branchName={session.branch_name || '전체 지점'}
+              userRole={session.role}
+              userId={session.user_id}
+              userBranchId={session.branch_id || ''}
             />
           </div>
         )}

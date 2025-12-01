@@ -45,7 +45,7 @@ export default async function SalesPage() {
   const [productsResult, customersResult, historyResult] = await Promise.all([
     getProductsWithStock(userSession.branch_id),
     getCustomersList(),
-    getSalesHistory(userSession.branch_id)
+    getSalesHistory(userSession.branch_id, userSession.user_id)
   ])
 
   // 실패 처리

@@ -3,10 +3,18 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
-import type { PurchaseSaveRequest, PurchaseRpcResponse } from '@/types/purchases'
+import type { 
+  PurchaseSaveRequest, 
+  BatchPurchaseResponse,
+  PurchaseUpdateRequest,
+  PurchaseDeleteRequest 
+} from '@/types/purchases'
 
 /**
- * 입고 데이터 일괄 저장
+ * 입고 데이터 일괄 저장 (Phase 1: 트랜잭션 처리 강화)
+ * ✅ 전체 성공 또는 전체 실패 (원자성 보장)
+ * ✅ 거래번호 자동 생성
+ * ✅ 권한 검증 (본인 지점만)
  */
 export async function savePurchases(data: PurchaseSaveRequest) {
   try {
@@ -40,64 +48,81 @@ export async function savePurchases(data: PurchaseSaveRequest) {
       return { success: false, message: '입고할 품목이 없습니다.' }
     }
 
-    // 각 품목별로 입고 처리
-    const results: PurchaseRpcResponse[] = []
-    const errors: string[] = []
-
-    for (const item of data.items) {
-      if (!item.product_id) {
-        errors.push(`품목을 선택해주세요. (행: ${item.product_code || '미입력'})`)
-        continue
-      }
-      if (item.quantity <= 0) {
-        errors.push(`수량은 0보다 커야 합니다. (품목: ${item.product_name})`)
-        continue
-      }
-      if (item.unit_cost <= 0) {
-        errors.push(`단가는 0보다 커야 합니다. (품목: ${item.product_name})`)
-        continue
-      }
-
-      // RPC 함수 호출 (재고 레이어는 DB에서 처리)
-      const { data: rpcData, error } = await supabase
-        .rpc('process_purchase_with_layers', {
-          p_branch_id: data.branch_id,
-          p_client_id: data.supplier_id,
-          p_product_id: item.product_id,
-          p_quantity: item.quantity,
-          p_unit_cost: item.unit_cost,
-          p_supply_price: item.supply_price,      // 추가: 공급가
-          p_tax_amount: item.tax_amount ?? 0,     // 부가세
-          p_total_price: item.total_price,        // 추가: 합계
-          p_purchase_date: data.purchase_date,
-          p_created_by: data.created_by,
-          p_reference_number: data.reference_number || '',
-          p_notes: item.notes || data.notes || ''
-        })
-
-      if (error) {
-        console.error('❌ RPC Error:', error)
-        errors.push(`${item.product_name}: ${error.message}`)
-      } else if (rpcData && rpcData[0]) {
-        results.push(rpcData[0] as PurchaseRpcResponse)
-      }
+    // 빈 행 필터링 (product_id 없는 행 제외)
+    const validItems = data.items.filter(item => item.product_id && item.product_id.trim() !== '')
+    
+    if (validItems.length === 0) {
+      return { success: false, message: '유효한 품목이 없습니다.' }
     }
 
-    if (errors.length > 0) {
-      console.error('❌ 에러 발생:', errors)
+    // JSONB 형식으로 변환
+    const itemsJson = validItems.map(item => ({
+      product_id: item.product_id,
+      quantity: item.quantity,
+      unit_cost: item.unit_cost,
+      supply_price: item.supply_price || 0,
+      tax_amount: item.tax_amount || 0,
+      total_price: item.total_price || (item.quantity * item.unit_cost),
+      notes: item.notes || ''
+    }))
+
+    console.log('📦 입고 일괄 저장 시작:', {
+      branch_id: data.branch_id,
+      supplier_id: data.supplier_id,
+      item_count: validItems.length
+    })
+
+    // ✅ Phase 3: Audit Log - 사용자 컨텍스트 설정
+    const setConfigQuery = `SELECT set_config('app.current_user_id', '${data.created_by}', false)`
+    const { error: configError } = await supabase.rpc('exec_sql', { query: setConfigQuery })
+    
+    if (configError) {
+      console.error('❌ Config Error:', configError)
+      // 컨텍스트 설정 실패는 warning으로 처리 (비즈니스 로직 중단 안함)
+    }
+
+    // ✅ 단일 RPC 호출 (트랜잭션 보장)
+    const { data: rpcData, error } = await supabase.rpc('process_batch_purchase', {
+      p_branch_id: data.branch_id,
+      p_client_id: data.supplier_id,
+      p_purchase_date: data.purchase_date,
+      p_reference_number: data.reference_number || null,  // NULL이면 자동 생성
+      p_notes: data.notes || '',
+      p_created_by: data.created_by,
+      p_items: itemsJson as any
+    })
+
+    if (error) {
+      console.error('❌ RPC Error:', error)
       return {
         success: false,
-        message: `일부 품목 저장 실패:\n${errors.join('\n')}`
+        message: `입고 실패: ${error.message}`
       }
     }
+
+    const result = rpcData?.[0] as BatchPurchaseResponse
+
+    if (!result || !result.success) {
+      console.error('❌ 입고 실패:', result?.message)
+      return {
+        success: false,
+        message: result?.message || '입고 저장 실패'
+      }
+    }
+
+    console.log('✅ 입고 성공:', {
+      transaction_number: result.transaction_number,
+      total_items: result.total_items,
+      total_amount: result.total_amount
+    })
 
     revalidatePath('/purchases')
     revalidatePath('/inventory')
     
     return {
       success: true,
-      message: `${results.length}개 품목 입고 완료`,
-      data: results
+      message: `${result.total_items}개 품목 입고 완료\n거래번호: ${result.transaction_number}`,
+      data: result
     }
 
   } catch (error) {
@@ -168,6 +193,7 @@ export async function getSuppliersList() {
  */
 export async function getPurchasesHistory(
   branchId: string | null,
+  userId: string,
   startDate?: string,
   endDate?: string
 ) {
@@ -178,7 +204,8 @@ export async function getPurchasesHistory(
       .rpc('get_purchases_list', {
         p_branch_id: branchId,
         p_start_date: startDate || null,
-        p_end_date: endDate || null
+        p_end_date: endDate || null,
+        p_user_id: userId
       })
       .order('purchase_date', { ascending: false })
       .order('created_at', { ascending: false })
@@ -224,6 +251,178 @@ export async function getBranchesList() {
       success: false, 
       data: [],
       message: error instanceof Error ? error.message : '지점 조회 실패'
+    }
+  }
+}
+
+/**
+ * Phase 3.5: 입고 데이터 수정
+ * ✅ 권한: 모든 역할 (CRU 권한)
+ * ✅ 지점 격리: 본인 지점만 수정 (시스템 관리자 제외)
+ * ✅ Audit Log: UPDATE 트리거 자동 발동
+ */
+export async function updatePurchase(data: PurchaseUpdateRequest) {
+  try {
+    console.log('=== updatePurchase 디버깅 ===')
+    console.log('data.user_id:', data.user_id)
+    console.log('data.user_role:', data.user_role)
+    console.log('data.user_branch_id:', data.user_branch_id)
+    console.log('data.purchase_id:', data.purchase_id)
+    const supabase = await createServerClient()
+    
+    // 세션 확인
+    const cookieStore = await cookies()
+    const sessionCookie = cookieStore.get('erp_session_token')
+    
+    if (!sessionCookie) {
+      return { 
+        success: false, 
+        message: '인증되지 않은 사용자입니다.' 
+      }
+    }
+
+    // 검증
+    if (!data.purchase_id) {
+      return { success: false, message: '입고 ID가 필요합니다.' }
+    }
+
+    if (data.quantity <= 0) {
+      return { success: false, message: '수량은 0보다 커야 합니다.' }
+    }
+
+    if (data.unit_cost <= 0) {
+      return { success: false, message: '단가는 0보다 커야 합니다.' }
+    }
+
+    console.log('✏️ 입고 수정 시작:', {
+      purchase_id: data.purchase_id,
+      quantity: data.quantity,
+      unit_cost: data.unit_cost
+    })
+
+    // ✅ RPC 호출 (권한 및 지점 검증 포함, audit_logs 직접 기록)
+    const { data: rpcData, error } = await supabase.rpc('update_purchase', {
+      p_purchase_id: data.purchase_id,
+      p_user_id: data.user_id,
+      p_user_role: data.user_role,
+      p_user_branch_id: data.user_branch_id,
+      p_quantity: data.quantity,
+      p_unit_cost: data.unit_cost,
+      p_supply_price: data.supply_price,
+      p_tax_amount: data.tax_amount,
+      p_total_price: data.total_price,
+      p_notes: data.notes || ''
+    })
+
+    if (error) {
+      console.error('❌ RPC Error:', error)
+      return {
+        success: false,
+        message: `입고 수정 실패: ${error.message}`
+      }
+    }
+
+    const result = rpcData?.[0]
+
+    if (!result || !result.success) {
+      console.error('❌ 입고 수정 실패:', result?.message)
+      return {
+        success: false,
+        message: result?.message || '입고 수정 실패'
+      }
+    }
+
+    console.log('✅ 입고 수정 성공')
+
+    revalidatePath('/purchases')
+    revalidatePath('/inventory')
+    
+    return {
+      success: true,
+      message: result.message
+    }
+
+  } catch (error) {
+    console.error('❌ Update purchase error:', error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : '입고 수정 중 오류가 발생했습니다.'
+    }
+  }
+}
+
+/**
+ * Phase 3.5: 입고 데이터 삭제
+ * ✅ 권한: 원장 이상 (0000~0002)
+ * ✅ 지점 격리: 본인 지점만 삭제 (시스템 관리자 제외)
+ * ✅ Audit Log: DELETE 트리거 자동 발동
+ */
+export async function deletePurchase(data: PurchaseDeleteRequest) {
+  try {
+    const supabase = await createServerClient()
+    
+    // 세션 확인
+    const cookieStore = await cookies()
+    const sessionCookie = cookieStore.get('erp_session_token')
+    
+    if (!sessionCookie) {
+      return { 
+        success: false, 
+        message: '인증되지 않은 사용자입니다.' 
+      }
+    }
+
+    // 검증
+    if (!data.purchase_id) {
+      return { success: false, message: '입고 ID가 필요합니다.' }
+    }
+
+    console.log('🗑️ 입고 삭제 시작:', {
+      purchase_id: data.purchase_id,
+      user_role: data.user_role
+    })
+
+    // ✅ RPC 호출 (권한 및 지점 검증 포함, audit_logs 직접 기록)
+    const { data: rpcData, error } = await supabase.rpc('delete_purchase', {
+      p_purchase_id: data.purchase_id,
+      p_user_id: data.user_id,
+      p_user_role: data.user_role,
+      p_user_branch_id: data.user_branch_id
+    })
+
+    if (error) {
+      console.error('❌ RPC Error:', error)
+      return {
+        success: false,
+        message: `입고 삭제 실패: ${error.message}`
+      }
+    }
+
+    const result = rpcData?.[0]
+
+    if (!result || !result.success) {
+      console.error('❌ 입고 삭제 실패:', result?.message)
+      return {
+        success: false,
+        message: result?.message || '입고 삭제 실패'
+      }
+    }
+
+    console.log('✅ 입고 삭제 성공')
+
+    revalidatePath('/purchases')
+    revalidatePath('/inventory')
+    
+    return {
+      success: true,
+      message: result.message
+    }
+
+  } catch (error) {
+    console.error('❌ Delete purchase error:', error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : '입고 삭제 중 오류가 발생했습니다.'
     }
   }
 }

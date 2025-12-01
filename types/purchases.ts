@@ -28,6 +28,18 @@ export interface PurchaseGridRow {
 }
 
 /**
+ * 일괄 입고 RPC 응답
+ */
+export interface BatchPurchaseResponse {
+  success: boolean
+  message: string
+  transaction_number: string | null
+  purchase_ids: string[] | null
+  total_items: number
+  total_amount: number
+}
+
+/**
  * 입고 저장 요청 데이터
  */
 export interface PurchaseSaveRequest {
@@ -63,6 +75,32 @@ export interface PurchaseHistory {
   created_at: string
   created_by: string
     tax_amount?: number; // 부가세 (선택)
+}
+
+/**
+ * Phase 3.5: 입고 수정 요청 데이터
+ */
+export interface PurchaseUpdateRequest {
+  purchase_id: string
+  user_id: string
+  user_role: string
+  user_branch_id: string
+  quantity: number
+  unit_cost: number
+  supply_price: number
+  tax_amount: number
+  total_price: number
+  notes: string
+}
+
+/**
+ * Phase 3.5: 입고 삭제 요청 데이터
+ */
+export interface PurchaseDeleteRequest {
+  purchase_id: string
+  user_id: string
+  user_role: string
+  user_branch_id: string
 }
 
 /**

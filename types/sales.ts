@@ -69,6 +69,32 @@ export interface SaleHistory {
     tax_amount?: number; // 부가세 (선택)
 }
 
+/**
+ * Phase 3.5: 판매 수정 요청 데이터
+ */
+export interface SaleUpdateRequest {
+  sale_id: string
+  user_id: string
+  user_role: string
+  user_branch_id: string
+  quantity: number
+  unit_price: number
+  supply_price: number
+  tax_amount: number
+  total_price: number
+  notes: string
+}
+
+/**
+ * Phase 3.5: 판매 삭제 요청 데이터
+ */
+export interface SaleDeleteRequest {
+  sale_id: string
+  user_id: string
+  user_role: string
+  user_branch_id: string
+}
+
 // 고객 (거래처)
 export interface Customer {
   id: string
@@ -77,6 +103,18 @@ export interface Customer {
   contact_person?: string
   phone?: string
   email?: string
+}
+
+// 일괄 판매 RPC 응답
+export interface BatchSaleResponse {
+  success: boolean
+  message: string
+  transaction_number: string | null
+  sale_ids: string[] | null
+  total_items: number
+  total_amount: number
+  total_cost: number
+  total_profit: number
 }
 
 // RPC 응답

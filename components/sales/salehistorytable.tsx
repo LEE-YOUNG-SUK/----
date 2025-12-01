@@ -1,24 +1,48 @@
 'use client'
 
 /**
- * 판매 내역 테이블
+ * 판매 내역 테이블 (Phase 3.5: 수정/삭제 기능 추가)
  * 입고 내역(PurchaseHistoryTable) 구조 100% 적용
  */
 
 import { useState, useMemo, useEffect } from 'react'
+import { usePermissions } from '@/hooks/usePermissions'
+import { updateSale, deleteSale } from '@/app/sales/actions'
+import { Button } from '@/components/ui/Button'
+import EditSaleModal from './EditSaleModal'
 import { StatCard } from '@/components/shared/StatCard'
 import type { SaleHistory } from '@/types/sales'
 
 interface Props {
   data: SaleHistory[]
   branchName: string
+  userRole: string
+  userId: string
+  userBranchId: string
 }
 
-export default function SaleHistoryTable({ data: initialData, branchName }: Props) {
+export default function SaleHistoryTable({ 
+  data: initialData, 
+  branchName,
+  userRole,
+  userId,
+  userBranchId
+}: Props) {
   const [data, setData] = useState<SaleHistory[]>(initialData)
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 20
+
+  // Phase 3.5: 편집/삭제 상태
+  const [editingSale, setEditingSale] = useState<SaleHistory | null>(null)
+  const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const { can } = usePermissions(userRole)
+
+  // 편집 권한: 모든 역할
+  const canEdit = can('sales_management', 'update')
+  
+  // 삭제 권한: 원장 이상 (0000~0002)
+  const canDelete = userRole <= '0002' && can('sales_management', 'delete')
 
   // 초기 데이터 업데이트
   useEffect(() => {
@@ -69,6 +93,58 @@ export default function SaleHistoryTable({ data: initialData, branchName }: Prop
       avgProfitMargin
     }
   }, [filteredData])
+
+  // Phase 3.5: 판매 수정 핸들러
+  const handleEdit = async (editData: {
+    quantity: number
+    unit_price: number
+    supply_price: number
+    tax_amount: number
+    total_price: number
+    notes: string
+  }) => {
+    if (!editingSale) return
+
+    const result = await updateSale({
+      sale_id: editingSale.id,
+      user_id: userId,
+      user_role: userRole,
+      user_branch_id: userBranchId,
+      ...editData
+    })
+
+    if (result.success) {
+      alert(result.message)
+      window.location.reload()
+    } else {
+      alert(result.message)
+    }
+  }
+
+  // Phase 3.5: 판매 삭제 핸들러
+  const handleDelete = async (sale: SaleHistory) => {
+    if (!confirm(`판매 데이터를 삭제하시겠습니까?\n\n품목: ${sale.product_name}\n수량: ${sale.quantity} ${sale.unit}\n이 작업은 되돌릴 수 없습니다.`)) {
+      return
+    }
+
+    setIsDeleting(sale.id)
+
+    const result = await deleteSale({
+      sale_id: sale.id,
+      user_id: userId,
+      user_role: userRole,
+      user_branch_id: userBranchId
+    })
+
+    setIsDeleting(null)
+
+    if (result.success) {
+      alert(result.message)
+      window.location.reload()
+    } else {
+      alert(result.message)
+    }
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -148,6 +224,33 @@ export default function SaleHistoryTable({ data: initialData, branchName }: Prop
               {item.reference_number && (
                 <p className="mt-2 text-xs text-gray-500">참조: {item.reference_number}</p>
               )}
+
+              {/* Phase 3.5: 모바일 수정/삭제 버튼 */}
+              {(canEdit || canDelete) && (
+                <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+                  {canEdit && (
+                    <Button
+                      onClick={() => setEditingSale(item)}
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      수정
+                    </Button>
+                  )}
+                  {canDelete && (
+                    <Button
+                      onClick={() => handleDelete(item)}
+                      disabled={isDeleting === item.id}
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 text-red-600 hover:bg-red-50 hover:text-red-700"
+                    >
+                      {isDeleting === item.id ? '삭제 중...' : '삭제'}
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           ))
         )}
@@ -195,12 +298,18 @@ export default function SaleHistoryTable({ data: initialData, branchName }: Prop
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                 참조번호
               </th>
+              {/* Phase 3.5: 작업 컬럼 */}
+              {(canEdit || canDelete) && (
+                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">
+                  작업
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={12} className="px-4 py-12 text-center text-gray-500">
+                <td colSpan={canEdit || canDelete ? 13 : 12} className="px-4 py-12 text-center text-gray-500">
                   {searchTerm ? '검색 결과가 없습니다.' : '판매 내역이 없습니다.'}
                 </td>
               </tr>
@@ -246,6 +355,33 @@ export default function SaleHistoryTable({ data: initialData, branchName }: Prop
                   <td className="px-4 py-3 text-sm text-gray-600">
                     {item.reference_number || '-'}
                   </td>
+                  {/* Phase 3.5: 작업 셀 */}
+                  {(canEdit || canDelete) && (
+                    <td className="px-4 py-3 text-sm text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        {canEdit && (
+                          <Button
+                            onClick={() => setEditingSale(item)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            수정
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button
+                            onClick={() => handleDelete(item)}
+                            disabled={isDeleting === item.id}
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                          >
+                            {isDeleting === item.id ? '삭제 중...' : '삭제'}
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             )}
@@ -304,6 +440,15 @@ export default function SaleHistoryTable({ data: initialData, branchName }: Prop
             </button>
           </div>
         </div>
+      )}
+
+      {/* Phase 3.5: 판매 수정 모달 */}
+      {editingSale && (
+        <EditSaleModal
+          sale={editingSale}
+          onClose={() => setEditingSale(null)}
+          onSave={handleEdit}
+        />
       )}
     </div>
   )

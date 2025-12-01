@@ -7,6 +7,9 @@ export type PermissionResource =
   | 'purchases_management'  // 입고 관리
   | 'sales_management'      // 판매 관리
   | 'inventory_view'        // 재고 조회
+  | 'inventory_adjustments' // 재고 조정 (Phase 5)
+  | 'audit_logs_view'       // 감사 로그 조회 (Phase 3)
+  | 'reports_view'          // 레포트 조회 (Phase 6)
 
 // 권한 액션 타입
 export type PermissionAction = 'read' | 'create' | 'update' | 'delete'
@@ -59,6 +62,18 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     
     // 재고 조회
     { resource: 'inventory_view', action: 'read' },
+    
+    // 재고 조정 (Phase 5)
+    { resource: 'inventory_adjustments', action: 'read' },
+    { resource: 'inventory_adjustments', action: 'create' },
+    { resource: 'inventory_adjustments', action: 'update' },
+    { resource: 'inventory_adjustments', action: 'delete' },
+    
+    // 감사 로그 조회 (Phase 3)
+    { resource: 'audit_logs_view', action: 'read' },
+    
+    // 레포트 조회 (Phase 6)
+    { resource: 'reports_view', action: 'read' },
   ],
   
   // 0001: 원장 - 본인 지점 전체 CRUD (사용자/지점 관리 제외)
@@ -83,6 +98,17 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     
     // 재고 조회
     { resource: 'inventory_view', action: 'read' },
+    
+    // 재고 조정 (Phase 5) - 원장은 취소 가능
+    { resource: 'inventory_adjustments', action: 'read' },
+    { resource: 'inventory_adjustments', action: 'create' },
+    { resource: 'inventory_adjustments', action: 'delete' },
+    
+    // 감사 로그 조회 (Phase 3)
+    { resource: 'audit_logs_view', action: 'read' },
+    
+    // 레포트 조회 (Phase 6)
+    { resource: 'reports_view', action: 'read' },
   ],
   
   // 0002: 매니저 - 원장과 동일
@@ -98,20 +124,27 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     { resource: 'sales_management', action: 'update' },
     { resource: 'sales_management', action: 'delete' },
     { resource: 'inventory_view', action: 'read' },
+    
+    // 재고 조정 (Phase 5) - 매니저는 생성만 가능 (취소 불가)
+    { resource: 'inventory_adjustments', action: 'read' },
+    { resource: 'inventory_adjustments', action: 'create' },
+    
+    // 레포트 조회 (Phase 6)
+    { resource: 'reports_view', action: 'read' },
   ],
   
-  // 0003: 사용자 - 원장과 동일
+  // 0003: 사용자 - CRU만 가능 (삭제 불가)
   '0003': [
     { resource: 'clients_management', action: 'read' },
     { resource: 'products_management', action: 'read' },
     { resource: 'purchases_management', action: 'read' },
     { resource: 'purchases_management', action: 'create' },
     { resource: 'purchases_management', action: 'update' },
-    { resource: 'purchases_management', action: 'delete' },
+    // ❌ delete 제거 - 사용자는 입고 삭제 불가
     { resource: 'sales_management', action: 'read' },
     { resource: 'sales_management', action: 'create' },
     { resource: 'sales_management', action: 'update' },
-    { resource: 'sales_management', action: 'delete' },
+    // ❌ delete 제거 - 사용자는 판매 삭제 불가
     { resource: 'inventory_view', action: 'read' },
   ],
 }

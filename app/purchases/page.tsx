@@ -39,7 +39,7 @@ export default async function PurchasesPage() {
   const [productsResult, suppliersResult, historyResult] = await Promise.all([
     getProductsList(),
     getSuppliersList(),
-    getPurchasesHistory(userSession.branch_id)
+    getPurchasesHistory(userSession.branch_id, userSession.user_id)
   ])
 
   if (!productsResult.success || !suppliersResult.success) {

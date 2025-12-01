@@ -256,6 +256,9 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
             <PurchaseHistoryTable
               data={history}
               branchName={session.branch_name || '전체 지점'}
+              userRole={session.role}
+              userId={session.user_id}
+              userBranchId={session.branch_id}
             />
           </div>
         )}
