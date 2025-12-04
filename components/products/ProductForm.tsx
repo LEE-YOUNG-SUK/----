@@ -8,6 +8,7 @@ import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Label } from '../ui/Label'
 import { Checkbox } from '../ui/Checkbox'
+import { FormGrid } from '@/components/shared/FormGrid'
 
 interface ProductFormProps {
   product: Product | null
@@ -90,7 +91,7 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
           <div className="space-y-4">
             <h3 className="text-sm font-semibold">📋 기본 정보</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="code">품목 코드 *</Label>
                 <Input
@@ -118,9 +119,9 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
                   required
                 />
               </div>
-            </div>
+            </FormGrid>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="category">카테고리</Label>
                 <Input
@@ -147,9 +148,9 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
                   <option value="SET">SET (세트)</option>
                 </select>
               </div>
-            </div>
+            </FormGrid>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="specification">규격/사양</Label>
                 <Input
@@ -169,9 +170,9 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
                   placeholder="예: (주)메디텍"
                 />
               </div>
-            </div>
+            </FormGrid>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="barcode">바코드</Label>
                 <Input
@@ -195,14 +196,14 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
                   이 수준 이하 시 알림
                 </p>
               </div>
-            </div>
+            </FormGrid>
           </div>
 
           {/* 가격 정보 */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold">💰 가격 정보</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="standard_purchase_price">표준 구매가 (원)</Label>
                 <Input
@@ -230,7 +231,7 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
                   판매 시 기본값으로 사용
                 </p>
               </div>
-            </div>
+            </FormGrid>
           </div>
 
           {/* 상태 */}

@@ -6,6 +6,7 @@ import { AuditLogFilters } from './AuditLogFilters'
 import { AuditLogTable } from './AuditLogTable'
 import { AuditStatsCard } from './AuditStatsCard'
 import { getAuditLogs, getAuditStats } from '@/app/admin/audit-logs/actions'
+import { getProductNamesByIds } from '@/app/admin/audit-logs/product-helper'
 import type { AuditLogListItem, AuditStats, AuditLogFilter } from '@/types/audit'
 
 interface Props {
@@ -41,7 +42,44 @@ export function AuditLogManagement({ userSession }: Props) {
       )
 
       if (logsResult.success) {
-        setLogs(logsResult.data)
+        // 입고/판매만 필터링 (재고 조정 제외)
+        const filteredLogs = logsResult.data.filter((log: AuditLogListItem) => 
+          log.table_name === 'purchases' || log.table_name === 'sales'
+        )
+        
+        // 품목 ID 수집
+        const productIds = new Set<string>()
+        filteredLogs.forEach((log: AuditLogListItem) => {
+          const data = log.old_data || log.new_data
+          if (data && data.product_id) {
+            productIds.add(data.product_id)
+          }
+        })
+        
+        // 품목명 조회
+        if (productIds.size > 0) {
+          const productNames = await getProductNamesByIds(Array.from(productIds))
+          
+          // 로그에 품목명 추가
+          const logsWithProductNames = filteredLogs.map((log: AuditLogListItem) => {
+            const data = log.old_data || log.new_data
+            const productId = data?.product_id
+            
+            if (productId && productNames[productId]) {
+              return {
+                ...log,
+                old_data: log.old_data ? { ...log.old_data, product_name: productNames[productId] } : log.old_data,
+                new_data: log.new_data ? { ...log.new_data, product_name: productNames[productId] } : log.new_data
+              }
+            }
+            
+            return log
+          })
+          
+          setLogs(logsWithProductNames)
+        } else {
+          setLogs(filteredLogs)
+        }
       }
 
       // 통계 조회
@@ -54,7 +92,11 @@ export function AuditLogManagement({ userSession }: Props) {
       )
 
       if (statsResult.success) {
-        setStats(statsResult.data)
+        // 입고/판매만 필터링 (재고 조정 제외)
+        const filteredStats = statsResult.data.filter((stat: AuditStats) => 
+          stat.table_name === 'purchases' || stat.table_name === 'sales'
+        )
+        setStats(filteredStats)
       }
     } catch (error) {
       console.error('Load audit logs error:', error)

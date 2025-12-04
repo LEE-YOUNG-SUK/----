@@ -56,7 +56,7 @@ export function AuditStatsCard({ stats, loading }: Props) {
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">수정(UPDATE)</p>
+              <p className="text-sm font-medium text-gray-600">데이터 수정</p>
               <p className="text-2xl font-bold text-blue-600 mt-1">
                 {totalUpdates.toLocaleString()}
               </p>
@@ -71,7 +71,7 @@ export function AuditStatsCard({ stats, loading }: Props) {
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">삭제(DELETE)</p>
+              <p className="text-sm font-medium text-gray-600">데이터 삭제</p>
               <p className="text-2xl font-bold text-red-600 mt-1">
                 {totalDeletes.toLocaleString()}
               </p>

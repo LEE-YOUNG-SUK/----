@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/Button'
 import { getRecordHistory } from '@/app/admin/audit-logs/actions'
 import { ROLE_LABELS } from '@/types/permissions'
+import { getFieldLabel } from '@/lib/audit-field-labels'
 import type { AuditLogListItem, RecordHistory } from '@/types/audit'
 
 interface Props {
@@ -75,83 +76,139 @@ export function RecordHistoryModal({ log, userSession, onClose }: Props) {
   }
 
   const renderDataComparison = (history: RecordHistory) => {
+    // 주요 필드 정의 (표시 순서)
+    const displayFields = ['product_name', 'quantity', 'unit_price', 'supply_price', 'tax_amount', 'total_price', 'total_cost']
+    
+    // 포맷팅 함수
+    const formatValue = (field: string, value: any): string => {
+      if (value === null || value === undefined) return '-'
+      
+      // 숫자 필드
+      if (['quantity', 'unit_price', 'supply_price', 'tax_amount', 'total_price', 'total_cost'].includes(field)) {
+        const num = Number(value)
+        if (field.includes('price') || field.includes('cost') || field.includes('amount')) {
+          return `₩${num.toLocaleString()}`
+        }
+        return num.toLocaleString()
+      }
+      
+      // 불린 필드
+      if (typeof value === 'boolean') {
+        return value ? 'O' : 'X'
+      }
+      
+      return String(value)
+    }
+    
     if (history.action === 'DELETE') {
-      // 삭제: old_data만 표시
+      // 삭제: 한 줄로 이전 값만 표시
+      const oldData = history.old_data || {}
+      const fieldsToShow = displayFields.filter(f => oldData[f] !== undefined && oldData[f] !== null)
+      
       return (
-        <div>
-          <h4 className="font-semibold text-red-600 mb-2">🗑️ 삭제된 데이터</h4>
-          <div className="bg-red-50 p-4 rounded-md border border-red-200">
-            <pre className="text-xs text-gray-700 whitespace-pre-wrap">
-              {JSON.stringify(history.old_data, null, 2)}
-            </pre>
+        <div className="space-y-3">
+          <h4 className="font-semibold text-red-600 mb-3">🗑️ 삭제된 데이터</h4>
+          
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse border border-gray-300">
+              <thead>
+                <tr className="bg-gray-100">
+                  {fieldsToShow.map(field => (
+                    <th key={field} className="border border-gray-300 px-3 py-2 text-left text-xs font-medium text-gray-700">
+                      {getFieldLabel(field)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="bg-red-50">
+                  {fieldsToShow.map(field => (
+                    <td key={field} className="border border-gray-300 px-3 py-2 text-sm text-gray-900">
+                      {formatValue(field, oldData[field])}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       )
     }
 
     if (history.action === 'UPDATE') {
-      // 수정: old_data와 new_data 비교
+      // 수정: 첫 줄 이전값, 둘째 줄 수정값
+      const oldData = history.old_data || {}
+      const newData = history.new_data || {}
       const changedFields = history.changed_fields || []
       
+      // 모든 데이터 필드 수집 (변경된 것과 변경되지 않은 것 포함)
+      const allFields = displayFields.filter(f => 
+        oldData[f] !== undefined || newData[f] !== undefined
+      )
+      
       return (
-        <div className="space-y-4">
-          <h4 className="font-semibold text-blue-600 mb-2">
-            ✏️ 변경된 필드 ({changedFields.length}개)
+        <div className="space-y-3">
+          <h4 className="font-semibold text-blue-600 mb-3">
+            ✏️ 수정 내역 ({changedFields.length}개 필드 변경)
           </h4>
           
-          {changedFields.length > 0 ? (
-            <div className="space-y-3">
-              {changedFields.map((field) => {
-                const oldValue = history.old_data?.[field]
-                const newValue = history.new_data?.[field]
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse border border-gray-300">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border border-gray-300 px-3 py-2 text-left text-xs font-medium text-gray-700 w-20">
+                    구분
+                  </th>
+                  {allFields.map(field => (
+                    <th 
+                      key={field} 
+                      className={`border border-gray-300 px-3 py-2 text-left text-xs font-medium ${
+                        changedFields.includes(field) ? 'bg-yellow-100 text-yellow-900' : 'text-gray-700'
+                      }`}
+                    >
+                      {getFieldLabel(field)}
+                      {changedFields.includes(field) && ' ⚠️'}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {/* 이전 값 */}
+                <tr className="bg-red-50">
+                  <td className="border border-gray-300 px-3 py-2 text-xs font-medium text-red-700">
+                    이전
+                  </td>
+                  {allFields.map(field => (
+                    <td 
+                      key={field} 
+                      className={`border border-gray-300 px-3 py-2 text-sm ${
+                        changedFields.includes(field) ? 'bg-red-100 text-red-900 font-medium' : 'text-gray-600'
+                      }`}
+                    >
+                      {formatValue(field, oldData[field])}
+                    </td>
+                  ))}
+                </tr>
                 
-                return (
-                  <div key={field} className="border rounded-md p-3 bg-gray-50">
-                    <div className="font-medium text-sm text-gray-700 mb-2">
-                      📌 {field}
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <div className="text-gray-500 mb-1">이전 값</div>
-                        <div className="bg-red-50 p-2 rounded border border-red-200 text-red-700">
-                          {formatJsonValue(oldValue)}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-gray-500 mb-1">변경 값</div>
-                        <div className="bg-green-50 p-2 rounded border border-green-200 text-green-700">
-                          {formatJsonValue(newValue)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500">변경된 필드 정보 없음</p>
-          )}
-
-          {/* 전체 데이터 보기 */}
-          <details className="mt-4">
-            <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-900">
-              전체 데이터 보기
-            </summary>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <div>
-                <div className="text-xs text-gray-500 mb-1">이전 데이터</div>
-                <pre className="text-xs bg-gray-50 p-2 rounded border overflow-auto max-h-40">
-                  {JSON.stringify(history.old_data, null, 2)}
-                </pre>
-              </div>
-              <div>
-                <div className="text-xs text-gray-500 mb-1">변경 데이터</div>
-                <pre className="text-xs bg-gray-50 p-2 rounded border overflow-auto max-h-40">
-                  {JSON.stringify(history.new_data, null, 2)}
-                </pre>
-              </div>
-            </div>
-          </details>
+                {/* 수정 값 */}
+                <tr className="bg-green-50">
+                  <td className="border border-gray-300 px-3 py-2 text-xs font-medium text-green-700">
+                    수정
+                  </td>
+                  {allFields.map(field => (
+                    <td 
+                      key={field} 
+                      className={`border border-gray-300 px-3 py-2 text-sm ${
+                        changedFields.includes(field) ? 'bg-green-100 text-green-900 font-medium' : 'text-gray-600'
+                      }`}
+                    >
+                      {formatValue(field, newData[field])}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       )
     }

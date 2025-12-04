@@ -108,10 +108,13 @@ BEGIN
     s.sale_date,
     s.quantity,
     s.unit_price,
-    s.total_amount,
-    s.cost_of_goods,
+    s.total_price AS total_amount, -- ✅ total_price를 total_amount로 별칭
+    s.cost_of_goods_sold AS cost_of_goods, -- ✅ cost_of_goods_sold를 cost_of_goods로 별칭
     s.profit,
-    s.profit_margin,
+    CASE 
+      WHEN s.total_price > 0 THEN (s.profit / s.total_price) * 100
+      ELSE 0
+    END AS profit_margin, -- ✅ profit_margin 계산
     s.reference_number,
     s.notes,
     s.created_at,

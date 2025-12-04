@@ -9,6 +9,9 @@ import { Input } from '../ui/Input'
 import { Label } from '../ui/Label'
 import { Textarea } from '../ui/Textarea'
 import { Checkbox } from '../ui/Checkbox'
+import { FormGrid } from '../shared/FormGrid'
+import { PrimaryButton } from '../shared/PrimaryButton'
+import { SecondaryButton } from '../shared/SecondaryButton'
 
 interface ClientFormProps {
   client: Client | null
@@ -97,7 +100,7 @@ export default function ClientForm({ client, onClose, onSuccess }: ClientFormPro
           <div className="space-y-4">
             <h3 className="text-sm font-semibold">📋 기본 정보</h3>
             
-            <div className="grid grid-cols-2 gap-4">
+            <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="code">거래처 코드 *</Label>
                 <Input
@@ -125,9 +128,9 @@ export default function ClientForm({ client, onClose, onSuccess }: ClientFormPro
                   required
                 />
               </div>
-            </div>
+            </FormGrid>
 
-            <div className="grid grid-cols-2 gap-4">
+            <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="type">거래처 유형 *</Label>
                 <select
@@ -156,14 +159,14 @@ export default function ClientForm({ client, onClose, onSuccess }: ClientFormPro
                   maxLength={12}
                 />
               </div>
-            </div>
+            </FormGrid>
           </div>
 
           {/* 담당자 정보 */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold">👤 담당자 정보</h3>
             
-            <div className="grid grid-cols-2 gap-4">
+            <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="contact_person">대표자/담당자명</Label>
                 <Input
@@ -183,7 +186,7 @@ export default function ClientForm({ client, onClose, onSuccess }: ClientFormPro
                   placeholder="예: 02-1234-5678"
                 />
               </div>
-            </div>
+            </FormGrid>
 
             <div className="space-y-2">
               <Label htmlFor="email">이메일</Label>
@@ -241,12 +244,12 @@ export default function ClientForm({ client, onClose, onSuccess }: ClientFormPro
           </p>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+            <SecondaryButton type="button" onClick={onClose} disabled={isSubmitting}>
               취소
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? '⏳ 저장 중...' : '저장'}
-            </Button>
+            </SecondaryButton>
+            <PrimaryButton type="submit" disabled={isSubmitting} loading={isSubmitting}>
+              저장
+            </PrimaryButton>
           </DialogFooter>
         </form>
       </DialogContent>

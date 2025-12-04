@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { RecordHistoryModal } from './RecordHistoryModal'
 import { ROLE_LABELS } from '@/types/permissions'
+import { getFieldLabel } from '@/lib/audit-field-labels'
 import type { AuditLogListItem } from '@/types/audit'
 
 interface Props {
@@ -94,22 +95,13 @@ export function AuditLogTable({ logs, loading, userSession }: Props) {
                 일시
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                테이블
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                액션
+                변경내용
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 사용자
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                역할
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 지점
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                변경 필드
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 상세
@@ -117,58 +109,81 @@ export function AuditLogTable({ logs, loading, userSession }: Props) {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {logs.map((log) => (
-              <tr key={log.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatDate(log.created_at)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getTableNameBadge(log.table_name)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getActionBadge(log.action)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {log.username}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                  {ROLE_LABELS[log.user_role] || log.user_role}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                  {log.branch_name || '-'}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {log.changed_fields && log.changed_fields.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {log.changed_fields.slice(0, 3).map((field, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700"
-                        >
-                          {field}
-                        </span>
-                      ))}
-                      {log.changed_fields.length > 3 && (
-                        <span className="text-xs text-gray-500">
-                          +{log.changed_fields.length - 3}
-                        </span>
-                      )}
+            {logs.map((log) => {
+              // 변경내용을 품목명 포함하여 구체적으로 표현
+              const getChangeDescription = () => {
+                const tableLabel = log.table_name === 'purchases' ? '입고' : 
+                                  log.table_name === 'sales' ? '판매' : 
+                                  log.table_name === 'inventory_adjustments' ? '재고 조정' : 
+                                  log.table_name
+                
+                // 품목명 추출
+                const data = log.old_data || log.new_data
+                const productName = data?.product_name || null
+                
+                if (log.action === 'DELETE') {
+                  return (
+                    <div className="text-red-600">
+                      <div className="font-medium">
+                        🗑️ {productName ? `[${productName}]` : ''} {tableLabel} 데이터 <strong>삭제</strong>
+                      </div>
                     </div>
-                  ) : (
-                    <span className="text-gray-400">-</span>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setSelectedLog(log)}
-                  >
-                    🔍 상세
-                  </Button>
-                </td>
-              </tr>
-            ))}
+                  )
+                }
+                
+                if (log.action === 'UPDATE' && log.changed_fields && log.changed_fields.length > 0) {
+                  const fieldCount = log.changed_fields.length
+                  const fieldLabels = log.changed_fields.slice(0, 2).map(getFieldLabel).join(', ')
+                  const moreCount = fieldCount > 2 ? fieldCount - 2 : 0
+                  
+                  return (
+                    <div className="text-blue-600">
+                      <div className="font-medium">
+                        ✏️ {productName ? `[${productName}]` : ''} {tableLabel} 데이터 <strong>수정</strong>
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {fieldLabels}{moreCount > 0 && ` 외 ${moreCount}개`}
+                      </div>
+                    </div>
+                  )
+                }
+                
+                return (
+                  <span className="text-gray-600">
+                    ✏️ {tableLabel} 데이터를 수정했습니다
+                  </span>
+                )
+              }
+              
+              return (
+                <tr key={log.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {formatDate(log.created_at)}
+                  </td>
+                  <td className="px-6 py-4 text-sm">
+                    {getChangeDescription()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div>
+                      <div className="text-gray-900 font-medium">{log.username}</div>
+                      <div className="text-gray-500 text-xs">{ROLE_LABELS[log.user_role] || log.user_role}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {log.branch_name || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedLog(log)}
+                    >
+                      🔍 상세보기
+                    </Button>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>

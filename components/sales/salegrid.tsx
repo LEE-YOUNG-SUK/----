@@ -10,6 +10,8 @@ import 'ag-grid-community/styles/ag-theme-alpine.css'
 import type { ColDef, ICellEditorParams } from 'ag-grid-community'
 import type { ProductWithStock, SaleGridRow } from '@/types/sales'
 import { ProductCellEditor } from './salescelleditor'
+import { PrimaryButton } from '@/components/shared/PrimaryButton'
+import { SecondaryButton } from '@/components/shared/SecondaryButton'
 
 const DeleteButtonRenderer = (props: any) => (
   <button
@@ -132,12 +134,16 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
     }))
     // 선택한 행만 강제 리프레시 (rowNode 그대로 사용)
     setTimeout(() => {
-      if (gridRef.current?.api && rowNode) {
-        gridRef.current.api.refreshCells({
-          force: true,
-          rowNodes: [rowNode],
-          columns: ['product_code','product_name','unit','current_stock','unit_price','supply_price','tax_amount','total_price']
-        })
+      try {
+        if (gridRef.current?.api && rowNode?.data) {
+          gridRef.current.api.refreshCells({
+            force: true,
+            rowNodes: [rowNode],
+            columns: ['product_code','product_name','unit','current_stock','unit_price','supply_price','tax_amount','total_price']
+          })
+        }
+      } catch (e) {
+        // 페이지 새로고침 중 Grid가 파괴되어 발생하는 에러 무시
       }
     }, 0)
   }, [taxIncluded])
@@ -296,10 +302,16 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
       copy[params.node.rowIndex] = data
       return copy
     })
-    params.api.refreshCells({
-      rowNodes: [params.node],
-      columns: ['supply_price','tax_amount','total_price','total_amount']
-    })
+    try {
+      if (params.api && params.node) {
+        params.api.refreshCells({
+          rowNodes: [params.node],
+          columns: ['supply_price','tax_amount','total_price','total_amount']
+        })
+      }
+    } catch (e) {
+      // 페이지 새로고침 중 Grid가 파괴되어 발생하는 에러 무시
+    }
   }, [taxIncluded])
 
   const handleAddRow = useCallback(() => {
@@ -370,20 +382,12 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 bg-white border-b">
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleAddRow}
-            disabled={isSaving}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition font-medium shadow-sm"
-          >
+          <PrimaryButton onClick={handleAddRow} disabled={isSaving}>
             ➕ 행 추가
-          </button>
-          <button
-            onClick={handleClearAll}
-            disabled={isSaving}
-            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 transition font-medium shadow-sm"
-          >
+          </PrimaryButton>
+          <SecondaryButton onClick={handleClearAll} disabled={isSaving}>
             🗑️ 전체 삭제
-          </button>
+          </SecondaryButton>
         </div>
 
         <div className="flex items-center gap-6">

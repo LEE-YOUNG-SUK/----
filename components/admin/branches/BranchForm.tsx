@@ -5,6 +5,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
+import { FormGrid } from '@/components/shared/FormGrid'
+import { PrimaryButton } from '@/components/shared/PrimaryButton'
+import { SecondaryButton } from '@/components/shared/SecondaryButton'
 import { createBranch, updateBranch } from '@/app/admin/branches/actions'
 
 interface BranchFormProps {
@@ -67,7 +70,7 @@ export default function BranchForm({ branch, onClose, onSuccess }: BranchFormPro
           )}
 
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="code">지점 코드 *</Label>
                 <Input
@@ -92,9 +95,9 @@ export default function BranchForm({ branch, onClose, onSuccess }: BranchFormPro
                   disabled={loading}
                 />
               </div>
-            </div>
+            </FormGrid>
 
-            <div className="grid grid-cols-2 gap-4">
+            <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="contact_person">대표자</Label>
                 <Input
@@ -117,9 +120,9 @@ export default function BranchForm({ branch, onClose, onSuccess }: BranchFormPro
                   disabled={loading}
                 />
               </div>
-            </div>
+            </FormGrid>
 
-            <div className="grid grid-cols-2 gap-4">
+            <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="email">이메일</Label>
                 <Input
@@ -143,7 +146,7 @@ export default function BranchForm({ branch, onClose, onSuccess }: BranchFormPro
                   disabled={loading}
                 />
               </div>
-            </div>
+            </FormGrid>
 
             <div className="space-y-2">
               <Label htmlFor="address">주소</Label>
@@ -159,12 +162,12 @@ export default function BranchForm({ branch, onClose, onSuccess }: BranchFormPro
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+            <SecondaryButton type="button" onClick={onClose} disabled={loading}>
               취소
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? '저장 중...' : branch ? '수정' : '추가'}
-            </Button>
+            </SecondaryButton>
+            <PrimaryButton type="submit" disabled={loading} loading={loading}>
+              {branch ? '수정' : '추가'}
+            </PrimaryButton>
           </DialogFooter>
         </form>
       </DialogContent>

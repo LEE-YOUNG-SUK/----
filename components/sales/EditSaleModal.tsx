@@ -7,6 +7,9 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import type { SaleHistory } from '@/types/sales'
+import { FormGrid } from '@/components/shared/FormGrid'
+import { PrimaryButton } from '@/components/shared/PrimaryButton'
+import { SecondaryButton } from '@/components/shared/SecondaryButton'
 
 interface EditSaleModalProps {
   sale: SaleHistory
@@ -94,7 +97,8 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
         {/* 내용 */}
         <div className="px-6 py-4 space-y-4">
           {/* 판매 정보 (읽기 전용) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <FormGrid columns={2}>
             <div>
               <p className="text-xs text-gray-600 mb-1">품목코드</p>
               <p className="text-sm font-medium text-gray-900">{sale.product_code}</p>
@@ -119,11 +123,12 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
                 <p className="text-sm font-medium text-gray-900">{sale.reference_number}</p>
               </div>
             )}
+            </FormGrid>
           </div>
 
           {/* 수정 가능 필드 */}
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormGrid columns={2}>
               {/* 수량 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -156,10 +161,11 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
                   step="0.01"
                 />
               </div>
-            </div>
+            </FormGrid>
 
             {/* 자동 계산 필드 (읽기 전용) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-blue-50 rounded-lg">
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <FormGrid columns={3}>
               <div>
                 <p className="text-xs text-gray-600 mb-1">공급가</p>
                 <p className="text-sm font-semibold text-blue-700">
@@ -178,6 +184,7 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
                   ₩{totalPrice.toLocaleString()}
                 </p>
               </div>
+              </FormGrid>
             </div>
 
             {/* 비고 */}
@@ -198,20 +205,12 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
 
         {/* 푸터 */}
         <div className="sticky bottom-0 bg-white px-6 py-4 border-t flex justify-end gap-3">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isSaving}
-          >
+          <SecondaryButton onClick={onClose} disabled={isSaving}>
             취소
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? '저장 중...' : '저장'}
-          </Button>
+          </SecondaryButton>
+          <PrimaryButton onClick={handleSave} disabled={isSaving} loading={isSaving}>
+            저장
+          </PrimaryButton>
         </div>
       </div>
     </div>

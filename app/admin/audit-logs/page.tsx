@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
+import { NavigationWrapper } from '@/components/NavigationWrapper'
 import { PageLayout } from '@/components/shared/PageLayout'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { AuditLogManagement } from '@/components/admin/audit-logs/AuditLogManagement'
@@ -37,18 +38,22 @@ export default async function AuditLogsPage() {
   const userSession = {
     user_id: session.user_id,
     username: session.username,
+    display_name: session.display_name,
     role: session.role,
     branch_id: session.branch_id,
     branch_name: session.branch_name,
   }
 
   return (
-    <PageLayout>
-      <PageHeader
-        title="감사 로그"
-        description="데이터 변경 이력 조회 및 추적"
-      />
-      <AuditLogManagement userSession={userSession} />
-    </PageLayout>
+    <>
+      <NavigationWrapper user={userSession} />
+      <PageLayout>
+        <PageHeader
+          title="감사 로그"
+          description="데이터 변경 이력 조회 및 추적"
+        />
+        <AuditLogManagement userSession={userSession} />
+      </PageLayout>
+    </>
   )
 }

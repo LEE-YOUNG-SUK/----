@@ -96,6 +96,39 @@ export async function getRecordHistory(
       throw error
     }
 
+    // 입고/판매 테이블인 경우 품목명 추가
+    if ((tableName === 'purchases' || tableName === 'sales') && data && data.length > 0) {
+      // product_id 수집
+      const productIds = new Set<string>()
+      data.forEach((log: any) => {
+        if (log.old_data?.product_id) productIds.add(log.old_data.product_id)
+        if (log.new_data?.product_id) productIds.add(log.new_data.product_id)
+      })
+
+      // 품목명 조회
+      if (productIds.size > 0) {
+        const { data: products } = await supabase
+          .from('products')
+          .select('id, name')
+          .in('id', Array.from(productIds))
+
+        const productMap: Record<string, string> = {}
+        products?.forEach((p: any) => {
+          productMap[p.id] = p.name
+        })
+
+        // 로그에 품목명 추가
+        data.forEach((log: any) => {
+          if (log.old_data?.product_id) {
+            log.old_data.product_name = productMap[log.old_data.product_id] || '알 수 없음'
+          }
+          if (log.new_data?.product_id) {
+            log.new_data.product_name = productMap[log.new_data.product_id] || '알 수 없음'
+          }
+        })
+      }
+    }
+
     return {
       success: true,
       data: data || []

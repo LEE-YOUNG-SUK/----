@@ -10,6 +10,7 @@
 
 import { useState } from 'react'
 import { ReportFilter, ReportGroupByOption } from '@/types/reports'
+import { PrimaryButton } from '@/components/shared/PrimaryButton'
 
 interface Props {
   /** 초기 필터 값 */
@@ -196,13 +197,9 @@ export default function ReportFilters({
         )}
 
         {/* 조회 버튼 */}
-        <button
-          type="button"
-          onClick={handleSearch}
-          className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
-        >
+        <PrimaryButton onClick={handleSearch} className="px-6">
           🔍 조회
-        </button>
+        </PrimaryButton>
       </div>
     </div>
   )

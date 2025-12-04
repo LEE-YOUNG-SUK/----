@@ -272,16 +272,16 @@ export async function getSalesHistory(
       id: item.id,
       sale_date: item.sale_date,
       branch_name: item.branch_name || '',
-      customer_name: item.client_name || '', // client_name → customer_name
+      customer_name: item.customer_name || '', // RPC가 customer_name으로 반환
       product_code: item.product_code || '',
       product_name: item.product_name || '',
       unit: item.unit || '',
       quantity: item.quantity || 0,
       unit_price: item.unit_price || 0,
-      total_amount: item.total_price || 0, // total_price → total_amount
-      cost_of_goods: item.cost_of_goods_sold || 0, // cost_of_goods_sold → cost_of_goods
+      total_amount: item.total_amount || 0, // RPC가 total_amount로 반환
+      cost_of_goods: item.cost_of_goods || 0, // RPC가 cost_of_goods로 반환
       profit: item.profit || 0,
-      profit_margin: item.total_price > 0 ? ((item.profit || 0) / item.total_price) * 100 : 0,
+      profit_margin: item.total_amount > 0 ? ((item.profit || 0) / item.total_amount) * 100 : 0,
       reference_number: item.reference_number || null,
       created_by_name: '', // RPC에서 제공하지 않음
       created_at: item.created_at

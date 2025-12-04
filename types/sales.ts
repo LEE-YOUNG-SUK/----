@@ -95,6 +95,19 @@ export interface SaleDeleteRequest {
   user_branch_id: string
 }
 
+/**
+ * 거래번호별 그룹화된 판매 데이터 (PurchaseGroup 구조와 동일)
+ */
+export interface SaleGroup {
+  reference_number: string // 거래번호
+  sale_date: string
+  customer_name: string
+  items: SaleHistory[]
+  total_amount: number
+  total_items: number
+  first_product_name: string
+}
+
 // 고객 (거래처)
 export interface Customer {
   id: string

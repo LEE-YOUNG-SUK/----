@@ -13,6 +13,8 @@ import type { ColDef, ICellEditorParams } from 'ag-grid-community'
 import type { Product } from '@/types'
 import type { PurchaseGridRow } from '@/types/purchases'
 import { ProductCellEditor } from './ProductCellEditor'
+import { PrimaryButton } from '@/components/shared/PrimaryButton'
+import { SecondaryButton } from '@/components/shared/SecondaryButton'
 
 const DeleteButtonRenderer = (props: any) => {
   return (
@@ -62,28 +64,33 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
    */
   function calculatePrices(row: PurchaseGridRow, isTaxIncluded: boolean) {
     const quantity = row.quantity || 0
-    const unitCost = row.unit_cost || 0
+    const inputUnitCost = row.unit_cost || 0  // 사용자가 입력한 단가
     
     if (isTaxIncluded) {
       // 부가세 포함: 수량 * 단가 = 합계
-      const totalPrice = quantity * unitCost
-      const supplyPrice = Math.round(totalPrice / 1.1) // 공급가 (반올림)
-      const taxAmount = totalPrice - supplyPrice // 부가세 (차액, 자동으로 정수)
+      const totalPrice = quantity * inputUnitCost
+      const supplyPrice = Math.round(totalPrice / 1.1)
+      const taxAmount = totalPrice - supplyPrice
       
       row.total_price = totalPrice
       row.supply_price = supplyPrice
       row.tax_amount = taxAmount
-      row.total_cost = totalPrice // 기존 필드 호환
+      row.total_cost = totalPrice
+      // unit_cost는 그대로 유지 (이미 부가세 포함)
     } else {
       // 부가세 미포함: 수량 * 단가 = 공급가
-      const supplyPrice = quantity * unitCost
-      const taxAmount = Math.round(supplyPrice * 0.1) // 부가세 10% (반올림)
+      const supplyPrice = quantity * inputUnitCost
+      const taxAmount = Math.round(supplyPrice * 0.1)
       const totalPrice = supplyPrice + taxAmount
       
       row.supply_price = supplyPrice
       row.tax_amount = taxAmount
       row.total_price = totalPrice
-      row.total_cost = totalPrice // 기존 필드 호환
+      row.total_cost = totalPrice
+      
+      // ✅ 핵심: unit_cost를 부가세 포함 단가로 변환 (재고 저장용)
+      // 입력 단가 × 1.1 = 부가세 포함 단가
+      row.unit_cost = Math.round(inputUnitCost * 1.1)
     }
   }
 
@@ -382,20 +389,12 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 bg-white border-b">
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleAddRow}
-            disabled={isSaving}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition font-medium shadow-sm"
-          >
+          <PrimaryButton onClick={handleAddRow} disabled={isSaving}>
             ➕ 행 추가
-          </button>
-          <button
-            onClick={handleClearAll}
-            disabled={isSaving}
-            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 transition font-medium shadow-sm"
-          >
+          </PrimaryButton>
+          <SecondaryButton onClick={handleClearAll} disabled={isSaving}>
             🗑️ 전체 삭제
-          </button>
+          </SecondaryButton>
         </div>
 
         <div className="flex items-center gap-6">

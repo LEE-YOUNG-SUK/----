@@ -1,256 +1,256 @@
 'use client'
 
 /**
- * 판매 내역 테이블 (Phase 3.5: 수정/삭제 기능 추가)
- * 입고 내역(PurchaseHistoryTable) 구조 100% 적용
+ * 판매 내역 테이블 (거래번호별 그룹화)
  */
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { usePermissions } from '@/hooks/usePermissions'
-import { updateSale, deleteSale } from '@/app/sales/actions'
 import { Button } from '@/components/ui/Button'
-import EditSaleModal from './EditSaleModal'
-import { StatCard } from '@/components/shared/StatCard'
-import type { SaleHistory } from '@/types/sales'
+import SaleDetailModal from './SaleDetailModal'
+import type { SaleHistory, SaleGroup } from '@/types/sales'
 
-interface Props {
+interface SaleHistoryTableProps {
   data: SaleHistory[]
-  branchName: string
+  branchName: string | null
   userRole: string
   userId: string
   userBranchId: string
 }
 
 export default function SaleHistoryTable({ 
-  data: initialData, 
-  branchName,
-  userRole,
-  userId,
-  userBranchId
-}: Props) {
-  const [data, setData] = useState<SaleHistory[]>(initialData)
+  data, 
+  branchName, 
+  userRole, 
+  userId, 
+  userBranchId 
+}: SaleHistoryTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 20
+  const [selectedGroup, setSelectedGroup] = useState<SaleGroup | null>(null)
+  const itemsPerPage = 30
 
-  // Phase 3.5: 편집/삭제 상태
-  const [editingSale, setEditingSale] = useState<SaleHistory | null>(null)
-  const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const { can } = usePermissions(userRole)
-
-  // 편집 권한: 모든 역할
   const canEdit = can('sales_management', 'update')
-  
-  // 삭제 권한: 원장 이상 (0000~0002)
   const canDelete = userRole <= '0002' && can('sales_management', 'delete')
 
-  // 초기 데이터 업데이트
-  useEffect(() => {
-    setData(initialData)
-  }, [initialData])
+  // 거래번호별 그룹화
+  const groupedData = useMemo(() => {
+    const groups = new Map<string, SaleHistory[]>()
+    
+    data.forEach(item => {
+      const key = item.reference_number || `NO_REF_${item.sale_date}_${item.customer_name}`
+      if (!groups.has(key)) {
+        groups.set(key, [])
+      }
+      groups.get(key)!.push(item)
+    })
 
-  // 검색 필터링
-  const filteredData = useMemo(() => {
-    if (!searchTerm) return data
+    const result: SaleGroup[] = []
+    groups.forEach((items, ref) => {
+      const firstItem = items[0]
+      const totalAmount = items.reduce((sum, item) => sum + (item.total_amount || 0), 0)
+      
+      result.push({
+        reference_number: ref,
+        sale_date: firstItem.sale_date,
+        customer_name: firstItem.customer_name,
+        items: items,
+        total_amount: totalAmount,
+        total_items: items.length,
+        first_product_name: firstItem.product_name
+      })
+    })
 
-    const search = searchTerm.toLowerCase()
-    return data.filter(
-      (item) =>
-        (item.product_code || '').toLowerCase().includes(search) ||
-        (item.product_name || '').toLowerCase().includes(search) ||
-        (item.customer_name || '').toLowerCase().includes(search) ||
-        (item.reference_number || '').toLowerCase().includes(search)
+    // 날짜 내림차순 정렬
+    return result.sort((a, b) => 
+      new Date(b.sale_date).getTime() - new Date(a.sale_date).getTime()
     )
-  }, [data, searchTerm])
+  }, [data])
+
+  // 검색 + 날짜 필터링 (그룹 내부 품목도 검색)
+  const filteredGroups = useMemo(() => {
+    return groupedData.filter((group) => {
+      // 날짜 필터
+      let matchesDate = true
+      if (startDate || endDate) {
+        const groupDate = new Date(group.sale_date).toISOString().split('T')[0]
+        if (startDate && groupDate < startDate) matchesDate = false
+        if (endDate && groupDate > endDate) matchesDate = false
+      }
+      
+      if (!matchesDate) return false
+
+      // 검색 필터 - 거래번호, 거래처, 그룹 내 모든 품목 검색
+      if (!searchTerm) return true
+      
+      const search = searchTerm.toLowerCase()
+      const matchesGroupInfo = 
+        (group.reference_number || '').toLowerCase().includes(search) ||
+        (group.customer_name || '').toLowerCase().includes(search)
+      
+      // 그룹 내부 품목 검색
+      const matchesItems = group.items.some(item =>
+        (item.product_code || '').toLowerCase().includes(search) ||
+        (item.product_name || '').toLowerCase().includes(search)
+      )
+      
+      return matchesGroupInfo || matchesItems
+    })
+  }, [groupedData, searchTerm, startDate, endDate])
 
   // 페이지네이션
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage)
-  const paginatedData = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    return filteredData.slice(startIndex, startIndex + itemsPerPage)
-  }, [filteredData, currentPage])
+  const totalPages = Math.ceil(filteredGroups.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedGroups = filteredGroups.slice(startIndex, startIndex + itemsPerPage)
 
-  // 페이지 변경 시 스크롤 최상단
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  // 통계 계산
-  const stats = useMemo(() => {
-    const totalQuantity = filteredData.reduce((sum, item) => sum + (item.quantity || 0), 0)
-    const totalAmount = filteredData.reduce((sum, item) => sum + (item.total_amount || 0), 0)
-    const totalCost = filteredData.reduce((sum, item) => sum + (item.cost_of_goods || 0), 0)
-    const totalProfit = filteredData.reduce((sum, item) => sum + (item.profit || 0), 0)
-    const avgProfitMargin = totalAmount > 0 ? (totalProfit / totalAmount) * 100 : 0
-
-    return {
-      count: filteredData.length,
-      totalQuantity,
-      totalAmount,
-      totalCost,
-      totalProfit,
-      avgProfitMargin
-    }
-  }, [filteredData])
-
-  // Phase 3.5: 판매 수정 핸들러
-  const handleEdit = async (editData: {
-    quantity: number
-    unit_price: number
-    supply_price: number
-    tax_amount: number
-    total_price: number
-    notes: string
-  }) => {
-    if (!editingSale) return
-
-    const result = await updateSale({
-      sale_id: editingSale.id,
-      user_id: userId,
-      user_role: userRole,
-      user_branch_id: userBranchId,
-      ...editData
-    })
-
-    if (result.success) {
-      alert(result.message)
-      window.location.reload()
-    } else {
-      alert(result.message)
-    }
-  }
-
-  // Phase 3.5: 판매 삭제 핸들러
-  const handleDelete = async (sale: SaleHistory) => {
-    if (!confirm(`판매 데이터를 삭제하시겠습니까?\n\n품목: ${sale.product_name}\n수량: ${sale.quantity} ${sale.unit}\n이 작업은 되돌릴 수 없습니다.`)) {
-      return
-    }
-
-    setIsDeleting(sale.id)
-
-    const result = await deleteSale({
-      sale_id: sale.id,
-      user_id: userId,
-      user_role: userRole,
-      user_branch_id: userBranchId
-    })
-
-    setIsDeleting(null)
-
-    if (result.success) {
-      alert(result.message)
-      window.location.reload()
-    } else {
-      alert(result.message)
-    }
-  }
+  // 총 금액 계산
+  const totalAmount = filteredGroups.reduce((sum, group) => sum + group.total_amount, 0)
+  const totalItems = filteredGroups.reduce((sum, group) => sum + group.total_items, 0)
 
   return (
     <div className="flex flex-col h-full">
       {/* 헤더 */}
-      <div className="px-3 sm:px-6 py-3 sm:py-4 bg-white border-b border-gray-200 flex-shrink-0">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">판매 내역</h3>
-            <p className="text-sm text-gray-600 mt-1">{branchName}</p>
-          </div>
-          <div className="w-full sm:w-auto">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value)
-                setCurrentPage(1)
-              }}
-              placeholder="품목코드, 품명, 고객, 참조번호 검색..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+      <div className="p-3 sm:p-4 bg-white border-b flex-shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+            판매 내역
+            {branchName && (
+              <span className="ml-2 text-sm text-gray-500">({branchName})</span>
+            )}
+          </h2>
+          <div className="text-sm text-gray-600">
+            총 <span className="font-semibold text-blue-600">{filteredGroups.length}</span>건 
+            (<span className="font-semibold text-green-600">{totalItems}</span>품목) |
+            합계 <span className="font-semibold text-red-600">₩{totalAmount.toLocaleString()}</span>
           </div>
         </div>
-      </div>
 
-      {/* 통계 요약 */}
-      <div className="px-3 sm:px-6 py-3 sm:py-4 bg-gray-50 border-b border-gray-200 flex-shrink-0">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-          <StatCard label="판매 건수" value={stats.count} unit="건" variant="primary" />
-          <StatCard label="판매 수량" value={stats.totalQuantity} variant="primary" />
-          <StatCard label="판매 금액" value={`₩${stats.totalAmount.toLocaleString()}`} variant="primary" />
-          <StatCard label="총 이익" value={`₩${stats.totalProfit.toLocaleString()}`} variant="success" />
-          <StatCard label="평균 이익률" value={`${stats.avgProfitMargin.toFixed(1)}%`} variant="success" />
+        {/* 필터 - 한 줄로 통합 */}
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value)
+              setCurrentPage(1)
+            }}
+            placeholder="품목코드, 품목명"
+            className="flex-1 min-w-[300px] px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-700 font-medium whitespace-nowrap">시작일</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="w-40 px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-700 font-medium whitespace-nowrap">종료일</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="w-40 px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          <button
+            onClick={() => {
+              const today = new Date().toISOString().split('T')[0]
+              setStartDate(today)
+              setEndDate(today)
+              setCurrentPage(1)
+            }}
+            className="px-4 py-2.5 text-sm bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition whitespace-nowrap font-medium"
+          >
+            오늘
+          </button>
+          <button
+            onClick={() => {
+              const today = new Date()
+              const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+              setStartDate(firstDay.toISOString().split('T')[0])
+              setEndDate(today.toISOString().split('T')[0])
+              setCurrentPage(1)
+            }}
+            className="px-4 py-2.5 text-sm bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition whitespace-nowrap font-medium"
+          >
+            이번달
+          </button>
+          <button
+            onClick={() => {
+              setStartDate('')
+              setEndDate('')
+              setSearchTerm('')
+              setCurrentPage(1)
+            }}
+            className="px-4 py-2.5 text-sm bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition whitespace-nowrap font-medium"
+          >
+            초기화
+          </button>
         </div>
       </div>
 
       {/* 모바일 카드뷰 (767px 이하) */}
       <div className="md:hidden flex-1 overflow-y-auto bg-white">
-        {paginatedData.length === 0 ? (
+        {paginatedGroups.length === 0 ? (
           <div className="px-4 py-12 text-center text-gray-500">
             {searchTerm ? '검색 결과가 없습니다.' : '판매 내역이 없습니다.'}
           </div>
         ) : (
-          paginatedData.map((item, index) => (
-            <div key={`${item.id}-${index}`} className="p-4 hover:bg-gray-50 transition">
-              <div className="flex justify-between items-start mb-3">
+          paginatedGroups.map((group, index) => (
+            <div key={`${group.reference_number}-${index}`} className="p-3 border-b hover:bg-gray-50 transition">
+              <div className="flex justify-between items-start mb-2">
                 <div>
-                  <p className="text-sm font-medium text-blue-600">{item.product_code}</p>
-                  <p className="text-base font-semibold text-gray-900 mt-1">{item.product_name}</p>
-                </div>
-                <p className="text-xs text-gray-500">
-                  {new Date(item.sale_date).toLocaleDateString('ko-KR')}
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <p className="text-gray-600">고객</p>
-                  <p className="font-medium text-gray-900">{item.customer_name}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">수량</p>
-                  <p className="font-medium text-gray-900">{(item.quantity || 0).toLocaleString()} {item.unit}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">합계</p>
-                  <p className="font-bold text-blue-700">₩{(item.total_amount || 0).toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">이익</p>
-                  <p className={`font-bold ${(item.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    ₩{(item.profit || 0).toLocaleString()} ({(item.profit_margin || 0).toFixed(1)}%)
+                  <p className="text-sm font-medium text-blue-600">
+                    {group.reference_number?.startsWith('NO_REF_') ? '(없음)' : (group.reference_number || '(없음)')}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {new Date(group.sale_date).toLocaleDateString('ko-KR')}
                   </p>
                 </div>
               </div>
               
-              {item.reference_number && (
-                <p className="mt-2 text-xs text-gray-500">참조: {item.reference_number}</p>
-              )}
-
-              {/* Phase 3.5: 모바일 수정/삭제 버튼 */}
-              {(canEdit || canDelete) && (
-                <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
-                  {canEdit && (
-                    <Button
-                      onClick={() => setEditingSale(item)}
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      수정
-                    </Button>
-                  )}
-                  {canDelete && (
-                    <Button
-                      onClick={() => handleDelete(item)}
-                      disabled={isDeleting === item.id}
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 text-red-600 hover:bg-red-50 hover:text-red-700"
-                    >
-                      {isDeleting === item.id ? '삭제 중...' : '삭제'}
-                    </Button>
-                  )}
+              <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                <div>
+                  <p className="text-gray-600">거래처</p>
+                  <p className="font-medium text-gray-900">{group.customer_name}</p>
                 </div>
-              )}
+                <div>
+                  <p className="text-gray-600">품목</p>
+                  <p className="font-medium text-gray-900">
+                    {group.first_product_name}
+                    {group.total_items > 1 && <span className="text-blue-600"> 외 {group.total_items - 1}개</span>}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-600">품목 수</p>
+                  <p className="font-medium text-gray-900">{group.total_items}개</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">총액</p>
+                  <p className="font-bold text-blue-700">₩{group.total_amount.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedGroup(group)}
+                className="w-full"
+              >
+                상세보기
+              </Button>
             </div>
           ))
         )}
@@ -259,129 +259,75 @@ export default function SaleHistoryTable({
       {/* 데스크톱 테이블 (768px 이상) */}
       <div className="hidden md:block flex-1 overflow-y-auto bg-white">
         <div className="overflow-x-auto min-h-0">
-        <table className="min-w-full min-w-[1000px] divide-y divide-gray-200">
-          <thead className="bg-gray-100">
+          <table className="w-full min-w-[800px]">
+          <thead className="bg-gray-50 sticky top-0">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+              <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700 uppercase">
+                거래번호
+              </th>
+              <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700 uppercase">
                 판매일
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                품목코드
+              <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700 uppercase">
+                거래처
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                품목명
+              <th className="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase">
+                품목
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                고객
+              <th className="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase">
+                금액
               </th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">
-                단위
+              <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700 uppercase">
+                부가세포함
               </th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">
-                수량
+              <th className="px-5 py-2 text-center text-xs font-semibold text-gray-700 uppercase">
+                상세
               </th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">
-                단가
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">
-                판매금액
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">
-                원가
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">
-                이익
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">
-                이익률
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                참조번호
-              </th>
-              {/* Phase 3.5: 작업 컬럼 */}
-              {(canEdit || canDelete) && (
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">
-                  작업
-                </th>
-              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {paginatedData.length === 0 ? (
+            {paginatedGroups.length === 0 ? (
               <tr>
-                <td colSpan={canEdit || canDelete ? 13 : 12} className="px-4 py-12 text-center text-gray-500">
+                <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
                   {searchTerm ? '검색 결과가 없습니다.' : '판매 내역이 없습니다.'}
                 </td>
               </tr>
             ) : (
-              paginatedData.map((item, index) => (
-                <tr
-                  key={`${item.id}-${index}`}
-                  className="hover:bg-gray-50 transition"
-                >
-                  <td className="px-4 py-3 text-sm text-gray-900">
-                    {new Date(item.sale_date).toLocaleDateString('ko-KR')}
+              paginatedGroups.map((group, index) => (
+                <tr key={`${group.reference_number}-${index}`} className="hover:bg-gray-50">
+                  <td 
+                    className="px-3 py-1.5 text-sm text-center font-medium text-blue-600 cursor-pointer hover:underline"
+                    onClick={() => setSelectedGroup(group)}
+                  >
+                    {group.reference_number?.startsWith('NO_REF_') ? '(없음)' : (group.reference_number || '(없음)')}
                   </td>
-                  <td className="px-4 py-3 text-sm font-medium text-blue-600">
-                    {item.product_code}
+                  <td className="px-3 py-1.5 text-sm text-center text-gray-900">
+                    {new Date(group.sale_date).toLocaleDateString('ko-KR')}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">
-                    {item.product_name}
+                  <td className="px-3 py-1.5 text-sm text-center text-gray-600">
+                    {group.customer_name}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">
-                    {item.customer_name}
+                  <td className="px-4 py-1.5 text-sm text-center text-gray-900">
+                    {group.first_product_name}
+                    {group.total_items > 1 && (
+                      <span className="text-blue-600 font-medium"> 외 {group.total_items - 1}개</span>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-sm text-center text-gray-700 font-medium">
-                    {item.unit}
+                  <td className="px-4 py-1.5 text-sm text-center font-semibold text-blue-600">
+                    ₩{group.total_amount.toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-sm text-right text-gray-900">
-                    {(item.quantity || 0).toLocaleString()}
+                  <td className="px-3 py-1.5 text-center">
+                    <span className="text-green-600 font-medium">✓</span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-right text-gray-900">
-                    ₩{(item.unit_price || 0).toLocaleString()}
+                  <td className="px-5 py-1.5 text-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedGroup(group)}
+                    >
+                      상세보기
+                    </Button>
                   </td>
-                  <td className="px-4 py-3 text-sm text-right font-semibold text-blue-600">
-                    ₩{(item.total_amount || 0).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-right text-gray-600">
-                    ₩{(item.cost_of_goods || 0).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-right font-bold text-green-600">
-                    ₩{(item.profit || 0).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-right font-medium text-green-700">
-                    {(item.profit_margin || 0).toFixed(1)}%
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
-                    {item.reference_number || '-'}
-                  </td>
-                  {/* Phase 3.5: 작업 셀 */}
-                  {(canEdit || canDelete) && (
-                    <td className="px-4 py-3 text-sm text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        {canEdit && (
-                          <Button
-                            onClick={() => setEditingSale(item)}
-                            size="sm"
-                            variant="outline"
-                          >
-                            수정
-                          </Button>
-                        )}
-                        {canDelete && (
-                          <Button
-                            onClick={() => handleDelete(item)}
-                            disabled={isDeleting === item.id}
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                          >
-                            {isDeleting === item.id ? '삭제 중...' : '삭제'}
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  )}
                 </tr>
               ))
             )}
@@ -394,45 +340,22 @@ export default function SaleHistoryTable({
       {totalPages > 1 && (
         <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-white flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="text-sm text-gray-600 text-center sm:text-left">
-            전체 {filteredData.length}건 중 {(currentPage - 1) * itemsPerPage + 1}-
-            {Math.min(currentPage * itemsPerPage, filteredData.length)}건 표시
+            전체 {filteredGroups.length}건 ({totalItems}품목) 중 {(currentPage - 1) * itemsPerPage + 1}-
+            {Math.min(currentPage * itemsPerPage, filteredGroups.length)}건 표시
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => handlePageChange(currentPage - 1)}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
               className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               이전
             </button>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(
-                  (page) =>
-                    page === 1 ||
-                    page === totalPages ||
-                    Math.abs(page - currentPage) <= 2
-                )
-                .map((page, index, array) => (
-                  <div key={page} className="flex items-center">
-                    {index > 0 && array[index - 1] !== page - 1 && (
-                      <span className="px-2 text-gray-400">...</span>
-                    )}
-                    <button
-                      onClick={() => handlePageChange(page)}
-                      className={`px-3 py-2 text-sm border rounded-lg transition ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  </div>
-                ))}
-            </div>
+            <span className="px-3 py-2 text-sm font-medium text-gray-700">
+              {currentPage} / {totalPages}
+            </span>
             <button
-              onClick={() => handlePageChange(currentPage + 1)}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
               className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
@@ -442,12 +365,15 @@ export default function SaleHistoryTable({
         </div>
       )}
 
-      {/* Phase 3.5: 판매 수정 모달 */}
-      {editingSale && (
-        <EditSaleModal
-          sale={editingSale}
-          onClose={() => setEditingSale(null)}
-          onSave={handleEdit}
+      {/* 상세보기 모달 */}
+      {selectedGroup && (
+        <SaleDetailModal
+          referenceNumber={selectedGroup.reference_number}
+          items={selectedGroup.items}
+          onClose={() => setSelectedGroup(null)}
+          userRole={userRole}
+          userId={userId}
+          userBranchId={userBranchId}
         />
       )}
     </div>

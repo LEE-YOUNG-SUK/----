@@ -89,8 +89,8 @@ export default async function PurchasesPage() {
     <>
       <NavigationWrapper user={userSession} />
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="h-[calc(100vh-140px)] flex flex-col">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="h-[calc(100vh-100px)] flex flex-col">
             <ContentCard className="mb-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>

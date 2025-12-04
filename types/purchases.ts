@@ -94,6 +94,24 @@ export interface PurchaseUpdateRequest {
 }
 
 /**
+ * 거래번호별 그룹화된 입고 데이터
+ */
+export interface PurchaseGroup {
+  reference_number: string // 거래번호
+  purchase_date: string
+  client_id: string
+  client_name: string
+  branch_id: string
+  branch_name: string
+  items: PurchaseHistory[] // 해당 거래번호의 모든 품목
+  total_amount: number // 총 금액
+  total_items: number // 품목 수
+  first_product_name: string // 첫 번째 품목명
+  created_at: string
+  created_by: string
+}
+
+/**
  * Phase 3.5: 입고 삭제 요청 데이터
  */
 export interface PurchaseDeleteRequest {

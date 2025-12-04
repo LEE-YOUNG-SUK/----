@@ -57,8 +57,21 @@ export default async function InventoryAdjustmentsPage() {
   const thirtyDaysAgo = new Date(today)
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   
-  // branch_id가 null이면 빈 UUID 대신 실제 NULL 전달
-  const branchIdForQuery = userSession.branch_id || '00000000-0000-0000-0000-000000000000'
+  // branch_id 검증: null이면 재고 조정 불가
+  if (!userSession.branch_id) {
+    return (
+      <>
+        <NavigationWrapper user={userSession} />
+        <PageLayout>
+          <ContentCard className="bg-yellow-50 border-yellow-200">
+            <p className="text-yellow-800">재고 조정을 하려면 지점이 할당되어야 합니다. 관리자에게 문의하세요.</p>
+          </ContentCard>
+        </PageLayout>
+      </>
+    )
+  }
+  
+  const branchIdForQuery = userSession.branch_id
   
   const [productsResult, historyResult] = await Promise.all([
     getProductsList(),

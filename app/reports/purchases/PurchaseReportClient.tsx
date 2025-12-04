@@ -18,6 +18,8 @@ import {
   PURCHASE_GROUP_BY_OPTIONS 
 } from '@/types/reports'
 import { UserData } from '@/types'
+import { StatCard } from '@/components/shared/StatCard'
+import { FormGrid } from '@/components/shared/FormGrid'
 
 interface Props {
   userSession: UserData
@@ -159,38 +161,35 @@ export default function PurchaseReportClient({ userSession }: Props) {
 
       {/* 요약 정보 */}
       {reportData.length > 0 && !loading && (
-        <div className="bg-blue-50 border border-blue-200 rounded p-4">
-          <h3 className="font-bold text-blue-900 mb-2">📈 요약</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <p className="text-gray-600">총 수량</p>
-              <p className="text-lg font-bold text-blue-900">
-                {reportData.reduce((sum, row) => sum + row.total_quantity, 0).toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-600">총 금액</p>
-              <p className="text-lg font-bold text-blue-900">
-                {reportData.reduce((sum, row) => sum + row.total_amount, 0).toLocaleString()}원
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-600">총 거래 건수</p>
-              <p className="text-lg font-bold text-blue-900">
-                {reportData.reduce((sum, row) => sum + row.transaction_count, 0).toLocaleString()}건
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-600">평균 단가</p>
-              <p className="text-lg font-bold text-blue-900">
-                {(() => {
-                  const totalQty = reportData.reduce((sum, row) => sum + row.total_quantity, 0)
-                  const totalAmt = reportData.reduce((sum, row) => sum + row.total_amount, 0)
-                  return totalQty > 0 ? Math.round(totalAmt / totalQty).toLocaleString() : 0
-                })()}원
-              </p>
-            </div>
-          </div>
+        <div>
+          <h3 className="font-bold text-gray-700 mb-3">📈 요약</h3>
+          <FormGrid columns={4}>
+            <StatCard
+              label="총 수량"
+              value={reportData.reduce((sum, row) => sum + row.total_quantity, 0)}
+              variant="primary"
+            />
+            <StatCard
+              label="총 금액"
+              value={reportData.reduce((sum, row) => sum + row.total_amount, 0)}
+              unit="원"
+              variant="primary"
+            />
+            <StatCard
+              label="총 거래 건수"
+              value={reportData.reduce((sum, row) => sum + row.transaction_count, 0)}
+              unit="건"
+            />
+            <StatCard
+              label="평균 단가"
+              value={(() => {
+                const totalQty = reportData.reduce((sum, row) => sum + row.total_quantity, 0)
+                const totalAmt = reportData.reduce((sum, row) => sum + row.total_amount, 0)
+                return totalQty > 0 ? Math.round(totalAmt / totalQty) : 0
+              })()}
+              unit="원"
+            />
+          </FormGrid>
         </div>
       )}
     </div>

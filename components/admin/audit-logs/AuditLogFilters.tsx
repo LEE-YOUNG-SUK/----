@@ -48,7 +48,7 @@ export function AuditLogFilters({ userSession, onFilter, onReset, loading }: Pro
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 테이블명 */}
         <div>
-          <Label htmlFor="table_name">테이블</Label>
+          <Label htmlFor="table_name">구분</Label>
           <select
             id="table_name"
             value={tableName}
@@ -57,14 +57,14 @@ export function AuditLogFilters({ userSession, onFilter, onReset, loading }: Pro
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
           >
             <option value="">전체</option>
-            <option value="purchases">입고(purchases)</option>
-            <option value="sales">판매(sales)</option>
+            <option value="purchases">입고</option>
+            <option value="sales">판매</option>
           </select>
         </div>
 
         {/* 액션 */}
         <div>
-          <Label htmlFor="action">액션</Label>
+          <Label htmlFor="action">작업</Label>
           <select
             id="action"
             value={action}
@@ -73,8 +73,8 @@ export function AuditLogFilters({ userSession, onFilter, onReset, loading }: Pro
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
           >
             <option value="">전체</option>
-            <option value="UPDATE">수정(UPDATE)</option>
-            <option value="DELETE">삭제(DELETE)</option>
+            <option value="UPDATE">수정</option>
+            <option value="DELETE">삭제</option>
           </select>
         </div>
 

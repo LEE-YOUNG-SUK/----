@@ -18,6 +18,8 @@ import {
   SALES_GROUP_BY_OPTIONS 
 } from '@/types/reports'
 import { UserData } from '@/types'
+import { StatCard } from '@/components/shared/StatCard'
+import { FormGrid } from '@/components/shared/FormGrid'
 
 interface Props {
   userSession: UserData
@@ -178,40 +180,37 @@ export default function SalesReportClient({ userSession }: Props) {
 
       {/* 요약 정보 */}
       {reportData.length > 0 && !loading && (
-        <div className="bg-green-50 border border-green-200 rounded p-4">
-          <h3 className="font-bold text-green-900 mb-2">📈 요약</h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-            <div>
-              <p className="text-gray-600">총 수량</p>
-              <p className="text-lg font-bold text-green-900">
-                {reportData.reduce((sum, row) => sum + row.total_quantity, 0).toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-600">총 매출</p>
-              <p className="text-lg font-bold text-green-900">
-                {reportData.reduce((sum, row) => sum + row.total_revenue, 0).toLocaleString()}원
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-600">총 원가</p>
-              <p className="text-lg font-bold text-red-900">
-                {reportData.reduce((sum, row) => sum + row.total_cost, 0).toLocaleString()}원
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-600">총 이익</p>
-              <p className="text-lg font-bold text-blue-900">
-                {reportData.reduce((sum, row) => sum + row.total_profit, 0).toLocaleString()}원
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-600">총 거래 건수</p>
-              <p className="text-lg font-bold text-green-900">
-                {reportData.reduce((sum, row) => sum + row.transaction_count, 0).toLocaleString()}건
-              </p>
-            </div>
-          </div>
+        <div>
+          <h3 className="font-bold text-gray-700 mb-3">📈 요약</h3>
+          <FormGrid columns={5}>
+            <StatCard
+              label="총 수량"
+              value={reportData.reduce((sum, row) => sum + row.total_quantity, 0)}
+              variant="success"
+            />
+            <StatCard
+              label="총 매출"
+              value={reportData.reduce((sum, row) => sum + row.total_revenue, 0)}
+              unit="원"
+              variant="success"
+            />
+            <StatCard
+              label="총 원가"
+              value={reportData.reduce((sum, row) => sum + row.total_cost, 0)}
+              unit="원"
+            />
+            <StatCard
+              label="총 이익"
+              value={reportData.reduce((sum, row) => sum + row.total_profit, 0)}
+              unit="원"
+              variant="primary"
+            />
+            <StatCard
+              label="총 거래 건수"
+              value={reportData.reduce((sum, row) => sum + row.transaction_count, 0)}
+              unit="건"
+            />
+          </FormGrid>
         </div>
       )}
     </div>

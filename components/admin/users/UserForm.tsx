@@ -123,7 +123,7 @@ export default function UserForm({ user, branches, onClose, onSuccess }: UserFor
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* 계정 정보 */}
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="username">아이디 *</Label>
                 <Input
@@ -146,9 +146,9 @@ export default function UserForm({ user, branches, onClose, onSuccess }: UserFor
                   required
                 />
               </div>
-            </div>
+            </FormGrid>
 
-            <div className="grid grid-cols-2 gap-4">
+            <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="password">
                   비밀번호 {isEdit ? '' : '*'}
@@ -173,15 +173,15 @@ export default function UserForm({ user, branches, onClose, onSuccess }: UserFor
                   type="password"
                   value={formData.passwordConfirm}
                   onChange={(e) => setFormData({ ...formData, passwordConfirm: e.target.value })}
-                  placeholder="비밀번호 재입력"
+                  placeholder="비밀번호를 한 번 더 입력하세요"
                 />
               </div>
-            </div>
+            </FormGrid>
           </div>
 
           {/* 권한 및 지점 */}
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="role">권한 *</Label>
                 <select
@@ -222,7 +222,7 @@ export default function UserForm({ user, branches, onClose, onSuccess }: UserFor
                   </p>
                 )}
               </div>
-            </div>
+            </FormGrid>
           </div>
 
           {/* 상태 */}
@@ -240,12 +240,12 @@ export default function UserForm({ user, branches, onClose, onSuccess }: UserFor
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+            <SecondaryButton type="button" onClick={onClose} disabled={isSubmitting}>
               취소
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? '⏳ 저장 중...' : '저장'}
-            </Button>
+            </SecondaryButton>
+            <PrimaryButton type="submit" disabled={isSubmitting} loading={isSubmitting}>
+              저장
+            </PrimaryButton>
           </DialogFooter>
         </form>
       </DialogContent>

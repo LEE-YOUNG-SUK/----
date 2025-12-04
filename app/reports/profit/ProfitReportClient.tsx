@@ -18,6 +18,8 @@ import {
   PROFIT_GROUP_BY_OPTIONS 
 } from '@/types/reports'
 import { UserData } from '@/types'
+import { StatCard } from '@/components/shared/StatCard'
+import { FormGrid } from '@/components/shared/FormGrid'
 
 interface Props {
   userSession: UserData
@@ -167,40 +169,37 @@ export default function ProfitReportClient({ userSession }: Props) {
 
       {/* 요약 정보 */}
       {reportData.length > 0 && !loading && (
-        <div className="bg-purple-50 border border-purple-200 rounded p-4">
-          <h3 className="font-bold text-purple-900 mb-2">📈 요약</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <p className="text-gray-600">총 매출</p>
-              <p className="text-lg font-bold text-green-900">
-                {reportData.reduce((sum, row) => sum + row.total_revenue, 0).toLocaleString()}원
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-600">총 원가</p>
-              <p className="text-lg font-bold text-red-900">
-                {reportData.reduce((sum, row) => sum + row.total_cost, 0).toLocaleString()}원
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-600">총 이익</p>
-              <p className="text-lg font-bold text-blue-900">
-                {reportData.reduce((sum, row) => sum + row.total_profit, 0).toLocaleString()}원
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-600">평균 이익률</p>
-              <p className="text-lg font-bold text-purple-900">
-                {(() => {
-                  const totalRevenue = reportData.reduce((sum, row) => sum + row.total_revenue, 0)
-                  const totalProfit = reportData.reduce((sum, row) => sum + row.total_profit, 0)
-                  return totalRevenue > 0
-                    ? ((totalProfit / totalRevenue) * 100).toFixed(2)
-                    : '0.00'
-                })()}%
-              </p>
-            </div>
-          </div>
+        <div>
+          <h3 className="font-bold text-gray-700 mb-3">📈 요약</h3>
+          <FormGrid columns={4}>
+            <StatCard
+              label="총 매출"
+              value={reportData.reduce((sum, row) => sum + row.total_revenue, 0)}
+              unit="원"
+              variant="success"
+            />
+            <StatCard
+              label="총 원가"
+              value={reportData.reduce((sum, row) => sum + row.total_cost, 0)}
+              unit="원"
+            />
+            <StatCard
+              label="총 이익"
+              value={reportData.reduce((sum, row) => sum + row.total_profit, 0)}
+              unit="원"
+              variant="primary"
+            />
+            <StatCard
+              label="평균 이익률"
+              value={(() => {
+                const totalRevenue = reportData.reduce((sum, row) => sum + row.total_revenue, 0)
+                const totalProfit = reportData.reduce((sum, row) => sum + row.total_profit, 0)
+                return totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(2) : '0.00'
+              })()}
+              unit="%"
+              variant="success"
+            />
+          </FormGrid>
         </div>
       )}
     </div>

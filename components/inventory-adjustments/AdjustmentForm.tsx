@@ -6,6 +6,8 @@ import { saveInventoryAdjustment, getCurrentStock } from '@/app/inventory-adjust
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
+import { FormGrid } from '@/components/shared/FormGrid'
+import { PrimaryButton } from '@/components/shared/PrimaryButton'
 import type { Product } from '@/types'
 import type { 
   AdjustmentType, 
@@ -289,7 +291,7 @@ export default function AdjustmentForm({ products, session }: Props) {
         </select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <FormGrid columns={2}>
         {/* 수량 */}
         <div className="space-y-2">
           <Label htmlFor="quantity">수량 *</Label>
@@ -342,13 +344,13 @@ export default function AdjustmentForm({ products, session }: Props) {
             placeholder="예: INV-2025-001"
           />
         </div>
-      </div>
+      </FormGrid>
 
       {/* 금액 정보 (INCREASE인 경우만) */}
       {formData.adjustment_type === 'INCREASE' && formData.total_cost > 0 && (
         <div className="bg-gray-50 border border-gray-200 rounded-md p-4 space-y-2">
           <div className="text-sm font-medium text-gray-700">금액 정보 (자동 계산)</div>
-          <div className="grid grid-cols-3 gap-4 text-sm">
+          <FormGrid columns={3}>
             <div>
               <div className="text-gray-600">공급가</div>
               <div className="font-semibold">₩{formData.supply_price.toLocaleString()}</div>
@@ -361,7 +363,7 @@ export default function AdjustmentForm({ products, session }: Props) {
               <div className="text-gray-600">합계</div>
               <div className="font-semibold text-blue-600">₩{formData.total_cost.toLocaleString()}</div>
             </div>
-          </div>
+          </FormGrid>
         </div>
       )}
 
@@ -380,13 +382,13 @@ export default function AdjustmentForm({ products, session }: Props) {
 
       {/* 버튼 */}
       <div className="flex justify-end gap-3">
-        <Button
+        <PrimaryButton
           type="submit"
           disabled={isSubmitting || !selectedProduct}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          loading={isSubmitting}
         >
-          {isSubmitting ? '처리 중...' : '재고 조정'}
-        </Button>
+          재고 조정
+        </PrimaryButton>
       </div>
     </form>
   )

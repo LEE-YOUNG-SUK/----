@@ -55,6 +55,8 @@ export interface AuditLogListItem {
   user_role: string
   branch_name: string | null
   changed_fields: string[] | null
+  old_data: Record<string, any> | null
+  new_data: Record<string, any> | null
   created_at: string
 }
 
