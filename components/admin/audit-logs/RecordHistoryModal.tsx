@@ -227,7 +227,7 @@ export function RecordHistoryModal({ log, userSession, onClose }: Props) {
 
         <div className="space-y-4">
           {/* 레코드 정보 */}
-          <div className="bg-gray-50 p-4 rounded-md">
+          <div className="bg-gray-50 p-4 rounded-lg">
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <span className="text-gray-600">테이블:</span>{' '}
@@ -260,7 +260,7 @@ export function RecordHistoryModal({ log, userSession, onClose }: Props) {
                     <button
                       key={h.id}
                       onClick={() => setSelectedHistory(h)}
-                      className={`w-full text-left p-3 rounded-md border transition ${
+                      className={`w-full text-left p-3 rounded-lg border transition ${
                         selectedHistory?.id === h.id
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300 bg-white'

@@ -10,8 +10,6 @@ import { Label } from '../ui/Label'
 import { Textarea } from '../ui/Textarea'
 import { Checkbox } from '../ui/Checkbox'
 import { FormGrid } from '../shared/FormGrid'
-import { PrimaryButton } from '../shared/PrimaryButton'
-import { SecondaryButton } from '../shared/SecondaryButton'
 
 interface ClientFormProps {
   client: Client | null
@@ -137,7 +135,7 @@ export default function ClientForm({ client, onClose, onSuccess }: ClientFormPro
                   id="type"
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value as 'supplier' | 'customer' | 'both' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 >
                   <option value="supplier">공급업체</option>
@@ -244,12 +242,12 @@ export default function ClientForm({ client, onClose, onSuccess }: ClientFormPro
           </p>
 
           <DialogFooter>
-            <SecondaryButton type="button" onClick={onClose} disabled={isSubmitting}>
+            <Button variant="secondary" type="button" onClick={onClose} disabled={isSubmitting}>
               취소
-            </SecondaryButton>
-            <PrimaryButton type="submit" disabled={isSubmitting} loading={isSubmitting}>
+            </Button>
+            <Button variant="primary" type="submit" disabled={isSubmitting} loading={isSubmitting}>
               저장
-            </PrimaryButton>
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

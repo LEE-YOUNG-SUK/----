@@ -3,9 +3,9 @@ import { cookies } from 'next/headers'
 import { createServerClient } from '@/lib/supabase/server'
 import { UserData } from '@/types'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
-import { InventoryStats } from '@/components/inventory/InventoryStats'
-import { InventoryTable } from '@/components/inventory/InventoryTable'
-import { ContentCard } from '@/components/shared/ContentCard'
+import { InventoryStats } from '@/components/Inventory/InventoryStats'
+import { InventoryTable } from '@/components/Inventory/InventoryTable'
+import { ContentCard } from '@/components/ui/Card'
 
 interface InventoryItem {
   branch_id: string

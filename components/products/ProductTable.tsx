@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import type { Product } from '@/types'
-import { ContentCard } from '@/components/shared/ContentCard'
+import { ContentCard } from '@/components/ui/Card'
 import { Button } from '../ui/Button'
 import { deleteProduct } from '@/app/products/actions'
 import ProductFilters from './ProductFilters'
@@ -148,7 +148,7 @@ export default function ProductTable({
                       {permissions.canUpdate && (
                         <button
                           onClick={() => onEdit(product)}
-                          className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition"
+                          className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
                         >
                           ✏️ 수정
                         </button>
@@ -157,7 +157,7 @@ export default function ProductTable({
                         <button
                           onClick={() => handleDelete(product)}
                           disabled={deletingId === product.id}
-                          className="px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {deletingId === product.id ? '⏳ 삭제NULL' : '🗑️ 삭제'}
                         </button>

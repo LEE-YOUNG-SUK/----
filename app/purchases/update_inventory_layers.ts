@@ -10,7 +10,7 @@ export async function updateInventoryLayers(
   unitCost: number
 ) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
 
     const result = await supabase.rpc('update_inventory_layers', {
       branch_id: branchId,
@@ -24,8 +24,8 @@ export async function updateInventoryLayers(
     }
 
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating inventory layers:', error);
-    return { success: false, message: error.message };
+    return { success: false, message: error?.message || 'Unknown error' };
   }
 }

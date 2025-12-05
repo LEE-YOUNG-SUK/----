@@ -18,7 +18,7 @@ import {
   SALES_GROUP_BY_OPTIONS 
 } from '@/types/reports'
 import { UserData } from '@/types'
-import { StatCard } from '@/components/shared/StatCard'
+import { StatCard } from '@/components/ui/Card'
 import { FormGrid } from '@/components/shared/FormGrid'
 
 interface Props {
@@ -156,7 +156,7 @@ export default function SalesReportClient({ userSession }: Props) {
     <div className="space-y-6">
       {/* 오류 메시지 */}
       {error && (
-        <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded">
+        <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg">
           ⚠️ {error}
         </div>
       )}

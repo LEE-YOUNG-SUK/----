@@ -198,7 +198,7 @@ export function Navigation({ user, onLogout }: Props) {
                   href={item.href}
                   title={item.label}
                   className={`
-                    px-3 py-2 rounded-md text-sm font-medium transition
+                    px-3 py-2 rounded-lg text-sm font-medium transition
                     ${isActive 
                       ? 'bg-blue-100 text-blue-700' 
                       : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
@@ -217,7 +217,7 @@ export function Navigation({ user, onLogout }: Props) {
                 <button
                   onClick={() => toggleDropdown('reports')}
                   className={`
-                    px-3 py-2 rounded-md text-sm font-medium transition flex items-center
+                    px-3 py-2 rounded-lg text-sm font-medium transition flex items-center
                     ${isDropdownActive(reportsMenu.items)
                       ? 'bg-blue-100 text-blue-700' 
                       : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
@@ -232,7 +232,7 @@ export function Navigation({ user, onLogout }: Props) {
                 </button>
                 
                 {openDropdown === 'reports' && (
-                  <div className="absolute top-full left-0 mt-1 w-40 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50">
+                  <div className="absolute top-full left-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                     {visibleReportsItems.map((item) => (
                       <Link
                         key={item.href}
@@ -261,7 +261,7 @@ export function Navigation({ user, onLogout }: Props) {
                 <button
                   onClick={() => toggleDropdown('admin')}
                   className={`
-                    px-3 py-2 rounded-md text-sm font-medium transition flex items-center
+                    px-3 py-2 rounded-lg text-sm font-medium transition flex items-center
                     ${isDropdownActive(adminMenu.items)
                       ? 'bg-blue-100 text-blue-700' 
                       : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
@@ -276,7 +276,7 @@ export function Navigation({ user, onLogout }: Props) {
                 </button>
                 
                 {openDropdown === 'admin' && (
-                  <div className="absolute top-full left-0 mt-1 w-40 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50">
+                  <div className="absolute top-full left-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                     {visibleAdminItems.map((item) => (
                       <Link
                         key={item.href}
@@ -312,7 +312,7 @@ export function Navigation({ user, onLogout }: Props) {
             </div>
             <button
               onClick={onLogout}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition"
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
             >
               로그아웃
             </button>
@@ -321,7 +321,7 @@ export function Navigation({ user, onLogout }: Props) {
           {/* 모바일 햄버거 버튼 */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+            className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
             aria-label="메뉴 열기/닫기"
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -351,7 +351,7 @@ export function Navigation({ user, onLogout }: Props) {
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`
-                    block px-3 py-2 rounded-md text-base font-medium transition-all
+                    block px-3 py-2 rounded-lg text-base font-medium transition-all
                     ${isActive 
                       ? 'bg-blue-100 text-blue-700' 
                       : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
@@ -379,7 +379,7 @@ export function Navigation({ user, onLogout }: Props) {
                       href={item.href}
                       onClick={() => setMobileMenuOpen(false)}
                       className={`
-                        block px-3 py-2 pl-6 rounded-md text-base font-medium transition-all
+                        block px-3 py-2 pl-6 rounded-lg text-base font-medium transition-all
                         ${isActive 
                           ? 'bg-blue-100 text-blue-700' 
                           : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
@@ -409,7 +409,7 @@ export function Navigation({ user, onLogout }: Props) {
                       href={item.href}
                       onClick={() => setMobileMenuOpen(false)}
                       className={`
-                        block px-3 py-2 pl-6 rounded-md text-base font-medium transition-all
+                        block px-3 py-2 pl-6 rounded-lg text-base font-medium transition-all
                         ${isActive 
                           ? 'bg-blue-100 text-blue-700' 
                           : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
@@ -440,7 +440,7 @@ export function Navigation({ user, onLogout }: Props) {
                 setMobileMenuOpen(false)
                 onLogout()
               }}
-              className="w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md transition"
+              className="w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition"
             >
               로그아웃
             </button>

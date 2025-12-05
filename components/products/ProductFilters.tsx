@@ -65,7 +65,7 @@ export default function ProductFilters({ products, onFilterChange }: ProductFilt
       <select
         value={categoryFilter}
         onChange={(e) => setCategoryFilter(e.target.value)}
-        className="w-[180px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        className="w-[180px] px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       >
         <option value="all">전체 카테고리</option>
         {categories.map(cat => (
@@ -76,7 +76,7 @@ export default function ProductFilters({ products, onFilterChange }: ProductFilt
       <select
         value={statusFilter}
         onChange={(e) => setStatusFilter(e.target.value)}
-        className="w-[180px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        className="w-[180px] px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       >
         <option value="all">전체 상태</option>
         <option value="active">활성</option>

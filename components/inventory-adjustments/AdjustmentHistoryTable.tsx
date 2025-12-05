@@ -172,7 +172,7 @@ export default function AdjustmentHistoryTable({
               setCurrentPage(1)
             }}
             placeholder="품목코드, 품목명 검색..."
-            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
 
           {/* 유형 필터 */}
@@ -182,7 +182,7 @@ export default function AdjustmentHistoryTable({
               setTypeFilter(e.target.value as AdjustmentType | '')
               setCurrentPage(1)
             }}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
             <option value="">전체 유형</option>
             <option value="INCREASE">증가</option>
@@ -196,7 +196,7 @@ export default function AdjustmentHistoryTable({
               setReasonFilter(e.target.value as AdjustmentReason | '')
               setCurrentPage(1)
             }}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
             <option value="">전체 사유</option>
             {Object.entries(reasonLabels).map(([key, label]) => (
@@ -221,7 +221,7 @@ export default function AdjustmentHistoryTable({
               {/* 날짜 & 유형 */}
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-gray-600">{item.adjustment_date}</span>
-                <Badge variant={item.adjustment_type === 'INCREASE' ? 'success' : 'destructive'}>
+                <Badge variant={item.adjustment_type === 'INCREASE' ? 'success' : 'danger'}>
                   {typeLabels[item.adjustment_type]}
                 </Badge>
               </div>
@@ -255,7 +255,7 @@ export default function AdjustmentHistoryTable({
 
               {/* 취소 정보 */}
               {item.is_cancelled && (
-                <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2 mb-2">
+                <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2 mb-2">
                   <div className="font-semibold">✕ 취소됨</div>
                   <div>{item.cancel_reason}</div>
                   <div className="text-gray-500">취소자: {item.cancelled_by_username}</div>
@@ -322,7 +322,7 @@ export default function AdjustmentHistoryTable({
                     {item.product_name}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <Badge variant={item.adjustment_type === 'INCREASE' ? 'success' : 'destructive'}>
+                    <Badge variant={item.adjustment_type === 'INCREASE' ? 'success' : 'danger'}>
                       {typeLabels[item.adjustment_type]}
                     </Badge>
                   </td>

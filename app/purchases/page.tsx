@@ -4,7 +4,7 @@ import { NavigationWrapper } from '@/components/NavigationWrapper'
 import { PurchaseForm } from '@/components/purchases/PurchaseForm'
 import { getProductsList, getSuppliersList, getPurchasesHistory } from './actions'
 import { PageLayout } from '@/components/shared/PageLayout'
-import { ContentCard } from '@/components/shared/ContentCard'
+import { ContentCard } from '@/components/ui/Card'
 
 export default async function PurchasesPage() {
   const cookieStore = await cookies()

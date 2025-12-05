@@ -190,7 +190,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
           { id: 'history', label: '판매 내역', count: history.length }
         ]}
         activeTab={activeTab}
-        onChange={setActiveTab}
+        onChange={(tabId) => setActiveTab(tabId as 'input' | 'history')}
       />
 
       <div className="flex-1 overflow-auto">

@@ -148,7 +148,7 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
           { id: 'history', label: '입고 내역', count: history.length }
         ]}
         activeTab={activeTab}
-        onChange={setActiveTab}
+        onChange={(tabId) => setActiveTab(tabId as 'input' | 'history')}
       />
 
       <div className="flex-1 overflow-auto">

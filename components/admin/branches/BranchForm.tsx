@@ -6,8 +6,6 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { FormGrid } from '@/components/shared/FormGrid'
-import { PrimaryButton } from '@/components/shared/PrimaryButton'
-import { SecondaryButton } from '@/components/shared/SecondaryButton'
 import { createBranch, updateBranch } from '@/app/admin/branches/actions'
 
 interface BranchFormProps {
@@ -64,7 +62,7 @@ export default function BranchForm({ branch, onClose, onSuccess }: BranchFormPro
         
         <form onSubmit={handleSubmit}>
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
               {error}
             </div>
           )}
@@ -162,12 +160,12 @@ export default function BranchForm({ branch, onClose, onSuccess }: BranchFormPro
           </div>
 
           <DialogFooter>
-            <SecondaryButton type="button" onClick={onClose} disabled={loading}>
+            <Button variant="secondary" type="button" onClick={onClose} disabled={loading}>
               취소
-            </SecondaryButton>
-            <PrimaryButton type="submit" disabled={loading} loading={loading}>
+            </Button>
+            <Button variant="primary" type="submit" disabled={loading} loading={loading}>
               {branch ? '수정' : '추가'}
-            </PrimaryButton>
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

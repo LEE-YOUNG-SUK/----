@@ -54,7 +54,7 @@ export function AuditLogFilters({ userSession, onFilter, onReset, loading }: Pro
             value={tableName}
             onChange={(e) => setTableName(e.target.value)}
             disabled={loading}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
+            className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
           >
             <option value="">전체</option>
             <option value="purchases">입고</option>
@@ -70,7 +70,7 @@ export function AuditLogFilters({ userSession, onFilter, onReset, loading }: Pro
             value={action}
             onChange={(e) => setAction(e.target.value)}
             disabled={loading}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
+            className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
           >
             <option value="">전체</option>
             <option value="UPDATE">수정</option>

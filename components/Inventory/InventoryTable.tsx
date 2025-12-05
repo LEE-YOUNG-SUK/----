@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { InventoryLayerModal } from './InventoryLayerModal'
-import { ContentCard } from '@/components/shared/ContentCard'
+import { ContentCard } from '@/components/ui/Card'
 
 interface InventoryItem {
   branch_id: string

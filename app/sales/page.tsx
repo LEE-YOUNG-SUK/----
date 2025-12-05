@@ -10,7 +10,7 @@ import { SaleForm } from '@/components/sales/saleform'
 import { getProductsWithStock, getCustomersList, getSalesHistory } from './actions'
 import { PageLayout } from '@/components/shared/PageLayout'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { ContentCard } from '@/components/shared/ContentCard'
+import { ContentCard } from '@/components/ui/Card'
 
 export default async function SalesPage() {
   const cookieStore = await cookies()

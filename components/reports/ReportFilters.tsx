@@ -10,7 +10,7 @@
 
 import { useState } from 'react'
 import { ReportFilter, ReportGroupByOption } from '@/types/reports'
-import { PrimaryButton } from '@/components/shared/PrimaryButton'
+import { Button } from '@/components/ui/Button'
 
 interface Props {
   /** 초기 필터 값 */
@@ -93,7 +93,7 @@ export default function ReportFilters({
   }
 
   return (
-    <div className="bg-white border rounded p-4 space-y-4">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
       {/* 날짜 필터 */}
       <div className="flex flex-wrap gap-4 items-end">
         <div>
@@ -105,7 +105,7 @@ export default function ReportFilters({
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="border rounded px-3 py-2 w-40"
+            className="border border-gray-300 rounded-lg px-3 py-2 w-40 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
@@ -117,7 +117,7 @@ export default function ReportFilters({
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="border rounded px-3 py-2 w-40"
+            className="border border-gray-300 rounded-lg px-3 py-2 w-40 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -126,28 +126,28 @@ export default function ReportFilters({
           <button
             type="button"
             onClick={() => handleQuickDateRange('today')}
-            className="px-3 py-2 text-sm border rounded hover:bg-gray-50"
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             오늘
           </button>
           <button
             type="button"
             onClick={() => handleQuickDateRange('week')}
-            className="px-3 py-2 text-sm border rounded hover:bg-gray-50"
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             최근 7일
           </button>
           <button
             type="button"
             onClick={() => handleQuickDateRange('month')}
-            className="px-3 py-2 text-sm border rounded hover:bg-gray-50"
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             최근 1개월
           </button>
           <button
             type="button"
             onClick={() => handleQuickDateRange('year')}
-            className="px-3 py-2 text-sm border rounded hover:bg-gray-50"
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             올해
           </button>
@@ -164,7 +164,7 @@ export default function ReportFilters({
             id="groupBy"
             value={groupBy}
             onChange={(e) => setGroupBy(e.target.value as any)}
-            className="border rounded px-3 py-2 w-40"
+            className="border border-gray-300 rounded-lg px-3 py-2 w-40 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {groupByOptions.map((option) => (
               <option key={option.value} value={option.value} title={option.description}>
@@ -184,7 +184,7 @@ export default function ReportFilters({
               id="branchId"
               value={branchId || ''}
               onChange={(e) => setBranchId(e.target.value || null)}
-              className="border rounded px-3 py-2 w-40"
+              className="border border-gray-300 rounded-lg px-3 py-2 w-40 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">전체 지점</option>
               {branches.map((branch) => (
@@ -197,9 +197,9 @@ export default function ReportFilters({
         )}
 
         {/* 조회 버튼 */}
-        <PrimaryButton onClick={handleSearch} className="px-6">
+        <Button variant="primary" onClick={handleSearch} className="px-6">
           🔍 조회
-        </PrimaryButton>
+        </Button>
       </div>
     </div>
   )

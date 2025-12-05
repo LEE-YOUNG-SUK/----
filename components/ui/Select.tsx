@@ -4,11 +4,27 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
   label?: string;
   error?: string;
   children: React.ReactNode;
+  /** 값 변경 콜백 (문자열 값) */
   onValueChange?: (value: string) => void;
+  /** Select 크기 */
+  selectSize?: 'sm' | 'md' | 'lg';
 }
 
+const sizeClasses = {
+  sm: 'px-2 py-1.5 text-sm',
+  md: 'px-3 py-2 text-base',
+  lg: 'px-4 py-3 text-lg',
+};
+
+/**
+ * 통합 Select 컴포넌트
+ * - CSS 변수 기반 일관된 스타일
+ * - 에러 상태 지원
+ * - 라벨 지원
+ * - onValueChange 콜백 지원
+ */
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className = '', label, error, onValueChange, children, ...props }, ref) => {
+  ({ className = '', label, error, onValueChange, selectSize = 'md', children, ...props }, ref) => {
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       if (onValueChange) {
         onValueChange(e.target.value);
@@ -17,6 +33,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         props.onChange(e);
       }
     };
+    
     return (
       <div className="w-full">
         {label && (
@@ -27,10 +44,12 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         <select
           ref={ref}
           className={`
-            w-full px-3 py-2 border border-gray-300 rounded-md
+            w-full border border-gray-300 rounded-lg
             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
             disabled:bg-gray-100 disabled:cursor-not-allowed
-            ${error ? 'border-red-500' : ''}
+            transition-colors
+            ${sizeClasses[selectSize]}
+            ${error ? 'border-red-500 focus:ring-red-500' : ''}
             ${className}
           `}
           {...props}

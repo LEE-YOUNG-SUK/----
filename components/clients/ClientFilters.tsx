@@ -62,7 +62,7 @@ export default function ClientFilters({ clients, onFilterChange }: ClientFilters
       <select
         value={typeFilter}
         onChange={(e) => setTypeFilter(e.target.value)}
-        className="w-[180px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        className="w-[180px] px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       >
         <option value="all">전체 유형</option>
         <option value="supplier">공급업체</option>
@@ -73,7 +73,7 @@ export default function ClientFilters({ clients, onFilterChange }: ClientFilters
       <select
         value={statusFilter}
         onChange={(e) => setStatusFilter(e.target.value)}
-        className="w-[180px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        className="w-[180px] px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       >
         <option value="all">전체 상태</option>
         <option value="active">활성</option>

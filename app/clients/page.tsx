@@ -5,7 +5,7 @@ import { PermissionChecker } from '@/lib/permissions'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import { getClients } from './actions'
 import ClientManagement from '@/components/clients/ClientManagement'
-import { ContentCard } from '@/components/shared/ContentCard'
+import { ContentCard } from '@/components/ui/Card'
 
 export const dynamic = 'force-dynamic'
 

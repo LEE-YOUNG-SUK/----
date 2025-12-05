@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import type { Branch } from '@/types'
-import { ContentCard } from '@/components/shared/ContentCard'
+import { ContentCard } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { deleteBranch } from '@/app/admin/branches/actions'
 

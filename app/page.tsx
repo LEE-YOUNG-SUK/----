@@ -5,7 +5,7 @@ import { UserData } from '@/types'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import { ROLE_LABELS, ROLE_ICONS } from '@/types/permissions'
 import { PageLayout } from '@/components/shared/PageLayout'
-import { ContentCard } from '@/components/shared/ContentCard'
+import { ContentCard } from '@/components/ui/Card'
 
 async function getSession(): Promise<UserData | null> {
   try {

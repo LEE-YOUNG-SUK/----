@@ -93,7 +93,7 @@ export default function UserTable({ users, permissions, onEdit }: UserTableProps
         <CardTitle>사용자 목록</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
+        <div className="rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { UserData, Branch } from '@/types'
+import type { UserData } from '@/types'
 import UserTable from './UserTable'
 import UserForm from './UserForm'
 import { Button } from '../../ui/Button'
@@ -20,10 +20,17 @@ interface UserWithBranch {
   created_at: string
 }
 
+// 사용자 관리에서 필요한 지점 정보만 정의
+interface SimpleBranch {
+  id: string
+  code: string
+  name: string
+}
+
 interface UserManagementProps {
   initialUsers: UserWithBranch[]
-  branches: Branch[]
-  userData: UserData
+  branches: SimpleBranch[]
+  currentUser: UserData
   permissions: {
     canCreate: boolean
     canUpdate: boolean
@@ -34,7 +41,7 @@ interface UserManagementProps {
 export default function UserManagement({
   initialUsers,
   branches,
-  userData,
+  currentUser,
   permissions
 }: UserManagementProps) {
   const [users, setUsers] = useState<UserWithBranch[]>(initialUsers)

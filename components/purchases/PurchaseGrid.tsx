@@ -16,8 +16,7 @@ import type { ColDef, ICellEditorParams } from 'ag-grid-community'
 import type { Product } from '@/types'
 import type { PurchaseGridRow } from '@/types/purchases'
 import { ProductCellEditor } from './ProductCellEditor'
-import { PrimaryButton } from '@/components/shared/PrimaryButton'
-import { SecondaryButton } from '@/components/shared/SecondaryButton'
+import { Button } from '@/components/ui/Button'
 
 const DeleteButtonRenderer = (props: any) => {
   return (
@@ -431,12 +430,12 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 bg-white border-b">
         <div className="flex items-center gap-2">
-          <PrimaryButton onClick={handleAddRow} disabled={isSaving}>
+          <Button variant="primary" onClick={handleAddRow} disabled={isSaving}>
             ➕ 행 추가
-          </PrimaryButton>
-          <SecondaryButton onClick={handleClearAll} disabled={isSaving}>
+          </Button>
+          <Button variant="secondary" onClick={handleClearAll} disabled={isSaving}>
             🗑️ 전체 삭제
-          </SecondaryButton>
+          </Button>
         </div>
 
         <div className="flex items-center gap-6">

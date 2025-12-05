@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import type { Client } from '@/types'
-import { ContentCard } from '@/components/shared/ContentCard'
+import { ContentCard } from '@/components/ui/Card'
 import { Button } from '../ui/Button'
 import { deleteClient } from '@/app/clients/actions'
 import ClientFilters from './ClientFilters'
@@ -165,7 +165,7 @@ export default function ClientTable({
                       {permissions.canUpdate && (
                         <button
                           onClick={() => onEdit(client)}
-                          className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition"
+                          className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
                         >
                           ✏️ 수정
                         </button>
@@ -174,7 +174,7 @@ export default function ClientTable({
                         <button
                           onClick={() => handleDelete(client)}
                           disabled={deletingId === client.id}
-                          className="px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {deletingId === client.id ? '⏳ 삭제중' : '🗑️ 삭제'}
                         </button>

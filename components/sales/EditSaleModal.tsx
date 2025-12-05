@@ -8,8 +8,6 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import type { SaleHistory } from '@/types/sales'
 import { FormGrid } from '@/components/shared/FormGrid'
-import { PrimaryButton } from '@/components/shared/PrimaryButton'
-import { SecondaryButton } from '@/components/shared/SecondaryButton'
 
 interface EditSaleModalProps {
   sale: SaleHistory
@@ -205,12 +203,12 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
 
         {/* 푸터 */}
         <div className="sticky bottom-0 bg-white px-6 py-4 border-t flex justify-end gap-3">
-          <SecondaryButton onClick={onClose} disabled={isSaving}>
+          <Button variant="secondary" onClick={onClose} disabled={isSaving}>
             취소
-          </SecondaryButton>
-          <PrimaryButton onClick={handleSave} disabled={isSaving} loading={isSaving}>
+          </Button>
+          <Button variant="primary" onClick={handleSave} disabled={isSaving} loading={isSaving}>
             저장
-          </PrimaryButton>
+          </Button>
         </div>
       </div>
     </div>

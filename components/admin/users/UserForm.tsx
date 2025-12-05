@@ -1,13 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import type { Branch } from '@/types'
 import { saveUser } from '@/app/admin/users/actions'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../ui/Dialog'
 import { Button } from '../../ui/Button'
 import { Input } from '../../ui/Input'
 import { Label } from '../../ui/Label'
 import { Checkbox } from '../../ui/Checkbox'
+import { FormGrid } from '../../shared/FormGrid'
 
 interface UserWithBranch {
   id: string
@@ -21,9 +21,16 @@ interface UserWithBranch {
   created_at: string
 }
 
+// 사용자 폼에서 필요한 지점 정보만 정의
+interface SimpleBranch {
+  id: string
+  code: string
+  name: string
+}
+
 interface UserFormProps {
   user: UserWithBranch | null
-  branches: Branch[]
+  branches: SimpleBranch[]
   onClose: () => void
   onSuccess: () => void
 }
@@ -188,7 +195,7 @@ export default function UserForm({ user, branches, onClose, onSuccess }: UserFor
                   id="role"
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 >
                   <option value="0000">시스템 관리자</option>
@@ -206,7 +213,7 @@ export default function UserForm({ user, branches, onClose, onSuccess }: UserFor
                   id="branch_id"
                   value={formData.branch_id}
                   onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required={isBranchRequired}
                 >
                   <option value="">선택하세요</option>
@@ -240,12 +247,12 @@ export default function UserForm({ user, branches, onClose, onSuccess }: UserFor
           </div>
 
           <DialogFooter>
-            <SecondaryButton type="button" onClick={onClose} disabled={isSubmitting}>
+            <Button variant="secondary" type="button" onClick={onClose} disabled={isSubmitting}>
               취소
-            </SecondaryButton>
-            <PrimaryButton type="submit" disabled={isSubmitting} loading={isSubmitting}>
+            </Button>
+            <Button variant="primary" type="submit" disabled={isSubmitting} loading={isSubmitting}>
               저장
-            </PrimaryButton>
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

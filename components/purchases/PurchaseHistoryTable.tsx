@@ -343,7 +343,7 @@ export default function PurchaseHistoryTable({
       {totalPages > 1 && (
         <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-white flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="text-sm text-gray-600 text-center sm:text-left">
-            전체 {filteredGroups.length}건 ({filteredData.length}품목) 중 {(currentPage - 1) * itemsPerPage + 1}-
+            전체 {filteredGroups.length}건 ({totalItems}품목) 중 {(currentPage - 1) * itemsPerPage + 1}-
             {Math.min(currentPage * itemsPerPage, filteredGroups.length)}건 표시
           </div>
           <div className="flex items-center gap-2">

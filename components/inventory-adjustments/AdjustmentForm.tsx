@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { FormGrid } from '@/components/shared/FormGrid'
-import { PrimaryButton } from '@/components/shared/PrimaryButton'
 import type { Product } from '@/types'
 import type { 
   AdjustmentType, 
@@ -219,7 +218,7 @@ export default function AdjustmentForm({ products, session }: Props) {
           />
           
           {showDropdown && filteredProducts.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
               {filteredProducts.map((product) => (
                 <button
                   key={product.id}
@@ -237,7 +236,7 @@ export default function AdjustmentForm({ products, session }: Props) {
         </div>
         
         {selectedProduct && (
-          <div className="text-sm bg-blue-50 border border-blue-200 rounded-md p-3">
+          <div className="text-sm bg-blue-50 border border-blue-200 rounded-lg p-3">
             <div className="font-medium">{selectedProduct.code} - {selectedProduct.name}</div>
             <div className="text-gray-600 mt-1">
               현재 재고: <span className="font-semibold text-blue-600">{currentStock} {selectedProduct.unit}</span>
@@ -282,7 +281,7 @@ export default function AdjustmentForm({ products, session }: Props) {
           id="reason"
           value={formData.adjustment_reason}
           onChange={(e) => setFormData({ ...formData, adjustment_reason: e.target.value as AdjustmentReason })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           required
         >
           {Object.entries(reasonLabels).map(([key, label]) => (
@@ -348,7 +347,7 @@ export default function AdjustmentForm({ products, session }: Props) {
 
       {/* 금액 정보 (INCREASE인 경우만) */}
       {formData.adjustment_type === 'INCREASE' && formData.total_cost > 0 && (
-        <div className="bg-gray-50 border border-gray-200 rounded-md p-4 space-y-2">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
           <div className="text-sm font-medium text-gray-700">금액 정보 (자동 계산)</div>
           <FormGrid columns={3}>
             <div>
@@ -375,20 +374,21 @@ export default function AdjustmentForm({ products, session }: Props) {
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           rows={3}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="조정 사유 상세 설명..."
         />
       </div>
 
       {/* 버튼 */}
       <div className="flex justify-end gap-3">
-        <PrimaryButton
+        <Button
+          variant="primary"
           type="submit"
           disabled={isSubmitting || !selectedProduct}
           loading={isSubmitting}
         >
           재고 조정
-        </PrimaryButton>
+        </Button>
       </div>
     </form>
   )
