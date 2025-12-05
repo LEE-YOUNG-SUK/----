@@ -5,6 +5,9 @@
  */
 import { useCallback, useRef, useState, useMemo, useEffect } from 'react'
 import { AgGridReact } from 'ag-grid-react'
+
+// ✅ 그리드 파괴 상태 추적을 위한 전역 플래그
+let isGridDestroyed = false
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 import type { ColDef, ICellEditorParams } from 'ag-grid-community'
@@ -31,6 +34,18 @@ interface Props {
 
 export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Props) {
   const gridRef = useRef<any>(null)
+  const isMountedRef = useRef(true)  // ✅ 컴포넌트 마운트 상태 추적
+  
+  // ✅ 컴포넌트 마운트/언마운트 시 플래그 설정
+  useEffect(() => {
+    isGridDestroyed = false
+    isMountedRef.current = true
+    return () => {
+      isGridDestroyed = true
+      isMountedRef.current = false
+    }
+  }, [])
+  
   const [rowData, setRowData] = useState<SaleGridRow[]>(() => {
     // 기본 5개 행 생성
     return Array.from({ length: 5 }, (_, index) => ({
@@ -99,12 +114,21 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
 
   // 부가세 구분 변경 시 전체 재계산
   useEffect(() => {
+    if (!isMountedRef.current || isGridDestroyed) return
     setRowData(prev => prev.map(r => {
       const copy = { ...r }
       calculatePrices(copy, taxIncluded)
       return copy
     }))
-    setTimeout(() => gridRef.current?.api?.refreshCells({ force: true }), 0)
+    setTimeout(() => {
+      try {
+        if (!isGridDestroyed && isMountedRef.current && gridRef.current?.api) {
+          gridRef.current.api.refreshCells({ force: true })
+        }
+      } catch (e) {
+        // 그리드 파괴 에러 무시
+      }
+    }, 0)
   }, [taxIncluded])
 
   const handleDeleteRow = useCallback((rowIndex: number) => {
@@ -113,6 +137,7 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
 
   // 행 인덱스 기반 직접 변경 → 정렬/필터 후 잘못된 행 갱신 가능성 있으므로 RowNode와 id를 기준으로 불변 업데이트
   const handleProductSelect = useCallback((rowNode: any, product: ProductWithStock) => {
+    if (isGridDestroyed || !isMountedRef.current) return  // ✅ 파괴 상태 체크
     const targetId = rowNode?.data?.id
     if (!targetId) return
     setRowData(prev => prev.map(r => {
@@ -135,7 +160,7 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
     // 선택한 행만 강제 리프레시 (rowNode 그대로 사용)
     setTimeout(() => {
       try {
-        if (gridRef.current?.api && rowNode?.data) {
+        if (!isGridDestroyed && isMountedRef.current && gridRef.current?.api && rowNode?.data) {
           gridRef.current.api.refreshCells({
             force: true,
             rowNodes: [rowNode],
@@ -295,15 +320,17 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
   ], [handleDeleteRow, handleProductSelect, products])
 
   const onCellValueChanged = useCallback((params: any) => {
+    if (isGridDestroyed || !isMountedRef.current) return  // ✅ 파괴 상태 체크
     const { data } = params
     calculatePrices(data, taxIncluded)
     setRowData(prev => {
+      if (!isMountedRef.current) return prev  // ✅ 추가 체크
       const copy = [...prev]
       copy[params.node.rowIndex] = data
       return copy
     })
     try {
-      if (params.api && params.node) {
+      if (!isGridDestroyed && isMountedRef.current && params.api && params.node) {
         params.api.refreshCells({
           rowNodes: [params.node],
           columns: ['supply_price','tax_amount','total_price','total_amount']
@@ -332,15 +359,21 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
   }, [createEmptyRow])
 
   const handleSave = useCallback(() => {
+    if (isGridDestroyed || !isMountedRef.current) return  // ✅ 파괴 상태 체크
     const api = gridRef.current?.api
     if (!api) return
 
     const data: SaleGridRow[] = []
-    api.forEachNode((node: any) => {
-      if (node.data && node.data.product_id) {
-        data.push(node.data)
-      }
-    })
+    try {
+      api.forEachNode((node: any) => {
+        if (node.data && node.data.product_id) {
+          data.push(node.data)
+        }
+      })
+    } catch (e) {
+      console.error('Grid API error:', e)
+      return
+    }
 
     if (data.length === 0) {
       alert('판매할 품목을 입력해주세요.')
@@ -358,9 +391,10 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
       if (item.unit_price <= 0) {
         errors.push(`${index + 1}번째 행: 단가를 입력해주세요.`)
       }
-      if (item.quantity > item.current_stock) {
-        errors.push(`${index + 1}번째 행: 재고가 부족합니다. (재고: ${item.current_stock})`)
-      }
+      // ✅ 재고 부족 체크 제거 - 마이너스 재고 허용
+      // if (item.quantity > item.current_stock) {
+      //   errors.push(`${index + 1}번째 행: 재고가 부족합니다. (재고: ${item.current_stock})`)
+      // }
     })
 
     if (errors.length > 0) {

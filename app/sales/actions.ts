@@ -59,15 +59,15 @@ export async function saveSales(data: SaleSaveRequest) {
       return { success: false, message: '유효한 품목이 없습니다.' }
     }
 
-    // 재고 사전 체크 (클라이언트 검증 + 서버 이중 체크)
-    for (const item of validItems) {
-      if (item.quantity > item.current_stock) {
-        return {
-          success: false,
-          message: `재고 부족: ${item.product_name}\n필요: ${item.quantity}, 재고: ${item.current_stock}`
-        }
-      }
-    }
+    // ✅ 재고 사전 체크 제거 - 마이너스 재고 허용
+    // for (const item of validItems) {
+    //   if (item.quantity > item.current_stock) {
+    //     return {
+    //       success: false,
+    //       message: `재고 부족: ${item.product_name}\n필요: ${item.quantity}, 재고: ${item.current_stock}`
+    //     }
+    //   }
+    // }
 
     // JSONB 형식으로 변환
     const itemsJson = validItems.map(item => ({

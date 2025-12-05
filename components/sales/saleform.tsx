@@ -165,19 +165,20 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
       })
 
       if (result.success) {
+        // ✅ 성공 시 즉시 리로드 (AG Grid 에러 방지)
         alert(result.message || '판매 처리가 완료되었습니다.')
-        setCustomerId('')
-        setReferenceNumber('')
-        setNotes('')
-        window.location.reload()
+        // setTimeout으로 alert 닫힌 후 리로드
+        setTimeout(() => {
+          window.location.reload()
+        }, 100)
       } else {
+        setIsSaving(false)
         alert(result.message || '판매 처리 중 오류가 발생했습니다.')
       }
     } catch (error) {
       console.error('Save error:', error)
-      alert('판매 처리 중 오류가 발생했습니다.')
-    } finally {
       setIsSaving(false)
+      alert('판매 처리 중 오류가 발생했습니다.')
     }
   }
 

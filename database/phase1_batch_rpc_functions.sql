@@ -307,23 +307,24 @@ BEGIN
   END IF;
 
   -- ============================================
-  -- 3. 전체 품목 재고 사전 체크 (실패 시 전체 롤백)
+  -- 3. 전체 품목 재고 사전 체크 (비활성화 - 마이너스 재고 허용)
   -- ============================================
-  FOR v_item IN SELECT * FROM jsonb_array_elements(p_items)
-  LOOP
-    SELECT COALESCE(SUM(remaining_quantity), 0) INTO v_available_stock
-    FROM inventory_layers
-    WHERE branch_id = p_branch_id 
-      AND product_id = (v_item->>'product_id')::UUID
-      AND remaining_quantity > 0;
-    
-    IF v_available_stock < (v_item->>'quantity')::NUMERIC THEN
-      RAISE EXCEPTION '재고 부족: 품목 % (필요: %, 재고: %)', 
-        v_item->>'product_id', 
-        v_item->>'quantity', 
-        v_available_stock;
-    END IF;
-  END LOOP;
+  -- ✅ 재고 부족 체크 제거 - 마이너스 재고 허용
+  -- FOR v_item IN SELECT * FROM jsonb_array_elements(p_items)
+  -- LOOP
+  --   SELECT COALESCE(SUM(remaining_quantity), 0) INTO v_available_stock
+  --   FROM inventory_layers
+  --   WHERE branch_id = p_branch_id 
+  --     AND product_id = (v_item->>'product_id')::UUID
+  --     AND remaining_quantity > 0;
+  --   
+  --   IF v_available_stock < (v_item->>'quantity')::NUMERIC THEN
+  --     RAISE EXCEPTION '재고 부족: 품목 % (필요: %, 재고: %)', 
+  --       v_item->>'product_id', 
+  --       v_item->>'quantity', 
+  --       v_available_stock;
+  --   END IF;
+  -- END LOOP;
 
   -- ============================================
   -- 4. 품목별 판매 처리 (FIFO 원가 계산)

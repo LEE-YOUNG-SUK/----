@@ -124,19 +124,19 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
       })
 
       if (result.success) {
+        // ✅ 성공 시 즉시 리로드 (AG Grid 에러 방지)
         alert(result.message || '입고 처리가 완료되었습니다.')
-        setSupplierId('')
-        setReferenceNumber('')
-        setNotes('')
-        window.location.reload()
+        setTimeout(() => {
+          window.location.reload()
+        }, 100)
       } else {
+        setIsSaving(false)
         alert(result.message || '입고 처리 중 오류가 발생했습니다.')
       }
     } catch (error) {
       console.error('Save error:', error)
-      alert('입고 처리 중 오류가 발생했습니다.')
-    } finally {
       setIsSaving(false)
+      alert('입고 처리 중 오류가 발생했습니다.')
     }
   }
 

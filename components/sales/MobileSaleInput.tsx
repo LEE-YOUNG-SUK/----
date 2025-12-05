@@ -55,17 +55,17 @@ export default function MobileSaleInput({ products, onSave, isSaving, taxInclude
       return
     }
 
-    // 재고 부족 체크
-    const insufficientStock = items.find(item => {
-      const product = products.find(p => p.id === item.product_id)
-      return product && item.quantity > product.current_stock
-    })
+    // ✅ 재고 부족 체크 제거 - 마이너스 재고 허용
+    // const insufficientStock = items.find(item => {
+    //   const product = products.find(p => p.id === item.product_id)
+    //   return product && item.quantity > product.current_stock
+    // })
 
-    if (insufficientStock) {
-      const product = products.find(p => p.id === insufficientStock.product_id)
-      alert(`재고 부족: ${insufficientStock.product_name} (현재고: ${product?.current_stock || 0}, 판매수량: ${insufficientStock.quantity})`)
-      return
-    }
+    // if (insufficientStock) {
+    //   const product = products.find(p => p.id === insufficientStock.product_id)
+    //   alert(`재고 부족: ${insufficientStock.product_name} (현재고: ${product?.current_stock || 0}, 판매수량: ${insufficientStock.quantity})`)
+    //   return
+    // }
 
     onSave(items)
   }
