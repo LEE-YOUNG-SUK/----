@@ -377,3 +377,4 @@ ORDER BY p.proname;
 
 -- 2. 간단 테스트 (시스템 관리자로 조회)
 -- SELECT * FROM get_all_users('0000', NULL);
+

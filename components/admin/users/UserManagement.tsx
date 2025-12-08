@@ -119,6 +119,7 @@ export default function UserManagement({
         <UserForm
           user={selectedUser}
           branches={branches}
+          currentUser={currentUser}
           onClose={handleFormClose}
           onSuccess={handleSuccess}
         />

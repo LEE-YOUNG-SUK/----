@@ -31,13 +31,15 @@ interface SimpleBranch {
 interface UserFormProps {
   user: UserWithBranch | null
   branches: SimpleBranch[]
+  currentUser: { role: string; branch_id: string | null }
   onClose: () => void
   onSuccess: () => void
 }
 
-export default function UserForm({ user, branches, onClose, onSuccess }: UserFormProps) {
+export default function UserForm({ user, branches, currentUser, onClose, onSuccess }: UserFormProps) {
   const isEdit = !!user
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const isDirector = currentUser.role === '0001'
   
   const [formData, setFormData] = useState({
     username: user?.username || '',
@@ -45,7 +47,7 @@ export default function UserForm({ user, branches, onClose, onSuccess }: UserFor
     passwordConfirm: '',
     display_name: user?.display_name || '',
     role: user?.role || '0003',
-    branch_id: user?.branch_id || '',
+    branch_id: user?.branch_id || (isDirector ? currentUser.branch_id : ''),
     is_active: user?.is_active ?? true
   })
 
@@ -56,6 +58,27 @@ export default function UserForm({ user, branches, onClose, onSuccess }: UserFor
     if (!isEdit && !formData.username.trim()) {
       alert('아이디는 필수입니다')
       return
+    }
+
+    // 아이디 검증 (신규 생성 시) - 한글, 영문, 숫자, 밑줄(_), 하이픈(-) 허용
+    if (!isEdit) {
+      const usernameRegex = /^[가-힣a-zA-Z0-9_-]+$/
+      if (!usernameRegex.test(formData.username.trim())) {
+        alert('아이디는 한글, 영문, 숫자, 밑줄(_), 하이픈(-)만 사용 가능합니다')
+        return
+      }
+      
+      // 위험한 문자 체크 (SQL Injection, XSS 방지)
+      if (/[<>'"\\;`]/.test(formData.username)) {
+        alert('아이디에 특수문자(<, >, \', ", \\, ;, `)는 사용할 수 없습니다')
+        return
+      }
+      
+      // 최소 길이 체크
+      if (formData.username.trim().length < 2) {
+        alert('아이디는 최소 2자 이상이어야 합니다')
+        return
+      }
     }
 
     if (!formData.display_name.trim()) {
@@ -137,10 +160,15 @@ export default function UserForm({ user, branches, onClose, onSuccess }: UserFor
                   id="username"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  placeholder="영문, 숫자 조합"
+                  placeholder="예: 홍길동, user123, 관리자_01"
                   disabled={isEdit}
                   required
                 />
+                {!isEdit && (
+                  <p className="text-xs text-muted-foreground">
+                    한글, 영문, 숫자, 밑줄(_), 하이픈(-) 사용 가능 (최소 2자)
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -198,35 +226,64 @@ export default function UserForm({ user, branches, onClose, onSuccess }: UserFor
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 >
-                  <option value="0000">시스템 관리자</option>
-                  <option value="0001">원장</option>
+                  {!isDirector && <option value="0000">시스템 관리자</option>}
+                  {!isDirector && <option value="0001">원장</option>}
                   <option value="0002">매니저</option>
                   <option value="0003">직원</option>
                 </select>
+                {isDirector && (
+                  <p className="text-xs text-blue-600">
+                    원장은 매니저/직원만 생성 가능
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="branch_id">
                   소속 지점 {isBranchRequired && '*'}
                 </Label>
-                <select
-                  id="branch_id"
-                  value={formData.branch_id}
-                  onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required={isBranchRequired}
-                >
-                  <option value="">선택하세요</option>
-                  {branches.map(branch => (
-                    <option key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </option>
-                  ))}
-                </select>
-                {isBranchRequired && (
-                  <p className="text-xs text-muted-foreground">
-                    원장/매니저/직원은 필수 선택
-                  </p>
+                {isDirector ? (
+                  <>
+                    <select
+                      id="branch_id"
+                      value={formData.branch_id || ''}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                      disabled
+                    >
+                      {branches.map(branch => (
+                        branch.id === currentUser.branch_id && (
+                          <option key={branch.id} value={branch.id}>
+                            {branch.name}
+                          </option>
+                        )
+                      ))}
+                    </select>
+                    <p className="text-xs text-muted-foreground">
+                      본인 지점으로 자동 설정
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <select
+                      id="branch_id"
+                      value={formData.branch_id || ''}
+                      onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required={isBranchRequired}
+                    >
+                      <option value="">선택하세요</option>
+                      {branches.map(branch => (
+                        <option key={branch.id} value={branch.id}>
+                          {branch.name}
+                        </option>
+                      ))}
+                    </select>
+                    {isBranchRequired && (
+                      <p className="text-xs text-muted-foreground">
+                        원장/매니저/직원은 필수 선택
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             </FormGrid>

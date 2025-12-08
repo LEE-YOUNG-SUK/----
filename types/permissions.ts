@@ -76,8 +76,14 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     { resource: 'reports_view', action: 'read' },
   ],
   
-  // 0001: 원장 - 본인 지점 전체 CRUD (사용자/지점 관리 제외)
+  // 0001: 원장 - 본인 지점 전체 CRUD + 본인 지점 사용자 관리
   '0001': [
+    // 사용자 관리 (본인 지점만)
+    { resource: 'users_management', action: 'read' },
+    { resource: 'users_management', action: 'create' },
+    { resource: 'users_management', action: 'update' },
+    { resource: 'users_management', action: 'delete' },
+    
     // 거래처 (읽기만)
     { resource: 'clients_management', action: 'read' },
     

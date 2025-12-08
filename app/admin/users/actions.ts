@@ -5,50 +5,43 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 
 /**
- * 사용자 목록 조회
+ * 사용자 목록 조회 (권한별 지점 격리 적용)
  */
 export async function getUsers() {
   try {
     const supabase = await createServerClient()
     
-    // RPC 함수를 사용하여 RLS 우회
-    const { data: usersData, error: rpcError } = await supabase.rpc('get_all_users')
+    // 현재 사용자 세션 정보 가져오기
+    const cookieStore = await cookies()
+    const sessionToken = cookieStore.get('erp_session_token')?.value
+    
+    if (!sessionToken) {
+      console.error('❌ [Users Actions] 세션 토큰 없음')
+      return []
+    }
+
+    // 세션 확인 및 사용자 정보 가져오기
+    const { data: sessionData } = await supabase.rpc('verify_session', { 
+      p_token: sessionToken 
+    })
+    
+    if (!sessionData?.[0]?.valid) {
+      console.error('❌ [Users Actions] 세션 만료')
+      return []
+    }
+
+    const currentRole = sessionData[0].role
+    const currentBranchId = sessionData[0].branch_id
+    
+    // RPC 함수를 사용하여 권한별 사용자 조회
+    const { data: usersData, error: rpcError } = await supabase.rpc('get_all_users', {
+      p_user_role: currentRole,
+      p_user_branch_id: currentBranchId
+    })
     
     if (rpcError) {
-      console.error('⚠️ [Users Actions] RPC 에러 (직접 조회로 전환):', rpcError)
-      
-      // RPC 함수가 실패하면 직접 조회 시도
-      const { data, error } = await supabase
-        .from('users')
-        .select(`
-          id,
-          username,
-          display_name,
-          role,
-          branch_id,
-          is_active,
-          created_at,
-          updated_at,
-          branches!inner(name)
-        `)
-        .order('created_at', { ascending: false })
-      
-      if (error) {
-        console.error('❌ [Users Actions] 사용자 조회 에러:', error)
-        return []
-      }
-      
-      return data.map((user: any) => ({
-        id: user.id,
-        username: user.username,
-        display_name: user.display_name,
-        role: user.role,
-        branch_id: user.branch_id,
-        branch_name: user.branches?.name || null,
-        is_active: user.is_active,
-        created_at: user.created_at,
-        updated_at: user.updated_at
-      }))
+      console.error('⚠️ [Users Actions] RPC 에러:', rpcError)
+      return []
     }
     
     return usersData || []
@@ -98,6 +91,27 @@ export async function saveUser(formData: {
   const supabase = await createServerClient()
   
   try {
+    // 현재 사용자 정보 가져오기
+    const cookieStore = await cookies()
+    const sessionToken = cookieStore.get('erp_session_token')?.value
+    
+    if (!sessionToken) {
+      return { success: false, message: '인증되지 않은 사용자입니다' }
+    }
+
+    // 세션 확인 및 사용자 ID 가져오기
+    const { data: sessionData } = await supabase.rpc('verify_session', { 
+      p_token: sessionToken 
+    })
+    
+    if (!sessionData?.[0]?.valid) {
+      return { success: false, message: '세션이 만료되었습니다' }
+    }
+
+    const currentUserId = sessionData[0].user_id
+    const currentRole = sessionData[0].role
+    const currentBranchId = sessionData[0].branch_id
+
     // 역할 0001, 0002, 0003은 지점 필수
     if (['0001', '0002', '0003'].includes(formData.role) && !formData.branch_id) {
       return { success: false, message: '원장, 매니저, 직원은 소속 지점을 선택해야 합니다' }
@@ -110,7 +124,9 @@ export async function saveUser(formData: {
         p_display_name: formData.display_name,
         p_role: formData.role,
         p_branch_id: formData.branch_id || null,
-        p_is_active: formData.is_active
+        p_is_active: formData.is_active,
+        p_updated_by: currentUserId,
+        p_updater_role: currentRole
       })
       
       if (error) throw error
@@ -139,25 +155,6 @@ export async function saveUser(formData: {
       if (!formData.password) {
         return { success: false, message: '비밀번호는 필수입니다' }
       }
-
-      // 세션에서 현재 사용자 ID 가져오기
-      const cookieStore = await cookies()
-      const sessionToken = cookieStore.get('erp_session_token')?.value
-      
-      if (!sessionToken) {
-        return { success: false, message: '인증되지 않은 사용자입니다' }
-      }
-
-      // 세션 확인 및 사용자 ID 가져오기
-      const { data: sessionData } = await supabase.rpc('verify_session', { 
-        p_token: sessionToken 
-      })
-      
-      if (!sessionData?.[0]?.valid) {
-        return { success: false, message: '세션이 만료되었습니다' }
-      }
-
-      const currentUserId = sessionData[0].user_id
       
       const { data, error } = await supabase.rpc('create_user', {
         p_username: formData.username,
@@ -191,8 +188,30 @@ export async function deleteUser(userId: string) {
   const supabase = await createServerClient()
   
   try {
+    // 현재 사용자 정보 가져오기
+    const cookieStore = await cookies()
+    const sessionToken = cookieStore.get('erp_session_token')?.value
+    
+    if (!sessionToken) {
+      return { success: false, message: '인증되지 않은 사용자입니다' }
+    }
+
+    // 세션 확인 및 사용자 ID 가져오기
+    const { data: sessionData } = await supabase.rpc('verify_session', { 
+      p_token: sessionToken 
+    })
+    
+    if (!sessionData?.[0]?.valid) {
+      return { success: false, message: '세션이 만료되었습니다' }
+    }
+
+    const currentUserId = sessionData[0].user_id
+    const currentRole = sessionData[0].role
+    
     const { data, error } = await supabase.rpc('delete_user', {
-      p_user_id: userId
+      p_user_id: userId,
+      p_deleted_by: currentUserId,
+      p_deleter_role: currentRole
     })
     
     if (error) throw error
