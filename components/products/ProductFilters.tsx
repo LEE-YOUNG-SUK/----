@@ -33,7 +33,7 @@ export default function ProductFilters({ products, onFilterChange }: ProductFilt
 
     // 카테고리 필터
     if (categoryFilter !== 'all') {
-      result = result.filter(product => product.category === categoryFilter)
+      result = result.filter(product => product.category_name === categoryFilter)
     }
 
     // 상태 필터
@@ -58,7 +58,7 @@ export default function ProductFilters({ products, onFilterChange }: ProductFilt
   }
 
   // 유니크한 카테고리 목록
-  const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)))
+  const categories = Array.from(new Set(products.map(p => p.category_name).filter(Boolean)))
 
   return (
     <>

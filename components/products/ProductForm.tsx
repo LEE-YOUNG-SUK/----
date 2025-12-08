@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import type { Product } from '@/types'
-import { saveProduct } from '@/app/products/actions'
+import { useState, useEffect } from 'react'
+import type { Product, ProductCategory } from '@/types'
+import { saveProduct, getProductCategories } from '@/app/products/actions'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/Dialog'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -19,11 +19,13 @@ interface ProductFormProps {
 export default function ProductForm({ product, onClose, onSuccess }: ProductFormProps) {
   const isEdit = !!product
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [categories, setCategories] = useState<ProductCategory[]>([])
+  const [loadingCategories, setLoadingCategories] = useState(true)
   
   const [formData, setFormData] = useState({
     code: product?.code || '',
     name: product?.name || '',
-    category: product?.category || '',
+    category_id: product?.category_id || '',
     unit: product?.unit || 'EA',
     specification: product?.specification || '',
     manufacturer: product?.manufacturer || '',
@@ -33,6 +35,17 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
     standard_sale_price: product?.standard_sale_price || 0,
     is_active: product?.is_active ?? true
   })
+
+  // 카테고리 목록 조회
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setLoadingCategories(true)
+      const data = await getProductCategories()
+      setCategories(data)
+      setLoadingCategories(false)
+    }
+    fetchCategories()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -55,7 +68,7 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
         id: product?.id,
         code: formData.code.trim(),
         name: formData.name.trim(),
-        category: formData.category.trim() || null,
+        category_id: formData.category_id || null,
         unit: formData.unit,
         specification: formData.specification.trim() || null,
         manufacturer: formData.manufacturer.trim() || null,
@@ -123,13 +136,30 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
 
             <FormGrid columns={2}>
               <div className="space-y-2">
-                <Label htmlFor="category">카테고리</Label>
-                <Input
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="예: 소모품, 장비, 의약품"
-                />
+                <Label htmlFor="category_id">카테고리 *</Label>
+                {loadingCategories ? (
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400">
+                    카테고리 로딩 중...
+                  </div>
+                ) : (
+                  <select
+                    id="category_id"
+                    value={formData.category_id}
+                    onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">카테고리 선택</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  품목 분류 (필수 선택)
+                </p>
               </div>
 
               <div className="space-y-2">

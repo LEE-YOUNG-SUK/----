@@ -60,12 +60,25 @@ export interface Client {
   updated_at: string
 }
 
+// 품목 카테고리
+export interface ProductCategory {
+  id: string
+  code: string
+  name: string
+  description?: string | null
+  display_order: number
+  is_active: boolean
+}
+
 // 품목
 export interface Product {
   id: string
   code: string
   name: string
-  category: string | null
+  category_id: string | null
+  category_code?: string | null  // JOIN 결과
+  category_name?: string | null  // JOIN 결과
+  category?: string | null       // 하위 호환 (구 버전)
   unit: string
   specification: string | null
   manufacturer: string | null

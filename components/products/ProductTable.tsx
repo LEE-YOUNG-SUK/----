@@ -111,9 +111,9 @@ export default function ProductTable({
                     <span className="text-sm font-medium text-gray-900">{product.name}</span>
                   </td>
                   <td className="px-4 py-3">
-                    {product.category ? (
+                    {product.category_name ? (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {product.category}
+                        {product.category_name}
                       </span>
                     ) : (
                       <span className="text-sm text-gray-500">-</span>

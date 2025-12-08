@@ -7,7 +7,7 @@
 // 목적: 사용(내부소모) 재료비 레포트 (상태 관리, UI)
 // ============================================================
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import type { ColDef } from 'ag-grid-community'
 import { getUsageReport } from './actions'
 import ReportFilters from '@/components/reports/ReportFilters'
@@ -20,6 +20,7 @@ import {
 import { UserData } from '@/types'
 import { StatCard } from '@/components/ui/Card'
 import { FormGrid } from '@/components/shared/FormGrid'
+import { supabase } from '@/lib/supabase/client'
 
 interface Props {
   userSession: UserData
@@ -47,6 +48,25 @@ export default function UsageReportClient({ userSession }: Props) {
   const [reportData, setReportData] = useState<UsageReportRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [branches, setBranches] = useState<{id: string, name: string}[]>([])
+
+  // 지점 목록 조회 (시스템 관리자만)
+  useEffect(() => {
+    if (userSession.role === '0000') {
+      const fetchBranches = async () => {
+        const { data, error } = await supabase
+          .from('branches')
+          .select('id, name')
+          .eq('is_active', true)
+          .order('name')
+        
+        if (!error && data) {
+          setBranches(data)
+        }
+      }
+      fetchBranches()
+    }
+  }, [userSession.role])
 
   /**
    * 필터 변경 핸들러
@@ -157,7 +177,7 @@ export default function UsageReportClient({ userSession }: Props) {
         groupByOptions={usageGroupByOptions}
         onFilterChange={handleFilterChange}
         showBranchFilter={userSession.role === '0000'}
-        branches={[]}
+        branches={branches}
       />
 
       {/* 레포트 그리드 */}
