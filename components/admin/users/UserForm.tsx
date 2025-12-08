@@ -169,6 +169,11 @@ export default function UserForm({ user, branches, currentUser, onClose, onSucce
                     한글, 영문, 숫자, 밑줄(_), 하이픈(-) 사용 가능 (최소 2자)
                   </p>
                 )}
+                {!isEdit && (
+                  <p className="text-xs text-blue-600">
+                    💡 같은 지점 내에서만 중복 불가 (다른 지점은 동일 아이디 가능)
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">

@@ -156,9 +156,13 @@ BEGIN
         p_branch_id := v_creator_branch_id;
     END IF;
 
-    -- 아이디 중복 체크
-    IF EXISTS (SELECT 1 FROM public.users WHERE username = p_username) THEN
-        RETURN QUERY SELECT FALSE, '이미 존재하는 아이디입니다.'::TEXT, NULL::UUID;
+    -- 아이디 + 지점 중복 체크 (같은 지점 내에서만 중복 불가)
+    IF EXISTS (
+      SELECT 1 FROM public.users 
+      WHERE username = p_username 
+        AND branch_id = p_branch_id
+    ) THEN
+        RETURN QUERY SELECT FALSE, '해당 지점에 이미 존재하는 아이디입니다.'::TEXT, NULL::UUID;
         RETURN;
     END IF;
 
