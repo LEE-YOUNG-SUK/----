@@ -3,6 +3,9 @@
  * 입고 관리(purchases.ts) 구조 100% 적용
  */
 
+// 거래 유형 추가
+export type TransactionType = 'SALE' | 'USAGE'
+
 // 재고 포함 품목 (판매용)
 export interface ProductWithStock {
   id: string
@@ -34,6 +37,7 @@ export interface SaleGridRow {
   total_price: number     // 합계 (자동계산)
   total_amount: number    // 기존 호환성 유지
   notes: string
+  transaction_type?: TransactionType  // 거래유형 (선택)
 }
 
 // 판매 저장 요청
@@ -45,7 +49,8 @@ export interface SaleSaveRequest {
   notes: string
   items: SaleGridRow[]
   created_by: string
-    tax_amount?: number; // 부가세 (선택, 일괄입력용)
+  tax_amount?: number // 부가세 (선택, 일괄입력용)
+  transaction_type?: TransactionType // 거래유형 (선택, 기본값: SALE)
 }
 
 // 판매 내역
@@ -66,7 +71,8 @@ export interface SaleHistory {
   reference_number: string | null
   created_by_name: string
   created_at: string
-    tax_amount?: number; // 부가세 (선택)
+  tax_amount?: number // 부가세 (선택)
+  transaction_type?: TransactionType // 거래유형
 }
 
 /**

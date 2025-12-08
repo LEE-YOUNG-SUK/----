@@ -29,9 +29,10 @@ interface Props {
   onSave: (items: SaleGridRow[]) => void
   isSaving: boolean
   taxIncluded: boolean
+  transactionType?: 'SALE' | 'USAGE'  // ✅ 추가
 }
 
-export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Props) {
+export default function SaleGrid({ products, onSave, isSaving, taxIncluded, transactionType = 'SALE' }: Props) {
   const gridRef = useRef<any>(null)
   const isMountedRef = useRef(true)  // ✅ 컴포넌트 마운트 상태 추적
   
@@ -172,7 +173,36 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
     }, 0)
   }, [taxIncluded])
 
-  const columnDefs = useMemo<ColDef<SaleGridRow>[]>(() => [
+  const columnDefs = useMemo<ColDef<SaleGridRow>[]>(() => {
+    // ✅ 추가: 단가 컬럼 정의 (거래유형별 다름)
+    const unitPriceColumn: ColDef<SaleGridRow> = transactionType === 'USAGE' 
+      ? {
+          headerName: '출고단가 (자동)',
+          field: 'unit_price',
+          width: 140,
+          editable: false,
+          type: 'numericColumn',
+          cellClass: 'bg-purple-50 text-right font-medium text-purple-700',
+          valueFormatter: (params) => {
+            const value = params.value || 0
+            return `₩${value.toLocaleString()}`
+          },
+          headerTooltip: 'FIFO 평균 원가로 자동 계산됩니다'
+        }
+      : {
+          headerName: '판매단가',
+          field: 'unit_price',
+          width: 120,
+          editable: true,
+          type: 'numericColumn',
+          cellClass: 'text-right',
+          valueFormatter: (params) => {
+            const value = params.value || 0
+            return `₩${value.toLocaleString()}`
+          }
+        }
+
+    return [
     {
       headerName: 'No',
       valueGetter: 'node.rowIndex + 1',
@@ -261,18 +291,7 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
         return value.toLocaleString()
       }
     },
-    {
-      headerName: '단가',
-      field: 'unit_price',
-      width: 120,
-      editable: true,
-      type: 'numericColumn',
-      cellClass: 'text-right',
-      valueFormatter: (params) => {
-        const value = params.value || 0
-        return `₩${value.toLocaleString()}`
-      }
-    },
+    unitPriceColumn,  // ✅ 변경: 조건부 컬럼
     {
       headerName: '공급가',
       field: 'supply_price',
@@ -316,7 +335,7 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
         handleDeleteRow: handleDeleteRow
       }
     }
-  ], [handleDeleteRow, handleProductSelect, products])
+  ]}, [handleDeleteRow, handleProductSelect, products, transactionType])
 
   const onCellValueChanged = useCallback((params: any) => {
     if (isGridDestroyed || !isMountedRef.current) return  // ✅ 파괴 상태 체크
@@ -375,7 +394,7 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
     }
 
     if (data.length === 0) {
-      alert('판매할 품목을 입력해주세요.')
+      alert(`${transactionType === 'USAGE' ? '사용할' : '판매할'} 품목을 입력해주세요.`)
       return
     }
 
@@ -387,7 +406,8 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded }: Pr
       if (item.quantity <= 0) {
         errors.push(`${index + 1}번째 행: 수량을 입력해주세요.`)
       }
-      if (item.unit_price <= 0) {
+      // ✅ 판매(SALE)일 때만 단가 검증 (사용(USAGE)은 서버에서 자동 계산)
+      if (transactionType === 'SALE' && item.unit_price <= 0) {
         errors.push(`${index + 1}번째 행: 단가를 입력해주세요.`)
       }
       // ✅ 재고 부족 체크 제거 - 마이너스 재고 허용

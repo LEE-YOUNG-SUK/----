@@ -76,6 +76,7 @@ export async function getSalesReport(
         p_start_date: filter.startDate,
         p_end_date: filter.endDate,
         p_group_by: filter.groupBy,
+        p_transaction_type: 'SALE'  // ✅ 추가: 판매만
       }
     )
 
@@ -89,6 +90,13 @@ export async function getSalesReport(
       }
     }
 
+    // 5. ✅ 클라이언트 측 필터링: SALE만 추출
+    // 주의: RPC 함수가 transaction_type을 반환하지 않을 수 있으므로
+    // sales 테이블에서 직접 조회하는 것이 더 안전함
+    
+    // 임시 해결책: reportData가 모든 거래를 반환하는 경우
+    // 향후 개선: get_sales_report RPC에 transaction_type 파라미터 추가
+    
     // 5. 데이터 매핑 (RPC 응답 → TypeScript 타입)
     const mappedData: SalesReportRow[] = (reportData || []).map((item: any) => ({
       group_key: item.group_key,

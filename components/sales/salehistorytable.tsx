@@ -16,6 +16,7 @@ interface SaleHistoryTableProps {
   userRole: string
   userId: string
   userBranchId: string
+  transactionType?: 'SALE' | 'USAGE'  // ✅ 추가
 }
 
 export default function SaleHistoryTable({ 
@@ -23,7 +24,8 @@ export default function SaleHistoryTable({
   branchName, 
   userRole, 
   userId, 
-  userBranchId 
+  userBranchId,
+  transactionType = 'SALE'  // ✅ 추가
 }: SaleHistoryTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -116,7 +118,7 @@ export default function SaleHistoryTable({
       <div className="p-3 sm:p-4 bg-white border-b flex-shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-            판매 내역
+            {transactionType === 'USAGE' ? '사용 내역' : '판매 내역'}
             {branchName && (
               <span className="ml-2 text-sm text-gray-500">({branchName})</span>
             )}
@@ -205,7 +207,7 @@ export default function SaleHistoryTable({
       <div className="md:hidden flex-1 overflow-y-auto bg-white">
         {paginatedGroups.length === 0 ? (
           <div className="px-4 py-12 text-center text-gray-500">
-            {searchTerm ? '검색 결과가 없습니다.' : '판매 내역이 없습니다.'}
+            {searchTerm ? '검색 결과가 없습니다.' : (transactionType === 'USAGE' ? '사용 내역이 없습니다.' : '판매 내역이 없습니다.')}
           </div>
         ) : (
           paginatedGroups.map((group, index) => (

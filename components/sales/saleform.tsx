@@ -52,9 +52,10 @@ interface Props {
   customers: Customer[]
   history: SaleHistory[]
   session: SessionData
+  transactionType?: 'SALE' | 'USAGE'  // ✅ 추가
 }
 
-export function SaleForm({ products: initialProducts, customers, history, session }: Props) {
+export function SaleForm({ products: initialProducts, customers, history, session, transactionType = 'SALE' }: Props) {
   if (!Array.isArray(initialProducts) || !Array.isArray(customers) || !Array.isArray(history)) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -79,6 +80,9 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
   const isMobile = useIsMobile()
 
   const isSystemAdmin = session.role === '0000'
+  
+  // ✅ 추가: 내부사용 고객 자동 선택
+  const [internalCustomerId, setInternalCustomerId] = useState<string | null>(null)
 
   // 시스템 관리자인 경우 지점 목록 조회
   useEffect(() => {
@@ -102,6 +106,24 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
       }
     }
   }, [isSystemAdmin])
+  
+  // ✅ 추가: 내부사용(USAGE)일 때 내부사용 고객 자동 선택
+  useEffect(() => {
+    if (transactionType === 'USAGE') {
+      // 내부사용 고객 찾기 (code = 'INTERNAL')
+      const internalCustomer = customers.find(c => c.code === 'INTERNAL')
+      if (internalCustomer) {
+        setInternalCustomerId(internalCustomer.id)
+        setCustomerId(internalCustomer.id)
+      }
+    } else {
+      setInternalCustomerId(null)
+      // 판매로 전환 시 고객 초기화
+      if (customerId === internalCustomerId) {
+        setCustomerId('')
+      }
+    }
+  }, [transactionType, customers])
 
   // 지점 변경 시 재고 있는 품목 다시 로드
   const loadProductsForBranch = async (branchId: string) => {
@@ -145,8 +167,9 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
     }
 
     const totalAmount = itemsWithCalc.reduce((sum, item) => sum + item.total_price, 0)
+    const actionText = transactionType === 'USAGE' ? '내부사용' : '판매'
     const confirmed = confirm(
-      `${items.length}개 품목, 총 ₩${totalAmount.toLocaleString()}원을 판매 처리하시겠습니까?`
+      `${items.length}개 품목, 총 ₩${totalAmount.toLocaleString()}원을 ${actionText} 처리하시겠습니까?`
     )
 
     if (!confirmed) return
@@ -161,7 +184,8 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
         reference_number: referenceNumber,
         notes: notes,
         items: itemsWithCalc,
-        created_by: session.user_id
+        created_by: session.user_id,
+        transaction_type: transactionType  // ✅ 추가
       })
 
       if (result.success) {
@@ -186,8 +210,8 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
     <div className="h-full flex flex-col">
       <TabNav
         tabs={[
-          { id: 'input', label: '판매 입력' },
-          { id: 'history', label: '판매 내역', count: history.length }
+          { id: 'input', label: transactionType === 'USAGE' ? '사용 입력' : '판매 입력' },
+          { id: 'history', label: transactionType === 'USAGE' ? '사용 내역' : '판매 내역', count: history.length }
         ]}
         activeTab={activeTab}
         onChange={(tabId) => setActiveTab(tabId as 'input' | 'history')}
@@ -218,23 +242,34 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
                 )}
 
                 <FormField label="고객" required>
-                  <select
-                    value={customerId}
-                    onChange={(e) => setCustomerId(e.target.value)}
-                    disabled={isSaving}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                  >
-                    <option value="">선택하세요</option>
-                    {customers.map((customer) => {
-                      const id = String(customer.id || '')
-                      const name = String(customer.name || '이름 없음')
-                      return (
-                        <option key={id} value={id}>
-                          {name}
-                        </option>
-                      )
-                    })}
-                  </select>
+                  {transactionType === 'USAGE' ? (
+                    /* 내부사용: 고객 고정 표시 */
+                    <input
+                      type="text"
+                      value="내부사용"
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                    />
+                  ) : (
+                    /* 판매: 고객 선택 */
+                    <select
+                      value={customerId}
+                      onChange={(e) => setCustomerId(e.target.value)}
+                      disabled={isSaving}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                    >
+                      <option value="">선택하세요</option>
+                      {customers.filter(c => c.code !== 'INTERNAL').map((customer) => {
+                        const id = String(customer.id || '')
+                        const name = String(customer.name || '이름 없음')
+                        return (
+                          <option key={id} value={id}>
+                            {name}
+                          </option>
+                        )
+                      })}
+                    </select>
+                  )}
                 </FormField>
 
                 <FormField label="판매일" required>
@@ -290,6 +325,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
                 onSave={handleSave}
                 isSaving={isSaving}
                 taxIncluded={taxIncluded}
+                transactionType={transactionType}
               />
             </div>
           </div>
@@ -301,6 +337,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
               userRole={session.role}
               userId={session.user_id}
               userBranchId={session.branch_id || ''}
+              transactionType={transactionType}
             />
           </div>
         )}

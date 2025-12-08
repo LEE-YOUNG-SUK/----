@@ -44,7 +44,7 @@ export function Navigation({ user, onLogout }: Props) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
   
-  // 일반 메뉴 항목 (순서: 대시보드, 품목, 입고, 판매, 재고)
+  // 일반 메뉴 항목 (순서: 대시보드, 품목, 입고, 판매, 사용, 재고)
   const mainMenuItems: MenuItem[] = [
     {
       href: '/',
@@ -68,14 +68,21 @@ export function Navigation({ user, onLogout }: Props) {
     {
       href: '/sales',
       label: '판매',
-      icon: '📤',
+      icon: '💰',
       resource: 'sales_management',
+      action: 'read',
+    },
+    {
+      href: '/usage',
+      label: '사용',
+      icon: '📦',
+      resource: 'usage_management',
       action: 'read',
     },
     {
       href: '/inventory',
       label: '재고',
-      icon: '📦',
+      icon: '📊',
       resource: 'inventory_view',
       action: 'read',
     },
@@ -87,9 +94,16 @@ export function Navigation({ user, onLogout }: Props) {
     icon: '📈',
     items: [
       {
+        href: '/reports/profit',
+        label: '종합',
+        icon: '📊',
+        resource: 'reports_view',
+        action: 'read',
+      },
+      {
         href: '/reports/purchases',
         label: '구매',
-        icon: '📊',
+        icon: '📥',
         resource: 'reports_view',
         action: 'read',
       },
@@ -101,9 +115,9 @@ export function Navigation({ user, onLogout }: Props) {
         action: 'read',
       },
       {
-        href: '/reports/profit',
-        label: '이익',
-        icon: '📈',
+        href: '/reports/usage',
+        label: '재료비',
+        icon: '📦',
         resource: 'reports_view',
         action: 'read',
       },

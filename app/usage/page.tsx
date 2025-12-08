@@ -1,18 +1,18 @@
 /**
- * 판매 관리 페이지 (고객 판매 전용)
- * 입고 관리(purchases/page.tsx) 구조 100% 적용
+ * 사용(내부소모) 관리 페이지
+ * 의료 소모품 등 내부 사용 처리
  */
 
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import { SaleForm } from '@/components/sales/saleform'
-import { getProductsWithStock, getCustomersList, getSalesHistory } from './actions'
+import { getProductsWithStock, getCustomersList, getSalesHistory } from '@/app/sales/actions'
 import { PageLayout } from '@/components/shared/PageLayout'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ContentCard } from '@/components/ui/Card'
 
-export default async function SalesPage() {
+export default async function UsagePage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('erp_session_token')?.value
   
@@ -42,10 +42,11 @@ export default async function SalesPage() {
     branch_name: session.branch_name || null
   }
 
+  // 판매와 동일한 데이터 조회
   const [productsResult, customersResult, historyResult] = await Promise.all([
     getProductsWithStock(userSession.branch_id),
     getCustomersList(),
-    getSalesHistory(userSession.branch_id, userSession.user_id, undefined, undefined, 'SALE')  // ✅ 'SALE' 필터 추가
+    getSalesHistory(userSession.branch_id, userSession.user_id, undefined, undefined, 'USAGE') // USAGE만 필터링
   ])
 
   // 실패 처리
@@ -98,9 +99,9 @@ export default async function SalesPage() {
             <ContentCard className="mb-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">💰 판매 관리</h1>
+                  <h1 className="text-2xl font-bold text-gray-900">📦 사용 관리 (내부소모)</h1>
                   <p className="text-sm text-gray-600 mt-1">
-                    화장품 등 고객에게 판매하고 이익을 계산합니다
+                    의료 소모품 등 내부 사용. 출고 단가는 입고 원가(FIFO)로 자동 적용됩니다
                   </p>
                 </div>
                 <div className="text-left sm:text-right">
@@ -120,7 +121,7 @@ export default async function SalesPage() {
                 customers={customers}
                 history={history}
                 session={userSession}
-                transactionType="SALE"
+                transactionType="USAGE"
               />
             </div>
           </div>
@@ -129,3 +130,4 @@ export default async function SalesPage() {
     </>
   )
 }
+

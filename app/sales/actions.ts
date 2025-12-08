@@ -103,7 +103,8 @@ export async function saveSales(data: SaleSaveRequest) {
       p_reference_number: data.reference_number || null,
       p_notes: data.notes || '',
       p_created_by: data.created_by,
-      p_items: itemsJson as any
+      p_items: itemsJson as any,
+      p_transaction_type: data.transaction_type || 'SALE'  // ✅ 거래유형 전달
     })
 
     if (error) {
@@ -250,17 +251,20 @@ export async function getSalesHistory(
   branchId: string | null,
   userId: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  transactionType?: 'SALE' | 'USAGE'  // ✅ 추가: 거래유형 필터
 ) {
   try {
     const supabase = await createServerClient()
     
+    // ✅ 수정: RPC에 transaction_type 파라미터 전달
     const { data, error } = await supabase
       .rpc('get_sales_list', {
         p_branch_id: branchId,
         p_start_date: startDate || null,
         p_end_date: endDate || null,
-        p_user_id: userId
+        p_user_id: userId,
+        p_transaction_type: transactionType || null  // ✅ 추가
       })
       .order('sale_date', { ascending: false })
       .order('created_at', { ascending: false })
@@ -284,7 +288,8 @@ export async function getSalesHistory(
       profit_margin: item.total_amount > 0 ? ((item.profit || 0) / item.total_amount) * 100 : 0,
       reference_number: item.reference_number || null,
       created_by_name: '', // RPC에서 제공하지 않음
-      created_at: item.created_at
+      created_at: item.created_at,
+      transaction_type: item.transaction_type || 'SALE'  // ✅ 추가
     }))
 
     return { 

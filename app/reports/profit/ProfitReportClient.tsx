@@ -1,20 +1,20 @@
 'use client'
 
 // ============================================================
-// Phase 6: Profit Report Client Component
+// 종합 레포트 클라이언트 컴포넌트
 // ============================================================
 // 작성일: 2025-01-26
-// 목적: 이익 레포트 클라이언트 컴포넌트 (상태 관리, UI)
+// 목적: 구매/사용/판매 통합 레포트 (상태 관리, UI)
+// 변경: 이익 레포트 → 종합 레포트
 // ============================================================
 
 import { useState, useMemo } from 'react'
 import type { ColDef } from 'ag-grid-community'
-import { getProfitReport } from './actions'
+import { getSummaryReport, type SummaryReportRow } from './actions'
 import ReportFilters from '@/components/reports/ReportFilters'
-import ReportGrid, { currencyFormatter, percentFormatter, numberFormatter } from '@/components/reports/ReportGrid'
+import ReportGrid, { currencyFormatter, percentFormatter } from '@/components/reports/ReportGrid'
 import { 
   ReportFilter, 
-  ProfitReportRow, 
   PROFIT_GROUP_BY_OPTIONS 
 } from '@/types/reports'
 import { UserData } from '@/types'
@@ -41,7 +41,7 @@ export default function ProfitReportClient({ userSession }: Props) {
   }
 
   const [filter, setFilter] = useState<ReportFilter>(getDefaultFilter())
-  const [reportData, setReportData] = useState<ProfitReportRow[]>([])
+  const [reportData, setReportData] = useState<SummaryReportRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -54,7 +54,7 @@ export default function ProfitReportClient({ userSession }: Props) {
     setError(null)
 
     try {
-      const response = await getProfitReport(newFilter)
+      const response = await getSummaryReport(newFilter)
       if (response.success) {
         setReportData(response.data)
       } else {
@@ -71,11 +71,11 @@ export default function ProfitReportClient({ userSession }: Props) {
   /**
    * 컬럼 정의
    */
-  const columnDefs = useMemo<ColDef<ProfitReportRow>[]>(() => [
+  const columnDefs = useMemo<ColDef<SummaryReportRow>[]>(() => [
     {
       headerName: '구분',
       field: 'group_label',
-      width: 200,
+      width: 140,
       pinned: 'left',
       cellStyle: () => ({ fontWeight: 'bold' }),
       valueFormatter: (params) => {
@@ -88,30 +88,46 @@ export default function ProfitReportClient({ userSession }: Props) {
       },
     },
     {
-      headerName: '총 매출',
-      field: 'total_revenue',
-      width: 150,
+      headerName: '구매금액',
+      field: 'purchase_amount',
+      width: 140,
       type: 'numericColumn',
       valueFormatter: currencyFormatter,
-      cellStyle: () => ({ fontWeight: 'bold', color: '#047857' }),
+      cellStyle: () => ({ color: '#3B82F6' }),  // 파란색
     },
     {
-      headerName: '총 원가',
-      field: 'total_cost',
-      width: 150,
+      headerName: '사용금액',
+      field: 'usage_amount',
+      width: 140,
       type: 'numericColumn',
       valueFormatter: currencyFormatter,
-      cellStyle: () => ({ color: '#dc2626' }),
+      cellStyle: () => ({ color: '#F59E0B' }),  // 주황색
     },
     {
-      headerName: '총 이익',
-      field: 'total_profit',
-      width: 150,
+      headerName: '판매금액',
+      field: 'sale_amount',
+      width: 140,
+      type: 'numericColumn',
+      valueFormatter: currencyFormatter,
+      cellStyle: () => ({ color: '#10B981', fontWeight: 'bold' }),  // 초록색
+    },
+    {
+      headerName: '판매원가',
+      field: 'sale_cost',
+      width: 140,
+      type: 'numericColumn',
+      valueFormatter: currencyFormatter,
+      cellStyle: () => ({ color: '#6B7280' }),  // 회색
+    },
+    {
+      headerName: '판매이익',
+      field: 'sale_profit',
+      width: 140,
       type: 'numericColumn',
       valueFormatter: currencyFormatter,
       cellStyle: (params) => ({
         fontWeight: 'bold',
-        color: params.value >= 0 ? '#1a56db' : '#dc2626',
+        color: params.value >= 0 ? '#10B981' : '#DC2626',
       }),
     },
     {
@@ -122,24 +138,10 @@ export default function ProfitReportClient({ userSession }: Props) {
       valueFormatter: percentFormatter,
       cellStyle: (params) => ({
         fontWeight: 'bold',
-        color: params.value >= 0 ? '#047857' : '#dc2626',
+        color: params.value >= 0 ? '#8B5CF6' : '#DC2626',  // 보라색
       }),
     },
-    {
-      headerName: '거래 건수',
-      field: 'transaction_count',
-      width: 110,
-      type: 'numericColumn',
-      valueFormatter: numberFormatter,
-    },
-    {
-      headerName: '품목 수',
-      field: 'product_count',
-      width: 100,
-      type: 'numericColumn',
-      valueFormatter: numberFormatter,
-    },
-  ], [])
+  ], [filter.groupBy])
 
   return (
     <div className="space-y-6">
@@ -170,36 +172,38 @@ export default function ProfitReportClient({ userSession }: Props) {
       {/* 요약 정보 */}
       {reportData.length > 0 && !loading && (
         <div>
-          <h3 className="font-bold text-gray-700 mb-3">📈 요약</h3>
+          <h3 className="font-bold text-gray-700 mb-3">📊 요약</h3>
           <FormGrid columns={4}>
             <StatCard
-              label="총 매출"
-              value={reportData.reduce((sum, row) => sum + row.total_revenue, 0)}
-              unit="원"
-              variant="success"
-            />
-            <StatCard
-              label="총 원가"
-              value={reportData.reduce((sum, row) => sum + row.total_cost, 0)}
-              unit="원"
-            />
-            <StatCard
-              label="총 이익"
-              value={reportData.reduce((sum, row) => sum + row.total_profit, 0)}
+              label="총 구매금액"
+              value={reportData.reduce((sum, row) => sum + row.purchase_amount, 0)}
               unit="원"
               variant="primary"
             />
             <StatCard
-              label="평균 이익률"
-              value={(() => {
-                const totalRevenue = reportData.reduce((sum, row) => sum + row.total_revenue, 0)
-                const totalProfit = reportData.reduce((sum, row) => sum + row.total_profit, 0)
-                return totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(2) : '0.00'
-              })()}
-              unit="%"
+              label="총 사용금액"
+              value={reportData.reduce((sum, row) => sum + row.usage_amount, 0)}
+              unit="원"
+              variant="warning"
+            />
+            <StatCard
+              label="총 판매금액"
+              value={reportData.reduce((sum, row) => sum + row.sale_amount, 0)}
+              unit="원"
+              variant="success"
+            />
+            <StatCard
+              label="총 판매이익"
+              value={reportData.reduce((sum, row) => sum + row.sale_profit, 0)}
+              unit="원"
               variant="success"
             />
           </FormGrid>
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-700">
+              💡 <strong>참고:</strong> 구매금액은 입고 비용, 사용금액은 내부소모 재료비, 판매금액은 고객 판매 수익을 나타냅니다. 이익률은 판매이익/판매금액으로 계산됩니다.
+            </p>
+          </div>
         </div>
       )}
     </div>
