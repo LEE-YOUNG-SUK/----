@@ -44,7 +44,7 @@ export interface BatchPurchaseResponse {
  */
 export interface PurchaseSaveRequest {
   branch_id: string
-  supplier_id: string
+  supplier_id: string | null  // ✅ 선택사항으로 변경 (null 허용)
   purchase_date: string // YYYY-MM-DD
   reference_number: string
   notes: string
@@ -74,6 +74,7 @@ export interface PurchaseHistory {
   notes: string
   created_at: string
   created_by: string
+  created_by_name: string  // 담당자 이름
     tax_amount?: number; // 부가세 (선택)
 }
 

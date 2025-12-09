@@ -149,10 +149,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
       total_amount: item.total_price
     }))
 
-    if (!customerId) {
-      alert('고객을 선택해주세요.')
-      return
-    }
+    // ✅ 고객 필수 선택 제거 (선택사항으로 변경)
 
     if (!saleDate) {
       alert('판매일을 선택해주세요.')
@@ -179,7 +176,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
     try {
       const result = await saveSales({
         branch_id: branchId,
-        customer_id: customerId,
+        customer_id: customerId || null,  // ✅ 빈 값일 경우 null 전달
         sale_date: saleDate,
         reference_number: referenceNumber,
         notes: notes,
@@ -241,7 +238,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
                   </FormField>
                 )}
 
-                <FormField label="고객" required>
+                <FormField label="고객">
                   {transactionType === 'USAGE' ? (
                     /* 내부사용: 고객 고정 표시 */
                     <input

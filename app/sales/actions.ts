@@ -36,9 +36,7 @@ export async function saveSales(data: SaleSaveRequest) {
     }
 
     // 검증
-    if (!data.customer_id) {
-      return { success: false, message: '고객을 선택해주세요.' }
-    }
+    // ✅ 고객 필수 검증 제거 (선택사항으로 변경)
     
     if (!data.sale_date) {
       return { success: false, message: '판매일을 선택해주세요.' }
@@ -257,40 +255,37 @@ export async function getSalesHistory(
   try {
     const supabase = await createServerClient()
     
-    // ✅ 수정: RPC에 transaction_type 파라미터 전달
     const { data, error } = await supabase
       .rpc('get_sales_list', {
         p_branch_id: branchId,
         p_start_date: startDate || null,
-        p_end_date: endDate || null,
-        p_user_id: userId,
-        p_transaction_type: transactionType || null  // ✅ 추가
+        p_end_date: endDate || null
       })
-      .order('sale_date', { ascending: false })
-      .order('created_at', { ascending: false })
 
     if (error) throw error
 
-    // RPC 결과를 SaleHistory 타입에 맞게 변환
-    const mappedData = (data || []).map((item: any) => ({
-      id: item.id,
-      sale_date: item.sale_date,
-      branch_name: item.branch_name || '',
-      customer_name: item.customer_name || '', // RPC가 customer_name으로 반환
-      product_code: item.product_code || '',
-      product_name: item.product_name || '',
-      unit: item.unit || '',
-      quantity: item.quantity || 0,
-      unit_price: item.unit_price || 0,
-      total_amount: item.total_amount || 0, // RPC가 total_amount로 반환
-      cost_of_goods: item.cost_of_goods || 0, // RPC가 cost_of_goods로 반환
-      profit: item.profit || 0,
-      profit_margin: item.total_amount > 0 ? ((item.profit || 0) / item.total_amount) * 100 : 0,
-      reference_number: item.reference_number || null,
-      created_by_name: '', // RPC에서 제공하지 않음
-      created_at: item.created_at,
-      transaction_type: item.transaction_type || 'SALE'  // ✅ 추가
-    }))
+    // ✅ RPC 결과를 SaleHistory 타입에 맞게 변환 (total_price → total_amount)
+    const mappedData = (data || [])
+      .filter((item: any) => !transactionType || item.transaction_type === transactionType)  // ✅ 클라이언트에서 필터링
+      .map((item: any) => ({
+        id: item.id,
+        sale_date: item.sale_date,
+        branch_name: item.branch_name || '',
+        customer_name: item.customer_name || '',
+        product_code: item.product_code || '',
+        product_name: item.product_name || '',
+        unit: item.unit || '',
+        quantity: item.quantity || 0,
+        unit_price: item.unit_price || 0,
+        total_amount: item.total_price || 0,  // ✅ 수정: total_price → total_amount
+        cost_of_goods: item.cost_of_goods_sold || 0,  // ✅ 수정: cost_of_goods_sold
+        profit: item.profit || 0,
+        profit_margin: item.total_price > 0 ? ((item.profit || 0) / item.total_price) * 100 : 0,
+        reference_number: item.reference_number || null,
+        created_by_name: item.created_by_name || '알 수 없음',  // ✅ 추가: RPC에서 반환
+        created_at: item.created_at,
+        transaction_type: item.transaction_type || 'SALE'
+      }))
 
     return { 
       success: true, 

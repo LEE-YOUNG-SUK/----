@@ -109,7 +109,8 @@ export default function SaleDetailModal({
             <div>
               <h2 className="text-xl font-bold text-gray-900">판매 상세</h2>
               <p className="text-sm text-gray-600 mt-1">
-                거래번호: <span className="font-medium text-blue-600">{referenceNumber || '(없음)'}</span>
+                거래번호: <span className="font-medium text-blue-600">{referenceNumber || '(없음)'}</span> |
+                담당자: <span className="font-medium">{items[0]?.created_by_name || '알 수 없음'}</span>
               </p>
             </div>
             <button
@@ -121,18 +122,24 @@ export default function SaleDetailModal({
           </div>
 
           {/* 통계 */}
-          <div className="px-6 py-4 bg-gray-50 border-b grid grid-cols-3 gap-4">
-            <div>
-              <p className="text-xs text-gray-600">품목 수</p>
-              <p className="text-lg font-bold text-gray-900">{items.length}개</p>
+          <div className="px-6 py-4 bg-gray-50 border-b">
+            <div className="grid grid-cols-3 gap-4 mb-2">
+              <div>
+                <p className="text-xs text-gray-600">품목 수</p>
+                <p className="text-lg font-bold text-gray-900">{items.length}개</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-600">총 판매액</p>
+                <p className="text-lg font-bold text-blue-600">₩{totalAmount.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-600">총 이익</p>
+                <p className="text-lg font-bold text-green-600">₩{totalProfit.toLocaleString()}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs text-gray-600">총 판매액</p>
-              <p className="text-lg font-bold text-blue-600">₩{totalAmount.toLocaleString()}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-600">총 이익</p>
-              <p className="text-lg font-bold text-green-600">₩{totalProfit.toLocaleString()}</p>
+            <div className="text-sm text-gray-600 mt-2">
+              판매일: {new Date(items[0]?.sale_date).toLocaleDateString('ko-KR')} |
+              고객: {items[0]?.customer_name || '(없음)'}
             </div>
           </div>
 

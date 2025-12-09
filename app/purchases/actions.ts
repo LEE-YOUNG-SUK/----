@@ -32,9 +32,7 @@ export async function savePurchases(data: PurchaseSaveRequest) {
     }
 
     // 검증
-    if (!data.supplier_id) {
-      return { success: false, message: '공급업체를 선택해주세요.' }
-    }
+    // ✅ 공급업체 필수 검증 제거 (선택사항으로 변경)
     
     if (!data.purchase_date) {
       return { success: false, message: '입고일을 선택해주세요.' }
@@ -204,11 +202,8 @@ export async function getPurchasesHistory(
       .rpc('get_purchases_list', {
         p_branch_id: branchId,
         p_start_date: startDate || null,
-        p_end_date: endDate || null,
-        p_user_id: userId
+        p_end_date: endDate || null
       })
-      .order('purchase_date', { ascending: false })
-      .order('created_at', { ascending: false })
 
     if (error) throw error
 

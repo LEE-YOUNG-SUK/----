@@ -596,9 +596,41 @@ components/purchases/
 
 ## 🔍 주요 버그 수정 이력
 
+### Phase 6.5 개선 사항 (2025-12-09)
+
+#### 7. 입고/판매 거래처 필수 선택 제거 (Phase 6.5-3) **← 최신**
+**요구사항**: 고객(거래처) 선택 없이도 입고 및 판매 가능하도록 변경
+**변경 내용**:
+1. **프론트엔드 검증 제거**
+   - `PurchaseForm.tsx`: 공급업체 필수 검증 제거
+   - `SaleForm.tsx`: 고객 필수 검증 제거
+   
+2. **Server Actions 검증 제거**
+   - `app/purchases/actions.ts`: supplier_id 필수 검증 제거
+   - `app/sales/actions.ts`: customer_id 필수 검증 제거
+
+3. **타입 정의 수정**
+   - `types/purchases.ts`: `supplier_id: string | null`
+   - `types/sales.ts`: `customer_id: string | null`
+
+**영향**:
+- 입고 시 공급업체를 선택하지 않아도 입고 처리 가능
+- 판매 시 고객을 선택하지 않아도 판매 처리 가능
+- null 값으로 DB에 저장됨
+
+**수정 파일**: 6개
+- `components/purchases/PurchaseForm.tsx`
+- `components/sales/SaleForm.tsx`
+- `app/purchases/actions.ts`
+- `app/sales/actions.ts`
+- `types/purchases.ts`
+- `types/sales.ts`
+
+---
+
 ### Phase 6.5 버그 수정 (2025-12-09)
 
-#### 6. 재고 페이지 카테고리 조회 오류 (Phase 6.5-2) **← 최신**
+#### 6. 재고 페이지 카테고리 조회 오류 (Phase 6.5-2)
 **원인**: `get_current_inventory` 함수에서 `p.category` 컬럼 직접 참조
 - 기존: `p.category` (VARCHAR) - 존재하지 않는 컬럼
 - products 테이블: `category_id` (UUID) - 실제 컬럼
@@ -749,13 +781,14 @@ npm run dev
 
 ### Phase 6.5 (2025-12-09)
 - **데이터베이스**: 3개 (product_categories_rpc.sql, add_category_filter_to_reports.sql, get_current_inventory_fix.sql)
-- **타입 정의**: 2개 (permissions.ts, reports.ts)
+- **타입 정의**: 4개 (permissions.ts, reports.ts, purchases.ts, sales.ts)
 - **카테고리 관리**: 5개 (page, actions, 3개 컴포넌트)
 - **레포트 Actions**: 4개 (수정: profit, purchases, sales, usage)
 - **레포트 클라이언트**: 4개 (수정: 4개 레포트 페이지)
+- **입고/판매 개선**: 4개 (PurchaseForm.tsx, SaleForm.tsx, purchases/actions.ts, sales/actions.ts)
 - **공통 컴포넌트**: 2개 (Navigation.tsx, ReportFilters.tsx)
 - **문서**: 1개 (CATEGORY_MANAGEMENT_COMPLETE.md)
-- **총 변경 파일**: **21개**
+- **총 변경 파일**: **27개**
 
 ### Phase 6 (2025-12-04)
 - **데이터베이스**: 1개

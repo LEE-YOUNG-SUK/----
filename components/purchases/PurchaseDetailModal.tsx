@@ -102,9 +102,10 @@ export default function PurchaseDetailModal({
             </DialogTitle>
             <div className="text-sm text-gray-600 mt-2">
               입고일: {new Date(items[0]?.purchase_date).toLocaleDateString('ko-KR')} |
-              공급업체: {items[0]?.client_name} |
+              공급업체: {items[0]?.client_name || '(없음)'} |
               품목 수: {items.length}개 |
-              총액: <span className="font-semibold text-blue-600">₩{totalAmount.toLocaleString()}</span>
+              총액: <span className="font-semibold text-blue-600">₩{totalAmount.toLocaleString()}</span> |
+              담당자: <span className="font-medium">{items[0]?.created_by_name || '알 수 없음'}</span>
             </div>
           </DialogHeader>
 

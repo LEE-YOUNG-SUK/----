@@ -86,10 +86,7 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
 
   const handleSave = async (items: PurchaseGridRow[]) => {
     // PurchaseGrid에서 이미 계산 완료된 데이터 사용
-    if (!supplierId) {
-      alert('공급업체를 선택해주세요.')
-      return
-    }
+    // ✅ 공급업체 필수 선택 제거 (선택사항으로 변경)
 
     if (!purchaseDate) {
       alert('입고일을 선택해주세요.')
@@ -115,7 +112,7 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
     try {
       const result = await savePurchases({
         branch_id: branchId,
-        supplier_id: supplierId,
+        supplier_id: supplierId || null,  // ✅ 빈 값일 경우 null 전달
         purchase_date: purchaseDate,
         reference_number: referenceNumber,
         notes: notes,
@@ -175,7 +172,7 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
                   </FormField>
                 )}
 
-                <FormField label="공급업체" required>
+                <FormField label="공급업체">
                   <select
                     value={supplierId}
                     onChange={(e) => setSupplierId(e.target.value)}

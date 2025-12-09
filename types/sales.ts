@@ -43,7 +43,7 @@ export interface SaleGridRow {
 // 판매 저장 요청
 export interface SaleSaveRequest {
   branch_id: string
-  customer_id: string
+  customer_id: string | null  // ✅ 선택사항으로 변경 (null 허용)
   sale_date: string
   reference_number: string
   notes: string
@@ -69,7 +69,7 @@ export interface SaleHistory {
   profit: number
   profit_margin: number
   reference_number: string | null
-  created_by_name: string
+  created_by_name: string  // 담당자 이름
   created_at: string
   tax_amount?: number // 부가세 (선택)
   transaction_type?: TransactionType // 거래유형
