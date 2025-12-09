@@ -89,6 +89,8 @@ export async function getUsageReport(
         p_start_date: filter.startDate,
         p_end_date: filter.endDate,
         p_group_by: filter.groupBy,
+        p_transaction_type: 'USAGE',  // ✅ 추가: 사용(내부소모)만
+        p_category_id: filter.categoryId || null  // ✅ 추가: 카테고리 필터
       }
     )
 

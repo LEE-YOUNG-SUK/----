@@ -144,6 +144,13 @@ export function Navigation({ user, onLogout }: Props) {
         action: 'read',
       },
       {
+        href: '/admin/categories',
+        label: '카테고리',
+        icon: '🏷️',
+        resource: 'admin_settings',
+        action: 'read',
+      },
+      {
         href: '/clients',
         label: '거래처',
         icon: '🏢',

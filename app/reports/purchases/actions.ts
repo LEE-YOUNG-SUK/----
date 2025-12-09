@@ -77,6 +77,7 @@ export async function getPurchaseReport(
         p_start_date: filter.startDate,
         p_end_date: filter.endDate,
         p_group_by: filter.groupBy,
+        p_category_id: filter.categoryId || null  // ✅ 추가: 카테고리 필터
       }
     )
 
@@ -97,8 +98,8 @@ export async function getPurchaseReport(
       total_quantity: parseFloat(item.total_quantity) || 0,
       total_amount: parseFloat(item.total_amount) || 0,
       transaction_count: parseInt(item.transaction_count, 10) || 0,
-      average_unit_cost: parseFloat(item.average_unit_cost) || 0,
-      product_count: parseInt(item.product_count, 10) || 0,
+      average_unit_cost: parseFloat(item.avg_unit_cost) || 0,      // ✅ DB 컬럼명: avg_unit_cost
+      product_count: parseInt(item.unique_products, 10) || 0,      // ✅ DB 컬럼명: unique_products
     }))
 
     return {

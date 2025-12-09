@@ -16,12 +16,150 @@
 - ✅ **Phase 3.5**: 필드명 매핑 및 타입 캐스팅 수정
 - ✅ **Phase 4**: 입고/판매 부가세 기능 구현
 - ✅ **Phase 5**: 재고 조정 시스템 완성
-- ✅ **Phase 6**: 판매 내역 그룹화 및 부가세 로직 개선 **← 현재**
+- ✅ **Phase 6**: 판매 내역 그룹화 및 부가세 로직 개선
+- ✅ **Phase 6.5**: 카테고리 관리 + 레포트 필터 개선 **← 현재**
 - ⏳ **Phase 7**: [다음 작업 계획]
 
 ---
 
-## 🎯 Phase 6 핵심 완료 작업
+## 🎯 Phase 6.5 핵심 완료 작업 (2025-12-09)
+
+### 1️⃣ 카테고리 관리 시스템 (신규 구현)
+
+#### A. 데이터베이스 (RPC 함수 5개)
+**파일**: `database/product_categories_rpc.sql`
+- ✅ `get_categories_list()` - 카테고리 목록 + 품목 개수
+- ✅ `create_category()` - 카테고리 생성 (코드/이름 중복 체크)
+- ✅ `update_category()` - 카테고리 수정
+- ✅ `delete_category()` - 카테고리 삭제 (품목 있으면 방지)
+- ✅ `update_categories_order()` - 표시 순서 일괄 변경
+
+#### B. 프론트엔드 (5개 파일)
+- **페이지**: `app/admin/categories/page.tsx` - URL: `/admin/categories`
+- **Actions**: `app/admin/categories/actions.ts` - Server Actions 4개
+- **컴포넌트**: 
+  - `components/admin/categories/CategoryManagement.tsx` - 메인 컨테이너
+  - `components/admin/categories/CategoryTable.tsx` - 목록 테이블
+  - `components/admin/categories/CategoryForm.tsx` - 추가/수정 폼
+
+#### C. 권한 시스템 통합
+**파일**: `types/permissions.ts`
+```typescript
+| 'admin_settings'  // 신규 리소스 추가
+```
+
+**파일**: `components/shared/Navigation.tsx`
+```tsx
+// 관리 메뉴에 카테고리 추가
+{
+  href: '/admin/categories',
+  label: '카테고리',
+  icon: '🏷️',
+  resource: 'admin_settings',
+  action: 'read',
+}
+```
+
+### 2️⃣ 레포트 카테고리 필터 추가
+
+#### A. 데이터베이스 (RPC 함수 3개 수정)
+**파일**: `database/add_category_filter_to_reports.sql`
+- ✅ `get_sales_report()` - 7번째 파라미터 `p_category_id` 추가
+- ✅ `get_purchase_report()` - 6번째 파라미터 `p_category_id` 추가
+- ✅ `get_summary_report()` - 6번째 파라미터 `p_category_id` 추가
+
+**핵심 변경**:
+```sql
+-- products 테이블 조인 추가
+LEFT JOIN products p ON s.product_id = p.id
+
+-- WHERE 절에 카테고리 필터 추가
+AND (p_category_id IS NULL OR p_category_id = '' OR p.category_id::TEXT = p_category_id)
+```
+
+#### B. 타입 정의 수정
+**파일**: `types/reports.ts`
+```typescript
+export interface ReportFilter {
+  startDate: string
+  endDate: string
+  groupBy: ReportGroupBy
+  branchId?: string | null
+  categoryId?: string | null  // ✅ 추가
+}
+```
+
+#### C. Server Actions 수정 (4개 파일)
+1. `app/reports/profit/actions.ts` - 종합 레포트
+2. `app/reports/purchases/actions.ts` - 구매 레포트
+3. `app/reports/sales/actions.ts` - 판매 레포트
+4. `app/reports/usage/actions.ts` - 재료비 레포트
+
+**공통 변경**:
+```typescript
+await supabase.rpc('get_xxx_report', {
+  ...
+  p_category_id: filter.categoryId || null  // ✅ 추가
+})
+```
+
+#### D. 클라이언트 컴포넌트 수정 (4개 파일)
+모든 레포트 클라이언트에 카테고리 상태 및 조회 로직 추가:
+```tsx
+const [categories, setCategories] = useState<{id: string, name: string}[]>([])
+
+useEffect(() => {
+  const fetchCategories = async () => {
+    const { data } = await supabase
+      .from('product_categories')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true })
+    if (data) setCategories(data)
+  }
+  fetchCategories()
+}, [])
+
+<ReportFilters categories={categories} ... />
+```
+
+#### E. 필터 UI 컴포넌트 수정
+**파일**: `components/reports/ReportFilters.tsx`
+- 카테고리 드롭다운 UI 추가
+- "전체 카테고리" 옵션 (기본값)
+
+### 3️⃣ 레포트 데이터 매핑 수정 (중요 버그 수정)
+
+**문제**: DB 컬럼명과 TypeScript 매핑 불일치
+
+#### 수정 내역:
+**파일**: `app/reports/purchases/actions.ts`
+```typescript
+// ❌ 수정 전
+average_unit_cost: parseFloat(item.average_unit_cost) || 0,
+product_count: parseInt(item.product_count, 10) || 0,
+
+// ✅ 수정 후
+average_unit_cost: parseFloat(item.avg_unit_cost) || 0,      // DB 컬럼명 사용
+product_count: parseInt(item.unique_products, 10) || 0,      // DB 컬럼명 사용
+```
+
+**파일**: `app/reports/sales/actions.ts`
+```typescript
+// ❌ 수정 전
+average_unit_price: parseFloat(item.average_unit_price) || 0,
+product_count: parseInt(item.product_count, 10) || 0,
+
+// ✅ 수정 후
+average_unit_price: parseFloat(item.avg_unit_price) || 0,      // DB 컬럼명 사용
+product_count: parseInt(item.unique_products, 10) || 0,        // DB 컬럼명 사용
+```
+
+**영향**: 레포트 페이지에서 평균 단가 및 품목 수가 정상적으로 표시됨
+
+---
+
+## 🎯 Phase 6 핵심 완료 작업 (2025-12-04)
 
 ### 1️⃣ 판매 내역 그룹화 (입고 내역과 동일한 UX)
 
@@ -321,7 +459,36 @@ created_at TIMESTAMPTZ
 
 ## 🚀 테스트 체크리스트
 
-### Phase 6 검증 사항
+### Phase 6.5 검증 사항 (신규)
+
+#### A. 카테고리 관리
+- [ ] `/admin/categories` 페이지 접근 (시스템 관리자)
+- [ ] 카테고리 목록 조회 (코드, 이름, 품목 수)
+- [ ] 카테고리 추가 (코드 중복 체크)
+- [ ] 카테고리 수정 (이름 변경)
+- [ ] 카테고리 삭제 (품목 없을 때만)
+- [ ] 사용 중인 카테고리 삭제 방지
+
+#### B. 레포트 카테고리 필터
+- [ ] 구매 레포트 → 카테고리 드롭다운 표시
+- [ ] 판매 레포트 → 카테고리 선택 가능
+- [ ] 종합 레포트 → 카테고리 필터 적용
+- [ ] 재료비 레포트 → 카테고리 필터 적용
+- [ ] "전체 카테고리" 선택 시 전체 데이터 표시
+- [ ] 특정 카테고리 선택 시 해당 품목만 표시
+
+#### C. 레포트 데이터 정확성
+- [ ] 평균 단가 정상 표시 (`avg_unit_cost`, `avg_unit_price`)
+- [ ] 품목 수 정상 표시 (`unique_products`)
+- [ ] 카테고리 필터링 정확성
+
+#### D. 재고 페이지 검증 (긴급 패치)
+- [ ] `/inventory` 페이지 접근
+- [ ] 카테고리 컬럼 정상 표시
+- [ ] 카테고리 없는 품목 → "미분류" 표시
+- [ ] 재고 수량, 평균 단가 정상 표시
+
+### Phase 6 검증 사항 (기존)
 
 #### A. 판매 내역 그룹화
 - [ ] 판매 목록 페이지 접근 → 거래번호별 그룹화 확인
@@ -361,10 +528,44 @@ created_at TIMESTAMPTZ
 ### 데이터베이스
 ```
 database/
+├── product_categories_rpc.sql           ← 카테고리 관리 RPC 5개 (신규)
+├── add_category_filter_to_reports.sql   ← 레포트 RPC 카테고리 필터 추가 (신규)
+├── get_current_inventory_fix.sql        ← 재고 조회 RPC 수정 (신규, 2025-12-09)
 ├── purchases_sales_rpc_functions.sql    ← get_sales_list 수정
 ├── phase5_inventory_adjustments_schema.sql
-├── phase5_fix_inventory_layers.sql
-└── complete_schema.sql                 ← 전체 스키마 통합
+└── complete_schema.sql                  ← 전체 스키마 통합
+```
+
+### 카테고리 관리 (신규)
+```
+app/admin/categories/
+├── page.tsx                             ← 카테고리 관리 페이지
+└── actions.ts                           ← Server Actions (CRUD)
+
+components/admin/categories/
+├── CategoryManagement.tsx               ← 메인 컨테이너
+├── CategoryTable.tsx                    ← 목록 테이블
+└── CategoryForm.tsx                     ← 추가/수정 폼
+```
+
+### 레포트 (카테고리 필터 추가)
+```
+app/reports/
+├── profit/
+│   ├── ProfitReportClient.tsx         ← 카테고리 상태 + 필터
+│   └── actions.ts                     ← p_category_id 추가
+├── purchases/
+│   ├── PurchaseReportClient.tsx       ← 카테고리 상태 + 필터
+│   └── actions.ts                     ← p_category_id 추가 + 매핑 수정 ✅
+├── sales/
+│   ├── SalesReportClient.tsx          ← 카테고리 상태 + 필터
+│   └── actions.ts                     ← p_category_id 추가 + 매핑 수정 ✅
+└── usage/
+    ├── UsageReportClient.tsx          ← 카테고리 상태 + 필터
+    └── actions.ts                     ← p_category_id 추가
+
+components/reports/
+└── ReportFilters.tsx                  ← 카테고리 드롭다운 UI 추가
 ```
 
 ### 프론트엔드 (판매)
@@ -395,22 +596,69 @@ components/purchases/
 
 ## 🔍 주요 버그 수정 이력
 
-### 1. 판매 금액 0원 표시 (Phase 6-1)
+### Phase 6.5 버그 수정 (2025-12-09)
+
+#### 6. 재고 페이지 카테고리 조회 오류 (Phase 6.5-2) **← 최신**
+**원인**: `get_current_inventory` 함수에서 `p.category` 컬럼 직접 참조
+- 기존: `p.category` (VARCHAR) - 존재하지 않는 컬럼
+- products 테이블: `category_id` (UUID) - 실제 컬럼
+
+**해결**: product_categories 테이블 JOIN 추가
+```sql
+-- ✅ 수정 후
+LEFT JOIN product_categories pc ON p.category_id = pc.id
+...
+COALESCE(pc.name, '미분류')::VARCHAR AS category
+```
+
+**파일**: `database/inventory_rpc_functions.sql` (또는 해당 RPC 파일)
+
+**영향**: 재고 페이지에서 카테고리명이 정상적으로 표시됨
+
+---
+
+#### 5. 레포트 데이터 매핑 불일치 (Phase 6.5-1)
+**원인**: DB 컬럼명과 TypeScript 매핑 불일치
+- DB: `avg_unit_cost`, `avg_unit_price`, `unique_products`
+- 기존 매핑: `average_unit_cost`, `average_unit_price`, `product_count`
+
+**해결**: Server Actions에서 DB 컬럼명 그대로 사용
+```typescript
+// ✅ 수정 후 (구매 레포트)
+average_unit_cost: parseFloat(item.avg_unit_cost) || 0,
+product_count: parseInt(item.unique_products, 10) || 0,
+
+// ✅ 수정 후 (판매 레포트)
+average_unit_price: parseFloat(item.avg_unit_price) || 0,
+product_count: parseInt(item.unique_products, 10) || 0,
+```
+
+**파일**: 
+- `app/reports/purchases/actions.ts`
+- `app/reports/sales/actions.ts`
+
+**영향**: 레포트 페이지에서 평균 단가 및 품목 수가 정상적으로 표시됨
+
+---
+
+### Phase 6 버그 수정 (2025-12-04)
+
+#### 1. 판매 금액 0원 표시 (Phase 6-1)
 **원인**: RPC 함수에서 `total_price`를 반환했는데 앱이 `total_amount` 필드 기대  
 **해결**: RPC 함수에 `s.total_price AS total_amount` 별칭 추가  
 **파일**: `database/purchases_sales_rpc_functions.sql`
 
-### 2. RPC 함수 타입 불일치 (Phase 6-2)
+#### 2. RPC 함수 타입 불일치 (Phase 6-2)
 **원인**: VARCHAR 필드를 TEXT로, INTEGER를 NUMERIC으로 캐스팅하지 않음  
 **해결**: 모든 필드에 명시적 타입 캐스팅 추가  
 **파일**: `database/purchases_sales_rpc_functions.sql`
 
-### 3. AG Grid 파괴 에러 (Phase 6-3)
+#### 3. AG Grid 파괴 에러 (Phase 6-3)
 **원인**: Grid 언마운트 중 비동기 `refreshCells()` 호출  
 **해결**: try-catch로 에러 무시  
 **파일**: `components/sales/salegrid.tsx`
 
-### 4. 부가세 미포함 단가 미변환 (Phase 6-4)
+#### 4. 부가세 미포함 단가 미변환 (Phase 6-4)
 **원인**: 부가세 미포함 시 입력 단가를 그대로 저장 (부가세 포함 아님)  
 **해결**: `row.unit_cost = Math.round(inputUnitCost * 1.1)` 추가  
 **파일**: `components/purchases/PurchaseGrid.tsx`
@@ -451,9 +699,12 @@ components/purchases/
 
 ### 주의사항
 - **RPC 함수 수정 시**: 파라미터 타입 (TEXT 필수), 반환 타입 (TEXT 필수) 확인
-- **필드 매핑**: DB 필드명 ≠ RPC 반환명인 경우 Server Actions에서 변환 필수
+- **필드 매핑**: ⚠️ **DB 컬럼명을 그대로 사용** (Phase 6.5-1 참고)
+  - DB: `avg_unit_cost` → TS: `item.avg_unit_cost` ✅
+  - DB: `unique_products` → TS: `item.unique_products` ✅
 - **Type 캐스팅**: `::TEXT`, `::NUMERIC`, `::UUID` 명시적 사용
 - **에러 처리**: Grid 관련 에러는 try-catch로 무시 (정상 동작)
+- **카테고리 필터**: RPC 함수에 `p_category_id` 파라미터, products 테이블 조인 필수
 
 ---
 
@@ -464,6 +715,7 @@ components/purchases/
 | `.github/copilot-instructions.md` | 프로젝트 아키텍처 가이드 |
 | `DATABASE_HANDOVER.md` | Phase 0-4 DB 설계 문서 |
 | `PHASE5_HANDOVER.md` | Phase 5 재고 조정 상세 |
+| `database/CATEGORY_MANAGEMENT_COMPLETE.md` | Phase 6.5 카테고리 관리 완료 보고서 |
 | `database/README.md` | DB 스키마 및 RPC 함수 설명 |
 | `docs/DEVELOPMENT_LESSONS.md` | Phase 3.5 교훈 (트리거 제거) |
 | `docs/NEXT_TASKS.md` | 향후 작업 우선순위 |
@@ -493,6 +745,41 @@ npm run dev
 
 ---
 
-**마지막 커밋**: Phase 6 완료 (2025-12-04)  
-**다음 검토**: Phase 6 테스트 완료 후 Phase 7 논의
+## 📝 변경 파일 총 개수
+
+### Phase 6.5 (2025-12-09)
+- **데이터베이스**: 3개 (product_categories_rpc.sql, add_category_filter_to_reports.sql, get_current_inventory_fix.sql)
+- **타입 정의**: 2개 (permissions.ts, reports.ts)
+- **카테고리 관리**: 5개 (page, actions, 3개 컴포넌트)
+- **레포트 Actions**: 4개 (수정: profit, purchases, sales, usage)
+- **레포트 클라이언트**: 4개 (수정: 4개 레포트 페이지)
+- **공통 컴포넌트**: 2개 (Navigation.tsx, ReportFilters.tsx)
+- **문서**: 1개 (CATEGORY_MANAGEMENT_COMPLETE.md)
+- **총 변경 파일**: **21개**
+
+### Phase 6 (2025-12-04)
+- **데이터베이스**: 1개
+- **타입 정의**: 1개
+- **판매 컴포넌트**: 3개
+- **입고 컴포넌트**: 1개
+- **Actions**: 1개
+- **총 변경 파일**: **7개**
+
+**전체 누적**: **28개 파일**
+
+---
+
+**마지막 업데이트**: Phase 6.5 완료 (2025-12-09)  
+**상태**: ✅ 카테고리 관리 구현 완료, 레포트 필터 추가 완료, 데이터 매핑 버그 수정 완료, 재고 페이지 카테고리 조회 오류 수정 완료  
+**다음 작업**: Phase 7 기획 및 개발
+
+---
+
+## 🐛 긴급 패치 이력
+
+### 2025-12-09 오후
+- ⚠️ **재고 페이지 오류 발견**: 카테고리 컬럼 조회 실패
+- ✅ **즉시 수정**: `get_current_inventory` RPC 함수 수정
+- 📝 **SQL 파일 생성**: `database/get_current_inventory_fix.sql`
+- 🎯 **결과**: 재고 페이지 정상 작동 확인
 

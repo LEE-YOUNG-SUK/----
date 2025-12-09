@@ -11,6 +11,7 @@ export type PermissionResource =
   | 'inventory_adjustments' // 재고 조정 (Phase 5)
   | 'audit_logs_view'       // 감사 로그 조회 (Phase 3)
   | 'reports_view'          // 레포트 조회 (Phase 6)
+  | 'admin_settings'        // 관리자 설정 (카테고리 등)
 
 // 권한 액션 타입
 export type PermissionAction = 'read' | 'create' | 'update' | 'delete'
@@ -81,6 +82,12 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     
     // 레포트 조회 (Phase 6)
     { resource: 'reports_view', action: 'read' },
+    
+    // 관리자 설정 (카테고리 관리 등)
+    { resource: 'admin_settings', action: 'read' },
+    { resource: 'admin_settings', action: 'create' },
+    { resource: 'admin_settings', action: 'update' },
+    { resource: 'admin_settings', action: 'delete' },
   ],
   
   // 0001: 원장 - 본인 지점 전체 CRUD + 본인 지점 사용자 관리

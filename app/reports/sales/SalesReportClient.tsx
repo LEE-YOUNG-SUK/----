@@ -46,6 +46,7 @@ export default function SalesReportClient({ userSession }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [branches, setBranches] = useState<{id: string, name: string}[]>([])
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([])
 
   // 지점 목록 조회 (시스템 관리자만)
   useEffect(() => {
@@ -64,6 +65,22 @@ export default function SalesReportClient({ userSession }: Props) {
       fetchBranches()
     }
   }, [userSession.role])
+
+  // 카테고리 목록 조회
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data, error } = await supabase
+        .from('product_categories')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true })
+      
+      if (!error && data) {
+        setCategories(data)
+      }
+    }
+    fetchCategories()
+  }, [])
 
   /**
    * 필터 변경 핸들러
@@ -188,6 +205,7 @@ export default function SalesReportClient({ userSession }: Props) {
         onFilterChange={handleFilterChange}
         showBranchFilter={userSession.role === '0000'}
         branches={branches}
+        categories={categories}
       />
 
       {/* 레포트 그리드 */}

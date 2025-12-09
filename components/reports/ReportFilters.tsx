@@ -23,6 +23,8 @@ interface Props {
   showBranchFilter?: boolean
   /** 지점 목록 (선택사항) */
   branches?: { id: string; name: string }[]
+  /** 카테고리 목록 (선택사항) */
+  categories?: { id: string; name: string }[]
 }
 
 export default function ReportFilters({
@@ -31,11 +33,13 @@ export default function ReportFilters({
   onFilterChange,
   showBranchFilter = false,
   branches = [],
+  categories = [],
 }: Props) {
   const [startDate, setStartDate] = useState(initialFilter.startDate)
   const [endDate, setEndDate] = useState(initialFilter.endDate)
   const [groupBy, setGroupBy] = useState(initialFilter.groupBy)
   const [branchId, setBranchId] = useState<string | null>(initialFilter.branchId || null)
+  const [categoryId, setCategoryId] = useState<string | null>(initialFilter.categoryId || null)
 
   /**
    * 조회 버튼 클릭 핸들러
@@ -46,6 +50,7 @@ export default function ReportFilters({
       endDate,
       groupBy,
       branchId: showBranchFilter ? branchId : null,
+      categoryId,
     })
   }
 
@@ -190,6 +195,28 @@ export default function ReportFilters({
               {branches.map((branch) => (
                 <option key={branch.id} value={branch.id}>
                   {branch.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* 카테고리 필터 */}
+        {categories.length > 0 && (
+          <div>
+            <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-1">
+              카테고리
+            </label>
+            <select
+              id="categoryId"
+              value={categoryId || ''}
+              onChange={(e) => setCategoryId(e.target.value || null)}
+              className="border border-gray-300 rounded-lg px-3 py-2 w-40 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">전체 카테고리</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
                 </option>
               ))}
             </select>

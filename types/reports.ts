@@ -32,6 +32,8 @@ export interface ReportFilter {
   groupBy: ReportGroupBy
   /** 지점 ID (선택사항, null이면 전체 지점) */
   branchId?: string | null
+  /** 카테고리 ID (선택사항, null이면 전체 카테고리) */
+  categoryId?: string | null
 }
 
 /**
