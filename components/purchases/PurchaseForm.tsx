@@ -214,17 +214,6 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
                   </select>
                 </FormField>
 
-                <FormField label="참조번호">
-                  <input
-                    type="text"
-                    value={referenceNumber}
-                    onChange={(e) => setReferenceNumber(e.target.value)}
-                    disabled={isSaving}
-                    placeholder="전표번호, 주문번호 등"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                  />
-                </FormField>
-
                 <FormField label="비고">
                   <input
                     type="text"
