@@ -33,6 +33,13 @@ export function AuditLogTable({ logs, loading, userSession }: Props) {
   }
 
   const getActionBadge = (action: string) => {
+    if (action === 'INSERT') {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          ➕ 등록
+        </span>
+      )
+    }
     if (action === 'UPDATE') {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -50,18 +57,21 @@ export function AuditLogTable({ logs, loading, userSession }: Props) {
     return <span>{action}</span>
   }
 
+  const TABLE_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
+    purchases: { label: '입고', emoji: '📥', color: 'bg-green-100 text-green-800' },
+    sales: { label: '판매', emoji: '📤', color: 'bg-purple-100 text-purple-800' },
+    inventory_adjustments: { label: '재고조정', emoji: '📦', color: 'bg-yellow-100 text-yellow-800' },
+    products: { label: '품목', emoji: '🏷️', color: 'bg-indigo-100 text-indigo-800' },
+    clients: { label: '거래처', emoji: '🏢', color: 'bg-teal-100 text-teal-800' },
+    branches: { label: '지점', emoji: '🏬', color: 'bg-orange-100 text-orange-800' },
+  }
+
   const getTableNameBadge = (tableName: string) => {
-    if (tableName === 'purchases') {
+    const info = TABLE_LABELS[tableName]
+    if (info) {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          📥 입고
-        </span>
-      )
-    }
-    if (tableName === 'sales') {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-          📤 판매
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${info.color}`}>
+          {info.emoji} {info.label}
         </span>
       )
     }
@@ -80,7 +90,7 @@ export function AuditLogTable({ logs, loading, userSession }: Props) {
     return (
       <div className="text-center py-12 text-gray-500">
         <p className="text-lg">📭 감사 로그가 없습니다.</p>
-        <p className="text-sm mt-2">데이터 수정/삭제 시 자동으로 기록됩니다.</p>
+        <p className="text-sm mt-2">데이터 등록/수정/삭제 시 자동으로 기록됩니다.</p>
       </div>
     )
   }
@@ -112,15 +122,23 @@ export function AuditLogTable({ logs, loading, userSession }: Props) {
             {logs.map((log) => {
               // 변경내용을 품목명 포함하여 구체적으로 표현
               const getChangeDescription = () => {
-                const tableLabel = log.table_name === 'purchases' ? '입고' : 
-                                  log.table_name === 'sales' ? '판매' : 
-                                  log.table_name === 'inventory_adjustments' ? '재고 조정' : 
-                                  log.table_name
-                
+                const tableInfo = TABLE_LABELS[log.table_name]
+                const tableLabel = tableInfo?.label || log.table_name
+
                 // 품목명 추출
                 const data = log.old_data || log.new_data
                 const productName = data?.product_name || null
-                
+
+                if (log.action === 'INSERT') {
+                  return (
+                    <div className="text-green-600">
+                      <div className="font-medium">
+                        ➕ {productName ? `[${productName}]` : ''} {tableLabel} 데이터 <strong>등록</strong>
+                      </div>
+                    </div>
+                  )
+                }
+
                 if (log.action === 'DELETE') {
                   return (
                     <div className="text-red-600">
@@ -130,12 +148,12 @@ export function AuditLogTable({ logs, loading, userSession }: Props) {
                     </div>
                   )
                 }
-                
+
                 if (log.action === 'UPDATE' && log.changed_fields && log.changed_fields.length > 0) {
                   const fieldCount = log.changed_fields.length
                   const fieldLabels = log.changed_fields.slice(0, 2).map(getFieldLabel).join(', ')
                   const moreCount = fieldCount > 2 ? fieldCount - 2 : 0
-                  
+
                   return (
                     <div className="text-blue-600">
                       <div className="font-medium">
@@ -147,7 +165,7 @@ export function AuditLogTable({ logs, loading, userSession }: Props) {
                     </div>
                   )
                 }
-                
+
                 return (
                   <span className="text-gray-600">
                     ✏️ {tableLabel} 데이터를 수정했습니다

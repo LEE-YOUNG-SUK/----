@@ -65,6 +65,7 @@ export async function saveProduct(formData: {
   standard_purchase_price: number | null
   standard_sale_price: number | null
   is_active: boolean
+  created_by?: string | null
 }) {
   const supabase = await createServerClient()
   
@@ -105,7 +106,8 @@ export async function saveProduct(formData: {
         p_barcode: formData.barcode,
         p_min_stock_level: formData.min_stock_level,
         p_standard_purchase_price: formData.standard_purchase_price,
-        p_standard_sale_price: formData.standard_sale_price
+        p_standard_sale_price: formData.standard_sale_price,
+        p_created_by: formData.created_by || null
       })
       
       if (error) throw error

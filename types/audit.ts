@@ -5,12 +5,12 @@
 /**
  * Audit Log 액션 타입
  */
-export type AuditAction = 'UPDATE' | 'DELETE'
+export type AuditAction = 'INSERT' | 'UPDATE' | 'DELETE'
 
 /**
  * Audit Log 테이블명
  */
-export type AuditTableName = 'purchases' | 'sales'
+export type AuditTableName = 'purchases' | 'sales' | 'inventory_adjustments' | 'products' | 'clients' | 'branches'
 
 /**
  * Audit Log 레코드

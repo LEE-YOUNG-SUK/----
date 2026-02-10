@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { UserData } from '@/types'
 import UserTable from './UserTable'
 import UserForm from './UserForm'
@@ -44,6 +45,7 @@ export default function UserManagement({
   currentUser,
   permissions
 }: UserManagementProps) {
+  const router = useRouter()
   const [users, setUsers] = useState<UserWithBranch[]>(initialUsers)
   const [filteredUsers, setFilteredUsers] = useState<UserWithBranch[]>(initialUsers)
   const [searchTerm, setSearchTerm] = useState('')
@@ -80,8 +82,9 @@ export default function UserManagement({
   }
 
   const handleSuccess = () => {
-    // 페이지 새로고침으로 데이터 갱신
-    window.location.reload()
+    setIsFormOpen(false)
+    setSelectedUser(null)
+    router.refresh()
   }
 
   return (

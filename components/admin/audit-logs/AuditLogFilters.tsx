@@ -59,6 +59,10 @@ export function AuditLogFilters({ userSession, onFilter, onReset, loading }: Pro
             <option value="">전체</option>
             <option value="purchases">입고</option>
             <option value="sales">판매</option>
+            <option value="inventory_adjustments">재고조정</option>
+            <option value="products">품목</option>
+            <option value="clients">거래처</option>
+            <option value="branches">지점</option>
           </select>
         </div>
 
@@ -73,6 +77,7 @@ export function AuditLogFilters({ userSession, onFilter, onReset, loading }: Pro
             className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
           >
             <option value="">전체</option>
+            <option value="INSERT">등록</option>
             <option value="UPDATE">수정</option>
             <option value="DELETE">삭제</option>
           </select>

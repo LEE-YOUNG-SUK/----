@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import EditPurchaseModal from './EditPurchaseModal'
@@ -30,6 +31,7 @@ export default function PurchaseDetailModal({
   userId,
   userBranchId
 }: Props) {
+  const router = useRouter()
   const [editingPurchase, setEditingPurchase] = useState<PurchaseHistory | null>(null)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const { can } = usePermissions(userRole)
@@ -61,7 +63,8 @@ export default function PurchaseDetailModal({
 
     if (result.success) {
       alert(result.message)
-      window.location.reload()
+      onClose()
+      router.refresh()
     } else {
       alert(result.message)
     }
@@ -86,7 +89,8 @@ export default function PurchaseDetailModal({
 
     if (result.success) {
       alert(result.message)
-      window.location.reload()
+      onClose()
+      router.refresh()
     } else {
       alert(result.message)
     }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Client } from '@/types'
 import { ContentCard } from '@/components/ui/Card'
 import { Button } from '../ui/Button'
@@ -20,14 +21,15 @@ interface ClientTableProps {
   onAddNew: () => void
 }
 
-export default function ClientTable({ 
-  clients, 
+export default function ClientTable({
+  clients,
   filteredClients,
   onFilterChange,
-  permissions, 
+  permissions,
   onEdit,
-  onAddNew 
+  onAddNew
 }: ClientTableProps) {
+  const router = useRouter()
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const getTypeText = (type: string) => {
@@ -70,7 +72,7 @@ export default function ClientTable({
       const result = await deleteClient(client.id)
       if (result.success) {
         alert(result.message)
-        window.location.reload()
+        router.refresh()
       } else {
         alert(result.message)
       }

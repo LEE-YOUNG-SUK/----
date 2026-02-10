@@ -1,7 +1,4 @@
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
-import { createServerClient } from '@/lib/supabase/server'
-import { PermissionChecker } from '@/lib/permissions'
+import { requirePermission } from '@/lib/session'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import CategoryManagement from '@/components/admin/categories/CategoryManagement'
 import { getCategories } from './actions'
@@ -14,43 +11,8 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic'
 
-async function getSession() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('erp_session_token')?.value
-
-  if (!token) {
-    redirect('/login')
-  }
-
-  const supabase = await createServerClient()
-  const { data: sessionData } = await supabase.rpc('verify_session', { 
-    p_token: token 
-  })
-
-  if (!sessionData?.[0]?.valid) {
-    redirect('/login')
-  }
-
-  const session = sessionData[0]
-
-  return {
-    user_id: session.user_id,
-    username: session.username,
-    display_name: session.display_name,
-    role: session.role as '0000' | '0001' | '0002' | '0003',
-    branch_id: session.branch_id || null,
-    branch_name: session.branch_name || null
-  }
-}
-
 export default async function CategoriesPage() {
-  const userData = await getSession()
-  const permissions = new PermissionChecker(userData.role)
-
-  // 권한 확인 (시스템 관리자만)
-  if (!permissions.can('admin_settings', 'read')) {
-    redirect('/')
-  }
+  const userData = await requirePermission('admin_settings', 'read')
 
   // 카테고리 목록 조회
   const categories = await getCategories()

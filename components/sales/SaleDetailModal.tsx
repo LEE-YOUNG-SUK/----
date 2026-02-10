@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import EditSaleModal from './EditSaleModal'
 import { deleteSale, updateSale } from '@/app/sales/actions'
@@ -28,6 +29,7 @@ export default function SaleDetailModal({
   userId,
   userBranchId
 }: Props) {
+  const router = useRouter()
   const [items, setItems] = useState<SaleHistory[]>(initialItems)
   const [editingSale, setEditingSale] = useState<SaleHistory | null>(null)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
@@ -58,7 +60,8 @@ export default function SaleDetailModal({
       if (result.success) {
         alert(result.message || '판매 정보가 수정되었습니다.')
         setEditingSale(null)
-        window.location.reload()
+        onClose()
+        router.refresh()
       } else {
         alert(result.message || '수정에 실패했습니다.')
       }
@@ -85,7 +88,8 @@ export default function SaleDetailModal({
 
       if (result.success) {
         alert(result.message || '판매가 삭제되었습니다.')
-        window.location.reload()
+        onClose()
+        router.refresh()
       } else {
         alert(result.message || '삭제에 실패했습니다.')
       }

@@ -1,5 +1,6 @@
 "use client"
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Branch, UserData } from '@/types'
 import BranchTable from './BranchTable'
 import BranchForm from './BranchForm'
@@ -14,11 +15,12 @@ interface BranchManagementProps {
   }
 }
 
-export default function BranchManagement({ 
-  branches, 
+export default function BranchManagement({
+  branches,
   userData,
-  permissions 
+  permissions
 }: BranchManagementProps) {
+  const router = useRouter()
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)
 
@@ -38,7 +40,9 @@ export default function BranchManagement({
   }
 
   const handleSuccess = () => {
-    window.location.reload()
+    setIsFormOpen(false)
+    setSelectedBranch(null)
+    router.refresh()
   }
 
   return (

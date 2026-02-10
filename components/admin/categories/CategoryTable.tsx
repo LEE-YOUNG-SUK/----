@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { ProductCategory } from '@/app/admin/categories/actions'
 import { ContentCard } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -12,11 +13,12 @@ interface CategoryTableProps {
   onAddNew: () => void
 }
 
-export default function CategoryTable({ 
+export default function CategoryTable({
   categories,
   onEdit,
-  onAddNew 
+  onAddNew
 }: CategoryTableProps) {
+  const router = useRouter()
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const handleDelete = async (category: ProductCategory) => {
@@ -34,7 +36,7 @@ export default function CategoryTable({
       const result = await deleteCategory(category.id)
       if (result.success) {
         alert(result.message)
-        window.location.reload()
+        router.refresh()
       } else {
         alert(result.message)
       }

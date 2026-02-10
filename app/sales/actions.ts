@@ -78,15 +78,10 @@ export async function saveSales(data: SaleSaveRequest) {
       notes: item.notes || ''
     }))
 
-    console.log('🛒 판매 일괄 저장 시작:', {
-      branch_id: data.branch_id,
-      customer_id: data.customer_id,
-      item_count: validItems.length
+    // ✅ Phase 3: Audit Log - 사용자 컨텍스트 설정 (SQL 인젝션 방지)
+    const { error: configError } = await supabase.rpc('set_current_user_context', {
+      p_user_id: data.created_by
     })
-
-    // ✅ Phase 3: Audit Log - 사용자 컨텍스트 설정
-    const setConfigQuery = `SELECT set_config('app.current_user_id', '${data.created_by}', false)`
-    const { error: configError } = await supabase.rpc('exec_sql', { query: setConfigQuery })
     
     if (configError) {
       console.error('❌ Config Error:', configError)
@@ -122,14 +117,6 @@ export async function saveSales(data: SaleSaveRequest) {
         message: result?.message || '판매 저장 실패'
       }
     }
-
-    console.log('✅ 판매 성공:', {
-      transaction_number: result.transaction_number,
-      total_items: result.total_items,
-      total_amount: result.total_amount,
-      total_cost: result.total_cost,
-      total_profit: result.total_profit
-    })
 
     revalidatePath('/sales')
     revalidatePath('/inventory')
@@ -364,12 +351,6 @@ export async function updateSale(data: SaleUpdateRequest) {
       return { success: false, message: '단가는 0보다 커야 합니다.' }
     }
 
-    console.log('✏️ 판매 수정 시작:', {
-      sale_id: data.sale_id,
-      quantity: data.quantity,
-      unit_price: data.unit_price
-    })
-
     // ✅ RPC 호출 (권한 및 지점 검증 포함, audit_logs 직접 기록)
     const { data: rpcData, error } = await supabase.rpc('update_sale', {
       p_sale_id: data.sale_id,
@@ -402,18 +383,16 @@ export async function updateSale(data: SaleUpdateRequest) {
       }
     }
 
-    console.log('✅ 판매 수정 성공')
-
     revalidatePath('/sales')
     revalidatePath('/inventory')
-    
+
     return {
       success: true,
       message: result.message
     }
 
   } catch (error) {
-    console.error('❌ Update sale error:', error)
+    console.error('Update sale error:', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '판매 수정 중 오류가 발생했습니다.'
@@ -447,11 +426,6 @@ export async function deleteSale(data: SaleDeleteRequest) {
       return { success: false, message: '판매 ID가 필요합니다.' }
     }
 
-    console.log('🗑️ 판매 삭제 시작:', {
-      sale_id: data.sale_id,
-      user_role: data.user_role
-    })
-
     // ✅ RPC 호출 (권한 및 지점 검증 포함, audit_logs 직접 기록)
     const { data: rpcData, error } = await supabase.rpc('delete_sale', {
       p_sale_id: data.sale_id,
@@ -478,18 +452,16 @@ export async function deleteSale(data: SaleDeleteRequest) {
       }
     }
 
-    console.log('✅ 판매 삭제 성공')
-
     revalidatePath('/sales')
     revalidatePath('/inventory')
-    
+
     return {
       success: true,
       message: result.message
     }
 
   } catch (error) {
-    console.error('❌ Delete sale error:', error)
+    console.error('Delete sale error:', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '판매 삭제 중 오류가 발생했습니다.'

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Product, UserData } from '@/types'
 import ProductTable from './ProductTable'
 import ProductForm from './ProductForm'
@@ -22,6 +23,7 @@ export default function ProductManagement({
   userData,
   permissions
 }: ProductManagementProps) {
+  const router = useRouter()
   const [products, setProducts] = useState<Product[]>(initialProducts)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(initialProducts)
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -43,8 +45,9 @@ export default function ProductManagement({
   }
 
   const handleSuccess = () => {
-    // 페이지 새로고침으로 데이터 갱신
-    window.location.reload()
+    setIsFormOpen(false)
+    setSelectedProduct(null)
+    router.refresh()
   }
 
   return (
@@ -64,6 +67,7 @@ export default function ProductManagement({
           product={selectedProduct}
           onClose={handleFormClose}
           onSuccess={handleSuccess}
+          userId={userData.user_id}
         />
       )}
     </>

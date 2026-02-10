@@ -163,6 +163,7 @@ export default function UserForm({ user, branches, currentUser, onClose, onSucce
                   placeholder="예: 홍길동, user123, 관리자_01"
                   disabled={isEdit}
                   required
+                  autoComplete="off"
                 />
                 {!isEdit && (
                   <p className="text-xs text-muted-foreground">
@@ -200,6 +201,7 @@ export default function UserForm({ user, branches, currentUser, onClose, onSucce
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   placeholder="최소 6자 이상"
                   required={!isEdit}
+                  autoComplete="new-password"
                 />
                 <p className="text-xs text-muted-foreground">
                   {isEdit ? '변경 시만 입력' : '필수 입력'}
@@ -214,6 +216,7 @@ export default function UserForm({ user, branches, currentUser, onClose, onSucce
                   value={formData.passwordConfirm}
                   onChange={(e) => setFormData({ ...formData, passwordConfirm: e.target.value })}
                   placeholder="비밀번호를 한 번 더 입력하세요"
+                  autoComplete="new-password"
                 />
               </div>
             </FormGrid>

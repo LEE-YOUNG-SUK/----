@@ -96,8 +96,8 @@ export async function getRecordHistory(
       throw error
     }
 
-    // 입고/판매 테이블인 경우 품목명 추가
-    if ((tableName === 'purchases' || tableName === 'sales') && data && data.length > 0) {
+    // 입고/판매/재고조정 테이블인 경우 품목명 추가
+    if (['purchases', 'sales', 'inventory_adjustments'].includes(tableName) && data && data.length > 0) {
       // product_id 수집
       const productIds = new Set<string>()
       data.forEach((log: any) => {

@@ -15,9 +15,10 @@ interface ClientFormProps {
   client: Client | null
   onClose: () => void
   onSuccess: () => void
+  userId?: string
 }
 
-export default function ClientForm({ client, onClose, onSuccess }: ClientFormProps) {
+export default function ClientForm({ client, onClose, onSuccess, userId }: ClientFormProps) {
   const isEdit = !!client
   const [isSubmitting, setIsSubmitting] = useState(false)
   
@@ -63,7 +64,8 @@ export default function ClientForm({ client, onClose, onSuccess }: ClientFormPro
         address: formData.address.trim() || null,
         tax_id: formData.tax_id.replace(/[^0-9]/g, '') || null,
         notes: formData.notes.trim() || null,
-        is_active: formData.is_active
+        is_active: formData.is_active,
+        created_by: userId || null
       })
 
       if (result.success) {

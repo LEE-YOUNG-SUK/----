@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import PurchaseHistoryTable from './PurchaseHistoryTable'
 import MobilePurchaseInput from './MobilePurchaseInput'
@@ -45,6 +46,8 @@ interface Props {
 }
 
 export function PurchaseForm({ products, suppliers, history, session }: Props) {
+  const router = useRouter()
+
   if (!Array.isArray(products) || !Array.isArray(suppliers) || !Array.isArray(history)) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -52,7 +55,7 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
       </div>
     )
   }
-  
+
   const [activeTab, setActiveTab] = useState<'input' | 'history'>('input')
   const [branches, setBranches] = useState<Branch[]>([])
   const [selectedBranchId, setSelectedBranchId] = useState(session.branch_id)
@@ -121,11 +124,8 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
       })
 
       if (result.success) {
-        // ✅ 성공 시 즉시 리로드 (AG Grid 에러 방지)
         alert(result.message || '입고 처리가 완료되었습니다.')
-        setTimeout(() => {
-          window.location.reload()
-        }, 100)
+        router.refresh()
       } else {
         setIsSaving(false)
         alert(result.message || '입고 처리 중 오류가 발생했습니다.')

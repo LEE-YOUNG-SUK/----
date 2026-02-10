@@ -1,11 +1,12 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/Card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/Table'
 import { Badge } from '../../ui/Badge'
 import { Button } from '../../ui/Button'
 import { deleteUser } from '@/app/admin/users/actions'
-import { useState } from 'react'
 import { ROLE_LABELS } from '@/types/permissions'
 
 interface UserWithBranch {
@@ -30,6 +31,7 @@ interface UserTableProps {
 }
 
 export default function UserTable({ users, permissions, onEdit }: UserTableProps) {
+  const router = useRouter()
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const getRoleVariant = (role: string) => {
@@ -66,7 +68,7 @@ export default function UserTable({ users, permissions, onEdit }: UserTableProps
       const result = await deleteUser(user.id)
       if (result.success) {
         alert(result.message)
-        window.location.reload()
+        router.refresh()
       } else {
         alert(result.message)
       }

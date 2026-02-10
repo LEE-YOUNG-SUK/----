@@ -1,12 +1,11 @@
 // 권한 리소스 타입
-export type PermissionResource = 
+export type PermissionResource =
   | 'users_management'      // 사용자 관리
   | 'branches_management'   // 지점 관리
   | 'clients_management'    // 거래처 관리
   | 'products_management'   // 품목 관리
   | 'purchases_management'  // 입고 관리
   | 'sales_management'      // 판매 관리
-  | 'usage_management'      // 사용(내부소모) 관리
   | 'inventory_view'        // 재고 조회
   | 'inventory_adjustments' // 재고 조정 (Phase 5)
   | 'audit_logs_view'       // 감사 로그 조회 (Phase 3)
@@ -61,13 +60,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     { resource: 'sales_management', action: 'create' },
     { resource: 'sales_management', action: 'update' },
     { resource: 'sales_management', action: 'delete' },
-    
-    // 사용(내부소모) 관리
-    { resource: 'usage_management', action: 'read' },
-    { resource: 'usage_management', action: 'create' },
-    { resource: 'usage_management', action: 'update' },
-    { resource: 'usage_management', action: 'delete' },
-    
+
     // 재고 조회
     { resource: 'inventory_view', action: 'read' },
     
@@ -115,13 +108,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     { resource: 'sales_management', action: 'create' },
     { resource: 'sales_management', action: 'update' },
     { resource: 'sales_management', action: 'delete' },
-    
-    // 사용(내부소모) (전체)
-    { resource: 'usage_management', action: 'read' },
-    { resource: 'usage_management', action: 'create' },
-    { resource: 'usage_management', action: 'update' },
-    { resource: 'usage_management', action: 'delete' },
-    
+
     // 재고 조회
     { resource: 'inventory_view', action: 'read' },
     
@@ -149,10 +136,6 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     { resource: 'sales_management', action: 'create' },
     { resource: 'sales_management', action: 'update' },
     { resource: 'sales_management', action: 'delete' },
-    { resource: 'usage_management', action: 'read' },
-    { resource: 'usage_management', action: 'create' },
-    { resource: 'usage_management', action: 'update' },
-    { resource: 'usage_management', action: 'delete' },
     { resource: 'inventory_view', action: 'read' },
     
     // 재고 조정 (Phase 5) - 매니저는 생성만 가능 (취소 불가)
@@ -175,10 +158,6 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     { resource: 'sales_management', action: 'create' },
     { resource: 'sales_management', action: 'update' },
     // ❌ delete 제거 - 사용자는 판매 삭제 불가
-    { resource: 'usage_management', action: 'read' },
-    { resource: 'usage_management', action: 'create' },
-    { resource: 'usage_management', action: 'update' },
-    // ❌ delete 제거 - 사용자는 사용 삭제 불가
     { resource: 'inventory_view', action: 'read' },
   ],
 }

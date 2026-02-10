@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Branch } from '@/types'
 import { ContentCard } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -17,12 +18,13 @@ interface BranchTableProps {
   onAddNew: () => void
 }
 
-export default function BranchTable({ 
-  branches, 
+export default function BranchTable({
+  branches,
   permissions,
   onEdit,
-  onAddNew 
+  onAddNew
 }: BranchTableProps) {
+  const router = useRouter()
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const formatDate = (dateString: string) => {
@@ -47,7 +49,7 @@ export default function BranchTable({
       const result = await deleteBranch(branch.id)
       if (result.success) {
         alert('지점이 삭제되었습니다')
-        window.location.reload()
+        router.refresh()
       } else {
         alert(result.message || '지점 삭제에 실패했습니다')
       }
@@ -100,6 +102,9 @@ export default function BranchTable({
                 등록일
               </th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                상태
+              </th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                 관리
               </th>
             </tr>
@@ -107,7 +112,7 @@ export default function BranchTable({
           <tbody className="bg-white divide-y divide-gray-200">
             {branches.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                   등록된 지점이 없습니다
                 </td>
               </tr>
@@ -131,6 +136,15 @@ export default function BranchTable({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(branch.created_at)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      branch.is_active
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {branch.is_active ? '활성' : '비활성'}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                     <div className="flex items-center justify-center gap-2">

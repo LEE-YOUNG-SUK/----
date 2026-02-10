@@ -36,6 +36,7 @@ export interface DbClient {
   is_active: boolean
   created_at: string      // timestamptz
   updated_at: string      // timestamptz
+  created_by: string | null  // uuid, FK -> users
 }
 
 // ============================================
@@ -45,17 +46,23 @@ export interface DbProduct {
   id: string              // uuid
   code: string            // unique
   name: string
-  category: string | null
+  category_id: string | null  // uuid, FK -> product_categories
   unit: string
   specification: string | null
   manufacturer: string | null
   barcode: string | null
+  description: string | null
   min_stock_level: number | null    // integer
   standard_purchase_price: number | null  // numeric(15,2)
   standard_sale_price: number | null      // numeric(15,2)
+  last_purchase_price: number | null      // numeric - 최근 구매가
+  last_purchase_date: string | null       // date
+  last_sale_price: number | null          // numeric - 최종 판매가
+  last_sale_date: string | null           // date
   is_active: boolean
   created_at: string      // timestamptz
   updated_at: string      // timestamptz
+  created_by: string | null  // uuid, FK -> users
 }
 
 // ============================================
@@ -65,7 +72,7 @@ export interface DbProduct {
 export interface DbPurchase {
   id: string              // uuid
   branch_id: string       // uuid, FK -> branches
-  client_id: string       // uuid, FK -> clients (NOT NULL)
+  client_id: string | null  // uuid, FK -> clients (NULL 허용 - 공급업체 미지정 입고)
   product_id: string      // uuid, FK -> products
   purchase_date: string   // date (YYYY-MM-DD)
   quantity: number        // integer
@@ -97,10 +104,9 @@ export interface DbSale {
   supply_price: number    // numeric(15,2) - 공급가
   tax_amount: number      // numeric(15,2) - 부가세
   total_price: number     // numeric(15,2) - 합계
-  unit_cogs: number | null       // numeric(15,2)
-  total_cogs: number | null      // numeric(15,2)
   cost_of_goods_sold: number | null  // numeric(15,2) - FIFO 원가
   profit: number | null          // numeric(15,2) - 이익
+  transaction_type: 'SALE' | 'USAGE' | null  // 거래유형: SALE(판매), USAGE(내부사용)
   reference_number: string | null  // varchar(50)
   notes: string | null
   created_at: string      // timestamptz
@@ -120,8 +126,8 @@ export interface DbInventoryLayer {
   purchase_date: string   // date
   unit_cost: number       // numeric(15,2)
   original_quantity: number   // integer
-  remaining_quantity: number  // integer (마이너스 가능)
-  source_type: 'PURCHASE' | 'ADJUSTMENT' | null
+  remaining_quantity: number  // integer
+  source_type: 'PURCHASE' | 'SALE' | 'ADJUSTMENT' | null  // 재고 출처
   source_id: string | null    // uuid
   created_at: string      // timestamptz
   updated_at: string      // timestamptz
@@ -162,16 +168,17 @@ export interface DbAuditLog {
   table_name: string      // 대상 테이블
   record_id: string       // uuid, 대상 레코드 ID
   action: 'INSERT' | 'UPDATE' | 'DELETE'
-  changed_fields: Record<string, any> | null  // jsonb
-  old_values: Record<string, any> | null      // jsonb
-  new_values: Record<string, any> | null      // jsonb
-  user_id: string | null  // uuid, FK -> users
-  user_name: string | null
+  old_data: Record<string, any> | null      // jsonb - 변경 전 데이터
+  new_data: Record<string, any> | null      // jsonb - 변경 후 데이터
+  changed_fields: string[] | null           // TEXT[] - 변경된 필드 목록
+  user_id: string         // uuid, FK -> users
+  username: string        // 사용자명
+  user_role: string       // 사용자 역할
   branch_id: string | null  // uuid, FK -> branches
   branch_name: string | null
-  product_name: string | null
   ip_address: string | null
   user_agent: string | null
+  reason: string | null   // 변경 사유
   created_at: string      // timestamptz
 }
 

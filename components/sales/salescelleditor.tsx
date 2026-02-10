@@ -159,7 +159,6 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
           // 클릭 중이 아닐 때만 드롭다운 숨기기
           setTimeout(() => {
             if (!isSelectingRef.current) {
-              console.log('👋 onBlur: hiding dropdown')
               setShowDropdown(false)
             }
           }, 150)
@@ -186,7 +185,6 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
               onMouseDown={(e) => {
                 // onBlur보다 먼저 실행되도록 onMouseDown 사용
                 e.preventDefault() // input blur 방지
-                console.log('🖱️ onMouseDown:', product.code)
                 handleSelect(product)
               }}
               onMouseEnter={() => setSelectedIndex(index)}

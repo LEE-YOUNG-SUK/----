@@ -1,7 +1,5 @@
-import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
+import { requireSession } from '@/lib/session'
 import { createServerClient } from '@/lib/supabase/server'
-import { UserData } from '@/types'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import { InventoryStats } from '@/components/Inventory/InventoryStats'
 import { InventoryTable } from '@/components/Inventory/InventoryTable'
@@ -31,30 +29,8 @@ interface InventorySummary {
   out_of_stock_count: number
 }
 
-async function getSession(): Promise<UserData | null> {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('erp_session_token')?.value
-  if (!token) return null
-  
-  const supabase = await createServerClient()
-  const { data } = await supabase.rpc('verify_session', { p_token: token })
-  
-  if (!data?.[0]?.valid) return null
-  
-  const session = data[0]
-  return {
-    user_id: session.user_id,
-    username: session.username,
-    display_name: session.display_name,
-    role: session.role as '0000' | '0001' | '0002' | '0003',
-    branch_id: session.branch_id || null,
-    branch_name: session.branch_name || null
-  }
-}
-
 export default async function InventoryPage() {
-  const session = await getSession()
-  if (!session) redirect('/login')
+  const session = await requireSession()
   
   // 원장/매니저/사용자는 본인 지점만
   const branchFilter = ['0001', '0002', '0003'].includes(session.role)
@@ -73,13 +49,7 @@ export default async function InventoryPage() {
     p_branch_id: branchFilter
   })
   
-  if (invError) {
-    console.error('❌ 재고 조회 실패:', invError)
-  }
-  
-  if (sumError) {
-    console.error('❌ 요약 통계 실패:', sumError)
-  }
+  // 에러는 UI에서 처리
   
   const inventoryData = (inventory as InventoryItem[]) || []
   const summaryData = (summary as InventorySummary[]) || []

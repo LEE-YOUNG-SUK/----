@@ -14,9 +14,10 @@ interface ProductFormProps {
   product: Product | null
   onClose: () => void
   onSuccess: () => void
+  userId?: string
 }
 
-export default function ProductForm({ product, onClose, onSuccess }: ProductFormProps) {
+export default function ProductForm({ product, onClose, onSuccess, userId }: ProductFormProps) {
   const isEdit = !!product
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [categories, setCategories] = useState<ProductCategory[]>([])
@@ -76,7 +77,8 @@ export default function ProductForm({ product, onClose, onSuccess }: ProductForm
         min_stock_level: Number(formData.min_stock_level) || 0,
         standard_purchase_price: Number(formData.standard_purchase_price) || 0,
         standard_sale_price: Number(formData.standard_sale_price) || 0,
-        is_active: formData.is_active
+        is_active: formData.is_active,
+        created_by: userId || null
       })
 
       if (result.success) {

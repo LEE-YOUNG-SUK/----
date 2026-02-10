@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Client, UserData } from '@/types'
 import ClientTable from './ClientTable'
 import ClientForm from './ClientForm'
@@ -22,6 +23,7 @@ export default function ClientManagement({
   userData,
   permissions
 }: ClientManagementProps) {
+  const router = useRouter()
   const [clients, setClients] = useState<Client[]>(initialClients)
   const [filteredClients, setFilteredClients] = useState<Client[]>(initialClients)
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -43,8 +45,9 @@ export default function ClientManagement({
   }
 
   const handleSuccess = () => {
-    // 페이지 새로고침으로 데이터 갱신
-    window.location.reload()
+    setIsFormOpen(false)
+    setSelectedClient(null)
+    router.refresh()
   }
 
   return (
@@ -64,6 +67,7 @@ export default function ClientManagement({
           client={selectedClient}
           onClose={handleFormClose}
           onSuccess={handleSuccess}
+          userId={userData.user_id}
         />
       )}
     </>

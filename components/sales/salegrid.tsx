@@ -360,14 +360,8 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
   }, [taxIncluded])
 
   const handleAddRow = useCallback(() => {
-    console.log('행 추가 버튼 클릭됨')
     const newRow = createEmptyRow()
-    console.log('새 행 생성:', newRow)
-    setRowData((prev) => {
-      const updated = [...prev, newRow]
-      console.log('업데이트된 행 수:', updated.length)
-      return updated
-    })
+    setRowData((prev) => [...prev, newRow])
   }, [createEmptyRow])
 
   const handleClearAll = useCallback(() => {

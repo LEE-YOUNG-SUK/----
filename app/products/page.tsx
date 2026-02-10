@@ -1,7 +1,4 @@
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
-import { createServerClient } from '@/lib/supabase/server'
-import { PermissionChecker } from '@/lib/permissions'
+import { requirePermission, getPermissionFlags } from '@/lib/session'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import { getProducts } from './actions'
 import ProductManagement from '@/components/products/ProductManagement'
@@ -9,42 +6,9 @@ import { ContentCard } from '@/components/ui/Card'
 
 export const dynamic = 'force-dynamic'
 
-async function getSession() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('erp_session_token')?.value
-
-  if (!token) {
-    redirect('/login')
-  }
-
-  const supabase = await createServerClient()
-  const { data: sessionData } = await supabase.rpc('verify_session', { 
-    p_token: token 
-  })
-
-  if (!sessionData?.[0]?.valid) {
-    redirect('/login')
-  }
-
-  const session = sessionData[0]
-
-  return {
-    user_id: session.user_id,
-    username: session.username,
-    display_name: session.display_name,
-    role: session.role as '0000' | '0001' | '0002' | '0003',
-    branch_id: session.branch_id || null,
-    branch_name: session.branch_name || null
-  }
-}
-
 export default async function ProductsPage() {
-  const userData = await getSession()
-  const permissions = new PermissionChecker(userData.role)
-
-  if (!permissions.can('products_management', 'read')) {
-    redirect('/')
-  }
+  const userData = await requirePermission('products_management', 'read')
+  const permissions = getPermissionFlags(userData.role, 'products_management')
 
   const products = await getProducts()
 
@@ -70,14 +34,10 @@ export default async function ProductsPage() {
               </div>
             </ContentCard>
 
-            <ProductManagement 
-              initialProducts={products} 
+            <ProductManagement
+              initialProducts={products}
               userData={userData}
-              permissions={{
-                canCreate: permissions.can('products_management', 'create'),
-                canUpdate: permissions.can('products_management', 'update'),
-                canDelete: permissions.can('products_management', 'delete')
-              }}
+              permissions={permissions}
             />
           </div>
         </div>

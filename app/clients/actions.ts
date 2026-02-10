@@ -42,6 +42,7 @@ export async function saveClient(formData: {
   tax_id: string | null
   notes: string | null
   is_active: boolean
+  created_by?: string | null
 }) {
   const supabase = await createServerClient()
   
@@ -83,7 +84,8 @@ export async function saveClient(formData: {
           address: formData.address,
           tax_id: formData.tax_id,
           notes: formData.notes,
-          is_active: formData.is_active
+          is_active: formData.is_active,
+          created_by: formData.created_by || null
         })
       
       if (error) {

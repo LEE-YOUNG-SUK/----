@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Product } from '@/types'
 import { ContentCard } from '@/components/ui/Card'
 import { Button } from '../ui/Button'
@@ -20,14 +21,15 @@ interface ProductTableProps {
   onAddNew: () => void
 }
 
-export default function ProductTable({ 
-  products, 
+export default function ProductTable({
+  products,
   filteredProducts,
   onFilterChange,
-  permissions, 
+  permissions,
   onEdit,
-  onAddNew 
+  onAddNew
 }: ProductTableProps) {
+  const router = useRouter()
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const formatPrice = (price: number | null) => {
@@ -49,7 +51,7 @@ export default function ProductTable({
       const result = await deleteProduct(product.id)
       if (result.success) {
         alert(result.message)
-        window.location.reload()
+        router.refresh()
       } else {
         alert(result.message)
       }

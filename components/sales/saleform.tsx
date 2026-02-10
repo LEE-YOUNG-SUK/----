@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import SaleHistoryTable from './salehistorytable'
 import MobileSaleInput from './MobileSaleInput'
@@ -56,6 +57,8 @@ interface Props {
 }
 
 export function SaleForm({ products: initialProducts, customers, history, session, transactionType = 'SALE' }: Props) {
+  const router = useRouter()
+
   if (!Array.isArray(initialProducts) || !Array.isArray(customers) || !Array.isArray(history)) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -63,7 +66,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
       </div>
     )
   }
-  
+
   const [activeTab, setActiveTab] = useState<'input' | 'history'>('input')
   const [branches, setBranches] = useState<Branch[]>([])
   const [selectedBranchId, setSelectedBranchId] = useState(session.branch_id)
@@ -186,12 +189,8 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
       })
 
       if (result.success) {
-        // ✅ 성공 시 즉시 리로드 (AG Grid 에러 방지)
         alert(result.message || '판매 처리가 완료되었습니다.')
-        // setTimeout으로 alert 닫힌 후 리로드
-        setTimeout(() => {
-          window.location.reload()
-        }, 100)
+        router.refresh()
       } else {
         setIsSaving(false)
         alert(result.message || '판매 처리 중 오류가 발생했습니다.')

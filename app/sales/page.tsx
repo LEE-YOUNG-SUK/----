@@ -3,44 +3,15 @@
  * 입고 관리(purchases/page.tsx) 구조 100% 적용
  */
 
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
+import { requireSession } from '@/lib/session'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import { SaleForm } from '@/components/sales/saleform'
 import { getProductsWithStock, getCustomersList, getSalesHistory } from './actions'
 import { PageLayout } from '@/components/shared/PageLayout'
-import { PageHeader } from '@/components/shared/PageHeader'
 import { ContentCard } from '@/components/ui/Card'
 
 export default async function SalesPage() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('erp_session_token')?.value
-  
-  if (!token) {
-    redirect('/login')
-  }
-  
-  const { createServerClient } = await import('@/lib/supabase/server')
-  const supabase = await createServerClient()
-  
-  const { data: sessionData } = await supabase.rpc('verify_session', { 
-    p_token: token 
-  })
-  
-  if (!sessionData?.[0]?.valid) {
-    redirect('/login')
-  }
-  
-  const session = sessionData[0]
-  
-  const userSession = {
-    user_id: session.user_id,
-    username: session.username,
-    display_name: session.display_name,
-    role: session.role as '0000' | '0001' | '0002' | '0003',
-    branch_id: session.branch_id || null,
-    branch_name: session.branch_name || null
-  }
+  const userSession = await requireSession()
 
   const [productsResult, customersResult, historyResult] = await Promise.all([
     getProductsWithStock(userSession.branch_id),
@@ -67,25 +38,22 @@ export default async function SalesPage() {
   }
 
   let products, customers, history
-  
+
   try {
     products = JSON.parse(JSON.stringify(productsResult.data || []))
-  } catch (e) {
-    console.error('products 직렬화 실패:', e)
+  } catch {
     products = []
   }
-  
+
   try {
     customers = JSON.parse(JSON.stringify(customersResult.data || []))
-  } catch (e) {
-    console.error('customers 직렬화 실패:', e)
+  } catch {
     customers = []
   }
-  
+
   try {
     history = JSON.parse(JSON.stringify(historyResult.data || []))
-  } catch (e) {
-    console.error('history 직렬화 실패:', e)
+  } catch {
     history = []
   }
 
@@ -119,7 +87,12 @@ export default async function SalesPage() {
                 products={products}
                 customers={customers}
                 history={history}
-                session={userSession}
+                session={{
+                  user_id: userSession.user_id,
+                  branch_id: userSession.branch_id || '',
+                  branch_name: userSession.branch_name || '',
+                  role: userSession.role
+                }}
                 transactionType="SALE"
               />
             </div>

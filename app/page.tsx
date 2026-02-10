@@ -1,44 +1,11 @@
-import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@/lib/supabase/server'
-import { UserData } from '@/types'
+import { requireSession } from '@/lib/session'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import { ROLE_LABELS, ROLE_ICONS } from '@/types/permissions'
 import { PageLayout } from '@/components/shared/PageLayout'
 import { ContentCard } from '@/components/ui/Card'
 
-async function getSession(): Promise<UserData | null> {
-  try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('erp_session_token')?.value
-    
-    if (!token) return null
-    
-    const supabase = await createServerClient()
-    const { data, error } = await supabase.rpc('verify_session', {
-      p_token: token
-    })
-    
-    if (error || !data || data.length === 0 || !data[0].valid) return null
-    
-    const session = data[0]
-    
-    return {
-      user_id: session.user_id,
-      username: session.username,
-      display_name: session.display_name,
-      role: session.role as '0000' | '0001' | '0002' | '0003',
-      branch_id: session.branch_id || null,
-      branch_name: session.branch_name || null
-    }
-  } catch (error) {
-    return null
-  }
-}
-
 export default async function DashboardPage() {
-  const session = await getSession()
-  if (!session) redirect('/login')
+  const session = await requireSession()
   
   const isAdmin = session.role === '0000'
   const isBranchUser = ['0001', '0002', '0003'].includes(session.role)

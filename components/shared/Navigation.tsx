@@ -73,13 +73,6 @@ export function Navigation({ user, onLogout }: Props) {
       action: 'read',
     },
     {
-      href: '/usage',
-      label: '사용',
-      icon: '📦',
-      resource: 'usage_management',
-      action: 'read',
-    },
-    {
       href: '/inventory',
       label: '재고',
       icon: '📊',
@@ -111,13 +104,6 @@ export function Navigation({ user, onLogout }: Props) {
         href: '/reports/sales',
         label: '판매',
         icon: '💰',
-        resource: 'reports_view',
-        action: 'read',
-      },
-      {
-        href: '/reports/usage',
-        label: '재료비',
-        icon: '📦',
         resource: 'reports_view',
         action: 'read',
       },

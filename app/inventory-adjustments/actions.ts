@@ -54,13 +54,6 @@ export async function saveInventoryAdjustment(data: AdjustmentSaveRequest) {
       }
     }
 
-    console.log('📝 재고 조정 저장 시작:', {
-      branch_id: data.branch_id,
-      product_id: data.product_id,
-      type: data.adjustment_type,
-      quantity: data.quantity
-    })
-
     // RPC 호출: process_inventory_adjustment
     const { data: rpcResult, error } = await supabase.rpc('process_inventory_adjustment', {
       p_branch_id: data.branch_id,
@@ -95,8 +88,6 @@ export async function saveInventoryAdjustment(data: AdjustmentSaveRequest) {
       console.error('❌ 재고 조정 실패:', result.message)
       return result
     }
-
-    console.log('✅ 재고 조정 성공:', result)
 
     // 캐시 무효화
     revalidatePath('/inventory-adjustments')
@@ -230,11 +221,6 @@ export async function cancelAdjustment(data: AdjustmentCancelRequest) {
       }
     }
 
-    console.log('🚫 재고 조정 취소 시작:', {
-      adjustment_id: data.adjustment_id,
-      cancel_reason: data.cancel_reason
-    })
-
     // RPC 호출: cancel_inventory_adjustment
     const { data: rpcResult, error } = await supabase.rpc('cancel_inventory_adjustment', {
       p_adjustment_id: data.adjustment_id,
@@ -258,8 +244,6 @@ export async function cancelAdjustment(data: AdjustmentCancelRequest) {
       console.error('❌ 재고 조정 취소 실패:', result.message)
       return result
     }
-
-    console.log('✅ 재고 조정 취소 성공:', result)
 
     // 캐시 무효화
     revalidatePath('/inventory-adjustments')

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@/lib/supabase/server'
 import { UserData } from '@/types'
+import { getSafeErrorMessage, logServerError } from '@/lib/error-handler'
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,10 +45,10 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({ success: true })
     
-  } catch (error: any) {
-    console.error('Login API error:', error)
+  } catch (error) {
+    logServerError('Login API', error)
     return NextResponse.json(
-      { error: error.message || 'Login failed' },
+      { error: getSafeErrorMessage(error, '로그인에 실패했습니다') },
       { status: 500 }
     )
   }

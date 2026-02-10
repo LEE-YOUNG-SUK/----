@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { FormGrid } from '@/components/shared/FormGrid'
+import { Checkbox } from '@/components/ui/Checkbox'
 import { createBranch, updateBranch } from '@/app/admin/branches/actions'
 
 interface BranchFormProps {
@@ -22,7 +23,8 @@ export default function BranchForm({ branch, onClose, onSuccess }: BranchFormPro
     email: branch?.email || '',
     business_number: branch?.business_number || '',
     address: branch?.address || '',
-    phone: branch?.phone || ''
+    phone: branch?.phone || '',
+    is_active: branch?.is_active ?? true
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -157,6 +159,22 @@ export default function BranchForm({ branch, onClose, onSuccess }: BranchFormPro
                 disabled={loading}
               />
             </div>
+
+            {branch && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, is_active: checked as boolean })
+                  }
+                  disabled={loading}
+                />
+                <Label htmlFor="is_active" className="cursor-pointer">
+                  활성 상태
+                </Label>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
