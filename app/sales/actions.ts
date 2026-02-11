@@ -144,26 +144,22 @@ export async function getProductsWithStock(branchId: string | null) {
   try {
     const supabase = await createServerClient()
 
-    // 1. 전체 품목 조회
-    const { data: allProducts, error: productsError } = await supabase
-      .rpc('get_products_list')
-      .order('code', { ascending: true })
-
-    if (productsError) throw productsError
-
-    // 2. 재고 조회 (지점별 또는 전체)
+    // 1+2. 품목 + 재고 병렬 조회
     let inventoryQuery = supabase
       .from('inventory_layers')
       .select('product_id, remaining_quantity')
       .gt('remaining_quantity', 0)
-    
-    // branch_id가 있으면 해당 지점만, 없으면 전체 지점 재고 합계
+
     if (branchId) {
       inventoryQuery = inventoryQuery.eq('branch_id', branchId)
     }
 
-    const { data: inventoryData, error: inventoryError } = await inventoryQuery
+    const [{ data: allProducts, error: productsError }, { data: inventoryData, error: inventoryError }] = await Promise.all([
+      supabase.rpc('get_products_list').order('code', { ascending: true }),
+      inventoryQuery
+    ])
 
+    if (productsError) throw productsError
     if (inventoryError) throw inventoryError
 
     // 3. 재고 맵 생성 (product_id별 합계 계산)

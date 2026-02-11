@@ -39,15 +39,11 @@ export default async function InventoryPage() {
   
   const supabase = await createServerClient()
   
-  // 재고 현황 조회
-  const { data: inventory, error: invError } = await supabase.rpc('get_current_inventory', {
-    p_branch_id: branchFilter
-  })
-  
-  // 재고 요약 통계
-  const { data: summary, error: sumError } = await supabase.rpc('get_inventory_summary', {
-    p_branch_id: branchFilter
-  })
+  // 재고 현황 + 요약 통계 병렬 조회
+  const [{ data: inventory, error: invError }, { data: summary, error: sumError }] = await Promise.all([
+    supabase.rpc('get_current_inventory', { p_branch_id: branchFilter }),
+    supabase.rpc('get_inventory_summary', { p_branch_id: branchFilter })
+  ])
   
   // 에러는 UI에서 처리
   
