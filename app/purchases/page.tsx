@@ -10,15 +10,18 @@ export default async function PurchasesPage({
 }: {
   searchParams: Promise<{ tab?: string }>
 }) {
-  const userSession = await requireSession()
   const resolvedParams = await searchParams
   const defaultTab = resolvedParams.tab === 'history' ? 'history' : 'input' as 'input' | 'history'
 
-  const [productsResult, suppliersResult, historyResult] = await Promise.all([
+  // 세션 검증 + 독립 데이터를 동시 조회
+  const [userSession, productsResult, suppliersResult] = await Promise.all([
+    requireSession(),
     getProductsList(),
-    getSuppliersList(),
-    getPurchasesHistory(userSession.branch_id, userSession.user_id)
+    getSuppliersList()
   ])
+
+  // 세션 필요한 쿼리는 이후 실행
+  const historyResult = await getPurchasesHistory(userSession.branch_id, userSession.user_id)
 
   if (!productsResult.success || !suppliersResult.success) {
     return (

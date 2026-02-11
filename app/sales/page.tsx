@@ -15,14 +15,19 @@ export default async function SalesPage({
 }: {
   searchParams: Promise<{ tab?: string }>
 }) {
-  const userSession = await requireSession()
   const resolvedParams = await searchParams
   const defaultTab = resolvedParams.tab === 'history' ? 'history' : 'input' as 'input' | 'history'
 
-  const [productsResult, customersResult, historyResult] = await Promise.all([
+  // 세션 검증 + 독립 데이터를 동시 조회
+  const [userSession, customersResult] = await Promise.all([
+    requireSession(),
+    getCustomersList()
+  ])
+
+  // 세션(branch_id) 필요한 쿼리는 이후 병렬 실행
+  const [productsResult, historyResult] = await Promise.all([
     getProductsWithStock(userSession.branch_id),
-    getCustomersList(),
-    getSalesHistory(userSession.branch_id, userSession.user_id, undefined, undefined, 'SALE')  // ✅ 'SALE' 필터 추가
+    getSalesHistory(userSession.branch_id, userSession.user_id, undefined, undefined, 'SALE')
   ])
 
   // 실패 처리

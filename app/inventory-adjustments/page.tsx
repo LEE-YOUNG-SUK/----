@@ -9,6 +9,8 @@ import AdjustmentStats from '@/components/inventory-adjustments/AdjustmentStats'
 import { getAdjustmentHistory, getProductsList } from './actions'
 
 export default async function InventoryAdjustmentsPage() {
+  // 세션 검증 + 품목 목록 동시 조회
+  const productsPromise = getProductsList()
   const userSession = await requireSession()
 
   // 권한 체크: 매니저 이상 (0000~0002)
@@ -47,7 +49,7 @@ export default async function InventoryAdjustmentsPage() {
   const branchIdForQuery = userSession.branch_id
   
   const [productsResult, historyResult] = await Promise.all([
-    getProductsList(),
+    productsPromise,
     getAdjustmentHistory(
       userSession.user_id,
       userSession.role,

@@ -7,10 +7,12 @@ import { ContentCard } from '@/components/ui/Card'
 export const dynamic = 'force-dynamic'
 
 export default async function ClientsPage() {
-  const userData = await requirePermission('clients_management', 'read')
+  // 세션 검증 + 데이터 동시 조회
+  const [userData, clients] = await Promise.all([
+    requirePermission('clients_management', 'read'),
+    getClients()
+  ])
   const permissions = getPermissionFlags(userData.role, 'clients_management')
-
-  const clients = await getClients()
 
   return (
     <>

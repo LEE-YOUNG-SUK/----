@@ -7,10 +7,12 @@ import { ContentCard } from '@/components/ui/Card'
 export const dynamic = 'force-dynamic'
 
 export default async function ProductsPage() {
-  const userData = await requirePermission('products_management', 'read')
+  // 세션 검증 + 데이터 동시 조회
+  const [userData, products] = await Promise.all([
+    requirePermission('products_management', 'read'),
+    getProducts()
+  ])
   const permissions = getPermissionFlags(userData.role, 'products_management')
-
-  const products = await getProducts()
 
   return (
     <>
