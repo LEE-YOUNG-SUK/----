@@ -20,7 +20,7 @@ const DeleteButtonRenderer = (props: any) => (
     onClick={() => props.handleDeleteRow(props.node.rowIndex)}
     className="w-full h-full text-red-600 hover:bg-red-50 transition"
   >
-    ✕ 삭제
+    🗑️
   </button>
 )
 
@@ -56,7 +56,6 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
       category: '',
       unit: '',
       specification: '',
-      manufacturer: '',
       current_stock: 0,
       quantity: 0,
       unit_price: 0,
@@ -78,7 +77,6 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
       category: '',
       unit: '',
       specification: '',
-      manufacturer: '',
       current_stock: 0,
       quantity: 0,
       unit_price: 0,
@@ -150,7 +148,6 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
         category: product.category || '',
         unit: product.unit,
         specification: product.specification || '',
-        manufacturer: product.manufacturer || '',
         current_stock: product.current_stock,
         unit_price: product.standard_sale_price || 0
       }
@@ -164,7 +161,7 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
           gridRef.current.api.refreshCells({
             force: true,
             rowNodes: [rowNode],
-            columns: ['product_code','product_name','unit','current_stock','unit_price','supply_price','tax_amount','total_price']
+            columns: ['product_code','product_name','unit','unit_price','supply_price','tax_amount','total_price']
           })
         }
       } catch (e) {
@@ -182,6 +179,7 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
           width: 140,
           editable: false,
           type: 'numericColumn',
+      headerClass: 'ag-header-cell-center',
           cellClass: 'bg-purple-50 text-right font-medium text-purple-700',
           valueFormatter: (params) => {
             const value = params.value || 0
@@ -192,9 +190,11 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
       : {
           headerName: '판매단가',
           field: 'unit_price',
-          width: 120,
+          width: 110,
+          minWidth: 110,
           editable: true,
           type: 'numericColumn',
+      headerClass: 'ag-header-cell-center',
           cellClass: 'text-right',
           valueFormatter: (params) => {
             const value = params.value || 0
@@ -207,13 +207,14 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
       headerName: 'No',
       valueGetter: 'node.rowIndex + 1',
       width: 60,
+      minWidth: 60,
       pinned: 'left',
       cellClass: 'text-center font-medium text-gray-600'
     },
     {
       headerName: '품목코드',
       field: 'product_code',
-      width: 150,
+      width: 110,
       pinned: 'left',
       editable: true,
       cellEditor: ProductCellEditor,
@@ -232,60 +233,50 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
         }
         return false
       },
-      cellClass: 'font-medium text-blue-600'
+      cellClass: 'text-center font-medium text-blue-600'
     },
     {
       headerName: '품목명',
       field: 'product_name',
-      width: 250,
-      editable: false,
-      cellClass: 'bg-gray-50'
+      width: 200,
+      minWidth: 200,
+      pinned: 'left',
+      editable: true,
+      cellEditor: ProductCellEditor,
+      cellEditorParams: (params: ICellEditorParams) => ({
+        products: products,
+        onProductSelect: (product: ProductWithStock) => {
+          handleProductSelect(params.node, product)
+        },
+        stopEditing: () => params.api.stopEditing()
+      }),
+      cellClass: 'text-center'
     },
     {
       headerName: '규격',
       field: 'specification',
-      width: 150,
+      width: 130,
+      minWidth: 130,
       editable: false,
-      cellClass: 'bg-gray-50 text-sm'
-    },
-    {
-      headerName: '제조사',
-      field: 'manufacturer',
-      width: 120,
-      editable: false,
-      cellClass: 'bg-gray-50 text-sm'
+      cellClass: 'text-center bg-gray-50 text-sm'
     },
     {
       headerName: '단위',
       field: 'unit',
       width: 80,
+      minWidth: 80,
       editable: false,
-      cellClass: 'bg-gray-50 text-center font-medium'
-    },
-    {
-      headerName: '재고',
-      field: 'current_stock',
-      width: 100,
-      editable: false,
-      type: 'numericColumn',
-      cellClass: (params) => {
-        const stock = params.value || 0
-        return stock <= 0 
-          ? 'bg-red-50 text-red-700 font-bold text-center' 
-          : 'bg-green-50 text-green-700 font-bold text-center'
-      },
-      valueFormatter: (params) => {
-        const value = params.value || 0
-        return value.toLocaleString()
-      }
+      cellClass: 'text-center bg-gray-50 font-medium'
     },
     {
       headerName: '수량',
       field: 'quantity',
-      width: 100,
+      width: 80,
+      minWidth: 80,
       editable: true,
       type: 'numericColumn',
-      cellClass: 'text-right',
+      headerClass: 'ag-header-cell-center',
+      cellClass: 'text-center',
       valueFormatter: (params) => {
         const value = params.value || 0
         return value.toLocaleString()
@@ -296,8 +287,10 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
       headerName: '공급가',
       field: 'supply_price',
       width: 130,
+      minWidth: 130,
       editable: false,
       type: 'numericColumn',
+      headerClass: 'ag-header-cell-center',
       cellClass: 'bg-gray-50 text-right font-medium',
       valueFormatter: p => `₩${(p.value || 0).toLocaleString()}`
     },
@@ -305,31 +298,36 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
       headerName: '부가세',
       field: 'tax_amount',
       width: 120,
+      minWidth: 120,
       editable: false,
       type: 'numericColumn',
+      headerClass: 'ag-header-cell-center',
       cellClass: 'bg-gray-50 text-right font-medium text-orange-600',
       valueFormatter: p => `₩${(p.value || 0).toLocaleString()}`
     },
     {
       headerName: '합계',
       field: 'total_price',
-      width: 140,
+      width: 130,
+      minWidth: 130,
       editable: false,
       type: 'numericColumn',
+      headerClass: 'ag-header-cell-center',
       cellClass: 'bg-blue-50 text-right font-bold text-blue-700',
       valueFormatter: p => `₩${(p.value || 0).toLocaleString()}`
     },
     {
       headerName: '비고',
       field: 'notes',
-      width: 200,
+      width: 130,
+      minWidth: 130,
       editable: true,
-      cellClass: 'text-sm'
+      cellClass: 'text-center text-sm'
     },
     {
       headerName: '삭제',
-      width: 80,
-      pinned: 'right',
+      width: 60,
+      minWidth: 60,
       cellRenderer: DeleteButtonRenderer,
       cellRendererParams: {
         handleDeleteRow: handleDeleteRow
@@ -400,9 +398,9 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
       if (item.quantity <= 0) {
         errors.push(`${index + 1}번째 행: 수량을 입력해주세요.`)
       }
-      // ✅ 판매(SALE)일 때만 단가 검증 (사용(USAGE)은 서버에서 자동 계산)
-      if (transactionType === 'SALE' && item.unit_price <= 0) {
-        errors.push(`${index + 1}번째 행: 단가를 입력해주세요.`)
+      // ✅ 판매(SALE)일 때만 단가 검증 (사용(USAGE)은 서버에서 자동 계산, 0원 허용)
+      if (transactionType === 'SALE' && item.unit_price < 0) {
+        errors.push(`${index + 1}번째 행: 단가는 0 이상이어야 합니다.`)
       }
       // ✅ 재고 부족 체크 제거 - 마이너스 재고 허용
       // if (item.quantity > item.current_stock) {
@@ -469,7 +467,9 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
           defaultColDef={{
             sortable: true,
             resizable: true,
-            minWidth: 100
+            minWidth: 100,
+            headerClass: 'ag-header-cell-center',
+            cellClass: 'text-center'
           }}
           onCellValueChanged={onCellValueChanged}
           stopEditingWhenCellsLoseFocus={true}

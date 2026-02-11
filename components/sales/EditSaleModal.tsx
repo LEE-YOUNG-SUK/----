@@ -27,6 +27,7 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
   const [unitPrice, setUnitPrice] = useState(sale.unit_price)
   const [notes, setNotes] = useState('') // SaleHistory에 notes 없음
   const [isSaving, setIsSaving] = useState(false)
+  const [taxIncluded, setTaxIncluded] = useState(true)
 
   // 자동 계산: 공급가, 부가세, 합계
   const [supplyPrice, setSupplyPrice] = useState(0)
@@ -34,19 +35,24 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
   const [totalPrice, setTotalPrice] = useState(0)
 
   useEffect(() => {
-    // 공급가 = 수량 × 단가
-    const calculated_supply = quantity * unitPrice
-    
-    // 부가세 = 공급가 × 10% (정수)
-    const calculated_tax = Math.round(calculated_supply * 0.1)
-    
-    // 합계 = 공급가 + 부가세
-    const calculated_total = calculated_supply + calculated_tax
-
-    setSupplyPrice(calculated_supply)
-    setTaxAmount(calculated_tax)
-    setTotalPrice(calculated_total)
-  }, [quantity, unitPrice])
+    if (taxIncluded) {
+      // 부가세 포함: 수량 × 단가 = 합계
+      const total = quantity * unitPrice
+      const supply = Math.round(total / 1.1)
+      const tax = total - supply
+      setSupplyPrice(supply)
+      setTaxAmount(tax)
+      setTotalPrice(total)
+    } else {
+      // 부가세 미포함: 수량 × 단가 = 공급가
+      const supply = quantity * unitPrice
+      const tax = Math.round(supply * 0.1)
+      const total = supply + tax
+      setSupplyPrice(supply)
+      setTaxAmount(tax)
+      setTotalPrice(total)
+    }
+  }, [quantity, unitPrice, taxIncluded])
 
   const handleSave = async () => {
     if (quantity <= 0) {
@@ -54,7 +60,7 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
       return
     }
 
-    if (unitPrice <= 0) {
+    if (unitPrice < 0) {
       alert('단가는 0보다 커야 합니다.')
       return
     }
@@ -160,6 +166,38 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
                 />
               </div>
             </FormGrid>
+
+            {/* 부가세 포함/미포함 토글 */}
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <span className="text-sm font-medium text-gray-700">부가세 구분</span>
+              <div className="flex bg-gray-200 rounded-lg p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setTaxIncluded(true)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition ${
+                    taxIncluded
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  포함
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTaxIncluded(false)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition ${
+                    !taxIncluded
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  미포함
+                </button>
+              </div>
+              <span className="text-xs text-gray-500">
+                {taxIncluded ? '단가 × 수량 = 합계' : '단가 × 수량 = 공급가'}
+              </span>
+            </div>
 
             {/* 자동 계산 필드 (읽기 전용) */}
             <div className="p-4 bg-blue-50 rounded-lg">

@@ -7,8 +7,8 @@ interface Props {
 export function InventoryStats({ summary }: Props) {
   if (!summary) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        {[...Array(5)].map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[...Array(3)].map((_, i) => (
           <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
             <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
             <div className="h-8 bg-gray-200 rounded w-16"></div>
@@ -36,18 +36,6 @@ export function InventoryStats({ summary }: Props) {
       value: `₩${summary.total_value.toLocaleString()}`,
       icon: '💰',
       color: 'purple'
-    },
-    {
-      label: '부족 품목',
-      value: `${summary.low_stock_count.toLocaleString()}개`,
-      icon: '⚠️',
-      color: 'yellow'
-    },
-    {
-      label: '재고 없음',
-      value: `${summary.out_of_stock_count.toLocaleString()}개`,
-      icon: '🚨',
-      color: 'red'
     }
   ]
   
@@ -60,7 +48,7 @@ export function InventoryStats({ summary }: Props) {
   }
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {stats.map((stat, index) => (
         <div
           key={index}

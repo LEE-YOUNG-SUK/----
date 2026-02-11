@@ -14,7 +14,6 @@ export interface ProductWithStock {
   category: string | null
   unit: string
   specification: string | null
-  manufacturer: string | null
   standard_sale_price: number
   current_stock: number  // 판매만의 특별 필드!
 }
@@ -28,7 +27,6 @@ export interface SaleGridRow {
   category: string
   unit: string
   specification: string
-  manufacturer: string
   current_stock: number  // 재고 수량
   quantity: number
   unit_price: number      // 사용자 입력 단가
@@ -69,6 +67,7 @@ export interface SaleHistory {
   profit: number
   profit_margin: number
   reference_number: string | null
+  notes: string
   created_by_name: string  // 담당자 이름
   created_at: string
   tax_amount?: number // 부가세 (선택)

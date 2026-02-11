@@ -199,7 +199,6 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
                   </div>
                   <div className="text-xs text-gray-600 mt-1">
                     {product.specification && `${product.specification} | `}
-                    {product.manufacturer && `${product.manufacturer} | `}
                     {product.unit}
                   </div>
                 </div>

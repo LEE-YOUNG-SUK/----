@@ -93,10 +93,11 @@ export default function SaleHistoryTable({
         (group.reference_number || '').toLowerCase().includes(search) ||
         (group.customer_name || '').toLowerCase().includes(search)
       
-      // 그룹 내부 품목 검색
+      // 그룹 내부 품목 검색 (비고 포함)
       const matchesItems = group.items.some(item =>
         (item.product_code || '').toLowerCase().includes(search) ||
-        (item.product_name || '').toLowerCase().includes(search)
+        (item.product_name || '').toLowerCase().includes(search) ||
+        (item.notes || '').toLowerCase().includes(search)
       )
       
       return matchesGroupInfo || matchesItems
@@ -139,7 +140,7 @@ export default function SaleHistoryTable({
               setSearchTerm(e.target.value)
               setCurrentPage(1)
             }}
-            placeholder="품목코드, 품목명"
+            placeholder="거래처, 품목코드, 품목명, 비고"
             className="flex-1 min-w-[300px] px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <div className="flex items-center gap-2">

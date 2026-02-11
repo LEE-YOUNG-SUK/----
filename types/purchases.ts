@@ -23,7 +23,6 @@ export interface PurchaseGridRow {
   total_price: number // 합계 (자동계산)
   total_cost: number // 기존 호환성 유지
   specification: string
-  manufacturer: string
   notes: string
 }
 

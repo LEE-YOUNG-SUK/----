@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { UserData } from '@/types'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -32,7 +33,8 @@ export function Navigation({ user, onLogout }: Props) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -43,8 +45,22 @@ export function Navigation({ user, onLogout }: Props) {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  const handleMouseEnter = (menu: string) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+      hoverTimeoutRef.current = null
+    }
+    setOpenDropdown(menu)
+  }
+
+  const handleMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setOpenDropdown(null)
+    }, 150)
+  }
   
-  // 일반 메뉴 항목 (순서: 대시보드, 품목, 입고, 판매, 사용, 재고)
+  // 일반 메뉴 항목 (순서: 대시보드, 품목, 재고)
   const mainMenuItems: MenuItem[] = [
     {
       href: '/',
@@ -59,20 +75,6 @@ export function Navigation({ user, onLogout }: Props) {
       action: 'read',
     },
     {
-      href: '/purchases',
-      label: '입고',
-      icon: '📥',
-      resource: 'purchases_management',
-      action: 'read',
-    },
-    {
-      href: '/sales',
-      label: '판매',
-      icon: '💰',
-      resource: 'sales_management',
-      action: 'read',
-    },
-    {
       href: '/inventory',
       label: '재고',
       icon: '📊',
@@ -80,6 +82,50 @@ export function Navigation({ user, onLogout }: Props) {
       action: 'read',
     },
   ]
+
+  // 입고 드롭다운 메뉴
+  const purchasesMenu: DropdownMenu = {
+    label: '입고',
+    icon: '📥',
+    items: [
+      {
+        href: '/purchases?tab=input',
+        label: '입고 입력',
+        icon: '📝',
+        resource: 'purchases_management',
+        action: 'read',
+      },
+      {
+        href: '/purchases?tab=history',
+        label: '입고 조회',
+        icon: '📋',
+        resource: 'purchases_management',
+        action: 'read',
+      },
+    ],
+  }
+
+  // 판매 드롭다운 메뉴
+  const salesMenu: DropdownMenu = {
+    label: '판매',
+    icon: '💰',
+    items: [
+      {
+        href: '/sales?tab=input',
+        label: '판매 입력',
+        icon: '📝',
+        resource: 'sales_management',
+        action: 'read',
+      },
+      {
+        href: '/sales?tab=history',
+        label: '판매 조회',
+        icon: '📋',
+        resource: 'sales_management',
+        action: 'read',
+      },
+    ],
+  }
   
   // 레포트 드롭다운 메뉴
   const reportsMenu: DropdownMenu = {
@@ -157,6 +203,13 @@ export function Navigation({ user, onLogout }: Props) {
         resource: 'audit_logs_view',
         action: 'read',
       },
+      {
+        href: '/admin/import',
+        label: '데이터 가져오기',
+        icon: '📤',
+        resource: 'purchases_management',
+        action: 'create',
+      },
     ],
   }
   
@@ -169,12 +222,17 @@ export function Navigation({ user, onLogout }: Props) {
   }
   
   const visibleMainItems = filterByPermission(mainMenuItems)
+  const visiblePurchasesItems = filterByPermission(purchasesMenu.items)
+  const visibleSalesItems = filterByPermission(salesMenu.items)
   const visibleReportsItems = filterByPermission(reportsMenu.items)
   const visibleAdminItems = filterByPermission(adminMenu.items)
   
   // 드롭다운 내 활성 경로 체크
   const isDropdownActive = (items: MenuItem[]) => {
-    return items.some(item => pathname === item.href || pathname.startsWith(item.href + '/'))
+    return items.some(item => {
+      const hrefPath = item.href.split('?')[0]
+      return pathname === hrefPath || pathname.startsWith(hrefPath + '/')
+    })
   }
   
   const toggleDropdown = (menu: string) => {
@@ -186,11 +244,8 @@ export function Navigation({ user, onLogout }: Props) {
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* 로고 */}
-          <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition">
-            <span className="text-2xl">🏥</span>
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900">
-              DR.Evers ERP
-            </h1>
+          <Link href="/" className="flex items-center hover:opacity-80 transition">
+            <Image src="/logo.png" alt="DR.Evers ERP" width={180} height={50} priority />
           </Link>
           
           {/* 데스크탑 메뉴 */}
@@ -218,9 +273,97 @@ export function Navigation({ user, onLogout }: Props) {
               )
             })}
             
+            {/* 입고 드롭다운 */}
+            {visiblePurchasesItems.length > 0 && (
+              <div className="relative" onMouseEnter={() => handleMouseEnter('purchases')} onMouseLeave={handleMouseLeave}>
+                <button
+                  onClick={() => toggleDropdown('purchases')}
+                  className={`
+                    px-3 py-2 rounded-lg text-sm font-medium transition flex items-center
+                    ${isDropdownActive(purchasesMenu.items)
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    }
+                  `}
+                >
+                  <span>{purchasesMenu.icon}</span>
+                  <span className="ml-1 hidden lg:inline">{purchasesMenu.label}</span>
+                  <svg className={`ml-1 h-4 w-4 transition-transform ${openDropdown === 'purchases' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {openDropdown === 'purchases' && (
+                  <div className="absolute top-full left-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    {visiblePurchasesItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setOpenDropdown(null)}
+                        className={`
+                          block px-4 py-2 text-sm transition
+                          ${pathname === item.href.split('?')[0] && item.href.includes(`tab=${new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('tab') || 'input'}`)
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-gray-700 hover:bg-gray-100'
+                          }
+                        `}
+                      >
+                        <span className="mr-2">{item.icon}</span>
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 판매 드롭다운 */}
+            {visibleSalesItems.length > 0 && (
+              <div className="relative" onMouseEnter={() => handleMouseEnter('sales')} onMouseLeave={handleMouseLeave}>
+                <button
+                  onClick={() => toggleDropdown('sales')}
+                  className={`
+                    px-3 py-2 rounded-lg text-sm font-medium transition flex items-center
+                    ${isDropdownActive(salesMenu.items)
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    }
+                  `}
+                >
+                  <span>{salesMenu.icon}</span>
+                  <span className="ml-1 hidden lg:inline">{salesMenu.label}</span>
+                  <svg className={`ml-1 h-4 w-4 transition-transform ${openDropdown === 'sales' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {openDropdown === 'sales' && (
+                  <div className="absolute top-full left-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    {visibleSalesItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setOpenDropdown(null)}
+                        className={`
+                          block px-4 py-2 text-sm transition
+                          ${pathname === item.href.split('?')[0] && item.href.includes(`tab=${new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('tab') || 'input'}`)
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-gray-700 hover:bg-gray-100'
+                          }
+                        `}
+                      >
+                        <span className="mr-2">{item.icon}</span>
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* 레포트 드롭다운 */}
             {visibleReportsItems.length > 0 && (
-              <div className="relative">
+              <div className="relative" onMouseEnter={() => handleMouseEnter('reports')} onMouseLeave={handleMouseLeave}>
                 <button
                   onClick={() => toggleDropdown('reports')}
                   className={`
@@ -264,7 +407,7 @@ export function Navigation({ user, onLogout }: Props) {
             
             {/* 관리 드롭다운 */}
             {visibleAdminItems.length > 0 && (
-              <div className="relative">
+              <div className="relative" onMouseEnter={() => handleMouseEnter('admin')} onMouseLeave={handleMouseLeave}>
                 <button
                   onClick={() => toggleDropdown('admin')}
                   className={`
@@ -371,6 +514,68 @@ export function Navigation({ user, onLogout }: Props) {
               )
             })}
             
+            {/* 입고 섹션 */}
+            {visiblePurchasesItems.length > 0 && (
+              <>
+                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-4">
+                  {purchasesMenu.icon} {purchasesMenu.label}
+                </div>
+                {visiblePurchasesItems.map((item) => {
+                  const hrefPath = item.href.split('?')[0]
+                  const isActive = pathname === hrefPath
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`
+                        block px-3 py-2 pl-6 rounded-lg text-base font-medium transition-all
+                        ${isActive
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                        }
+                      `}
+                    >
+                      <span className="mr-2">{item.icon}</span>
+                      {item.label}
+                    </Link>
+                  )
+                })}
+              </>
+            )}
+
+            {/* 판매 섹션 */}
+            {visibleSalesItems.length > 0 && (
+              <>
+                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-4">
+                  {salesMenu.icon} {salesMenu.label}
+                </div>
+                {visibleSalesItems.map((item) => {
+                  const hrefPath = item.href.split('?')[0]
+                  const isActive = pathname === hrefPath
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`
+                        block px-3 py-2 pl-6 rounded-lg text-base font-medium transition-all
+                        ${isActive
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                        }
+                      `}
+                    >
+                      <span className="mr-2">{item.icon}</span>
+                      {item.label}
+                    </Link>
+                  )
+                })}
+              </>
+            )}
+
             {/* 레포트 섹션 */}
             {visibleReportsItems.length > 0 && (
               <>

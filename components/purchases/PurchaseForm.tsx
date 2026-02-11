@@ -8,6 +8,7 @@ import MobilePurchaseInput from './MobilePurchaseInput'
 import { savePurchases, getBranchesList } from '@/app/purchases/actions'
 import { TabNav } from '@/components/shared/TabNav'
 import { FormGrid } from '@/components/shared/FormGrid'
+import SearchableSelect from '@/components/shared/SearchableSelect'
 import { FormField } from '@/components/shared/FormField'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import type { Product, Client } from '@/types'
@@ -43,9 +44,10 @@ interface Props {
   suppliers: Client[]
   history: PurchaseHistory[]
   session: SessionData
+  defaultTab?: 'input' | 'history'
 }
 
-export function PurchaseForm({ products, suppliers, history, session }: Props) {
+export function PurchaseForm({ products, suppliers, history, session, defaultTab = 'input' }: Props) {
   const router = useRouter()
 
   if (!Array.isArray(products) || !Array.isArray(suppliers) || !Array.isArray(history)) {
@@ -56,7 +58,12 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
     )
   }
 
-  const [activeTab, setActiveTab] = useState<'input' | 'history'>('input')
+  const [activeTab, setActiveTab] = useState<'input' | 'history'>(defaultTab)
+
+  useEffect(() => {
+    setActiveTab(defaultTab)
+  }, [defaultTab])
+
   const [branches, setBranches] = useState<Branch[]>([])
   const [selectedBranchId, setSelectedBranchId] = useState(session.branch_id)
   const [supplierId, setSupplierId] = useState('')
@@ -64,7 +71,6 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
     new Date().toISOString().split('T')[0]
   )
   const [referenceNumber, setReferenceNumber] = useState('')
-  const [notes, setNotes] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   // 부가세 구분 (true: 포함, false: 미포함)
   const [taxIncluded, setTaxIncluded] = useState(true)
@@ -118,7 +124,7 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
         supplier_id: supplierId || null,  // ✅ 빈 값일 경우 null 전달
         purchase_date: purchaseDate,
         reference_number: referenceNumber,
-        notes: notes,
+        notes: '',
         items: items,
         created_by: session.user_id
       })
@@ -142,7 +148,7 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
       <TabNav
         tabs={[
           { id: 'input', label: '입고 입력' },
-          { id: 'history', label: '입고 내역', count: history.length }
+          { id: 'history', label: '입고 조회', count: history.length }
         ]}
         activeTab={activeTab}
         onChange={(tabId) => setActiveTab(tabId as 'input' | 'history')}
@@ -152,44 +158,31 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
         {activeTab === 'input' ? (
           <div className="flex flex-col h-full">
             <div className="bg-white border-b p-3 sm:p-4 flex-shrink-0">
-              <FormGrid columns={isSystemAdmin ? 6 : 5}>
+              <FormGrid columns={isSystemAdmin ? 5 : 4}>
                 {/* 시스템 관리자만 지점 선택 */}
                 {isSystemAdmin && (
                   <FormField label="지점" required>
-                    <select
+                    <SearchableSelect
                       value={selectedBranchId}
-                      onChange={(e) => setSelectedBranchId(e.target.value)}
+                      onChange={(val) => setSelectedBranchId(val)}
+                      options={branches.map((b) => ({ value: b.id, label: b.name }))}
+                      placeholder="선택하세요"
                       disabled={isSaving}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                    >
-                      <option value="">선택하세요</option>
-                      {branches.map((branch) => (
-                        <option key={branch.id} value={branch.id}>
-                          {branch.name}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </FormField>
                 )}
 
-                <FormField label="공급업체">
-                  <select
+                <FormField label="거래처">
+                  <SearchableSelect
                     value={supplierId}
-                    onChange={(e) => setSupplierId(e.target.value)}
+                    onChange={(val) => setSupplierId(val)}
+                    options={suppliers.map((s) => ({
+                      value: String(s.id || ''),
+                      label: String(s.name || '이름 없음'),
+                    }))}
+                    placeholder="선택하세요"
                     disabled={isSaving}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                  >
-                    <option value="">선택하세요</option>
-                    {suppliers.map((supplier) => {
-                      const id = String(supplier.id || '')
-                      const name = String(supplier.name || '이름 없음')
-                      return (
-                        <option key={id} value={id}>
-                          {name}
-                        </option>
-                      )
-                    })}
-                  </select>
+                  />
                 </FormField>
 
                 <FormField label="입고일" required>
@@ -214,16 +207,6 @@ export function PurchaseForm({ products, suppliers, history, session }: Props) {
                   </select>
                 </FormField>
 
-                <FormField label="비고">
-                  <input
-                    type="text"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    disabled={isSaving}
-                    placeholder="메모 입력"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                  />
-                </FormField>
               </FormGrid>
             </div>
 

@@ -186,3 +186,8 @@ body {
 .form-gap {
   gap: var(--spacing-form-gap);
 }
+
+/* AG Grid 헤더 가운데 정렬 */
+.ag-header-cell-center .ag-header-cell-label {
+  justify-content: center;
+}

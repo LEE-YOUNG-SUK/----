@@ -27,7 +27,7 @@ export default function ProductForm({ product, onClose, onSuccess, userId }: Pro
     code: product?.code || '',
     name: product?.name || '',
     category_id: product?.category_id || '',
-    unit: product?.unit || 'EA',
+    unit: product?.unit || '',
     specification: product?.specification || '',
     manufacturer: product?.manufacturer || '',
     barcode: product?.barcode || '',
@@ -57,8 +57,8 @@ export default function ProductForm({ product, onClose, onSuccess, userId }: Pro
       return
     }
 
-    if (!formData.unit) {
-      alert('단위를 선택하세요')
+    if (!formData.unit.trim()) {
+      alert('단위를 입력하세요')
       return
     }
 
@@ -166,19 +166,14 @@ export default function ProductForm({ product, onClose, onSuccess, userId }: Pro
 
               <div className="space-y-2">
                 <Label htmlFor="unit">단위 *</Label>
-                <select
+                <Input
                   id="unit"
                   value={formData.unit}
                   onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="예: EA, BOX, KG, L, SET"
+                  maxLength={20}
                   required
-                >
-                  <option value="EA">EA (개)</option>
-                  <option value="BOX">BOX (박스)</option>
-                  <option value="KG">KG (킬로그램)</option>
-                  <option value="L">L (리터)</option>
-                  <option value="SET">SET (세트)</option>
-                </select>
+                />
               </div>
             </FormGrid>
 

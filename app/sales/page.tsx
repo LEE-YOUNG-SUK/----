@@ -10,8 +10,14 @@ import { getProductsWithStock, getCustomersList, getSalesHistory } from './actio
 import { PageLayout } from '@/components/shared/PageLayout'
 import { ContentCard } from '@/components/ui/Card'
 
-export default async function SalesPage() {
+export default async function SalesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>
+}) {
   const userSession = await requireSession()
+  const resolvedParams = await searchParams
+  const defaultTab = resolvedParams.tab === 'history' ? 'history' : 'input' as 'input' | 'history'
 
   const [productsResult, customersResult, historyResult] = await Promise.all([
     getProductsWithStock(userSession.branch_id),
@@ -67,9 +73,6 @@ export default async function SalesPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">💰 판매 관리</h1>
-                  <p className="text-sm text-gray-600 mt-1">
-                    화장품 등 고객에게 판매하고 이익을 계산합니다
-                  </p>
                 </div>
                 <div className="text-left sm:text-right">
                   <div className="text-sm text-gray-600">
@@ -94,6 +97,7 @@ export default async function SalesPage() {
                   role: userSession.role
                 }}
                 transactionType="SALE"
+                defaultTab={defaultTab}
               />
             </div>
           </div>

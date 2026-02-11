@@ -24,7 +24,7 @@ const DeleteButtonRenderer = (props: any) => {
       onClick={() => props.handleDeleteRow(props.node.rowIndex)}
       className="w-full h-full text-red-600 hover:bg-red-50 transition"
     >
-      ✕ 삭제
+      🗑️
     </button>
   )
 }
@@ -66,7 +66,6 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       total_price: 0,
       total_cost: 0,
       specification: '',
-      manufacturer: '',
       notes: ''
     }))
   })
@@ -78,34 +77,30 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
    */
   function calculatePrices(row: PurchaseGridRow, isTaxIncluded: boolean) {
     const quantity = row.quantity || 0
-    const inputUnitCost = row.unit_cost || 0  // 사용자가 입력한 단가
-    
+    const unitCost = row.unit_cost || 0
+
     if (isTaxIncluded) {
       // 부가세 포함: 수량 * 단가 = 합계
-      const totalPrice = quantity * inputUnitCost
+      const totalPrice = quantity * unitCost
       const supplyPrice = Math.round(totalPrice / 1.1)
       const taxAmount = totalPrice - supplyPrice
-      
-      row.total_price = totalPrice
+
       row.supply_price = supplyPrice
       row.tax_amount = taxAmount
+      row.total_price = totalPrice
       row.total_cost = totalPrice
-      // unit_cost는 그대로 유지 (이미 부가세 포함)
     } else {
       // 부가세 미포함: 수량 * 단가 = 공급가
-      const supplyPrice = quantity * inputUnitCost
+      const supplyPrice = quantity * unitCost
       const taxAmount = Math.round(supplyPrice * 0.1)
       const totalPrice = supplyPrice + taxAmount
-      
+
       row.supply_price = supplyPrice
       row.tax_amount = taxAmount
       row.total_price = totalPrice
       row.total_cost = totalPrice
-      
-      // ✅ 핵심: unit_cost를 부가세 포함 단가로 변환 (재고 저장용)
-      // 입력 단가 × 1.1 = 부가세 포함 단가
-      row.unit_cost = Math.round(inputUnitCost * 1.1)
     }
+    // unit_cost는 사용자 입력값 그대로 유지
   }
 
   // 빈 행 생성 (안정적인 참조를 위해 useMemo 사용)
@@ -124,7 +119,6 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       total_price: 0,
       total_cost: 0,
       specification: '',
-      manufacturer: '',
       notes: ''
     })
   }, [])
@@ -175,7 +169,6 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
         category: product.category || '',
         unit: product.unit,
         specification: product.specification || '',
-        manufacturer: product.manufacturer || '',
         unit_cost: product.standard_purchase_price || 0  // ✅ 표준 입고 단가 설정
       }
       
@@ -191,7 +184,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
           gridRef.current.api.refreshCells({
             force: true,
             rowNodes: [rowNode],
-            columns: ['product_code', 'product_name', 'unit', 'specification', 'manufacturer', 'supply_price', 'tax_amount', 'total_price']
+            columns: ['product_code', 'product_name', 'unit', 'specification', 'supply_price', 'tax_amount', 'total_price']
           })
         }
       } catch (e) {
@@ -205,13 +198,14 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       headerName: 'No',
       valueGetter: 'node.rowIndex + 1',
       width: 60,
+      minWidth: 60,
       pinned: 'left',
       cellClass: 'text-center font-medium text-gray-600'
     },
     {
       headerName: '품목코드',
       field: 'product_code',
-      width: 150,
+      width: 110,
       pinned: 'left',
       editable: true,
       cellEditor: ProductCellEditor,
@@ -222,43 +216,50 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
         },
         stopEditing: () => params.api.stopEditing()
       }),
-      cellClass: 'font-medium text-blue-600'
+      cellClass: 'text-center font-medium text-blue-600'
     },
     {
       headerName: '품목명',
       field: 'product_name',
-      width: 250,
-      editable: false,
-      cellClass: 'bg-gray-50'
+      width: 200,
+      minWidth: 200,
+      pinned: 'left',
+      editable: true,
+      cellEditor: ProductCellEditor,
+      cellEditorParams: (params: ICellEditorParams) => ({
+        products: products,
+        onProductSelect: (product: Product) => {
+          handleProductSelect(params.node, product)
+        },
+        stopEditing: () => params.api.stopEditing()
+      }),
+      cellClass: 'text-center'
     },
     {
       headerName: '규격',
       field: 'specification',
-      width: 150,
+      width: 130,
+      minWidth: 130,
       editable: false,
-      cellClass: 'bg-gray-50 text-sm'
-    },
-    {
-      headerName: '제조사',
-      field: 'manufacturer',
-      width: 120,
-      editable: false,
-      cellClass: 'bg-gray-50 text-sm'
+      cellClass: 'text-center bg-gray-50 text-sm'
     },
     {
       headerName: '단위',
       field: 'unit',
       width: 80,
+      minWidth: 80,
       editable: false,
-      cellClass: 'bg-gray-50 text-center font-medium'
+      cellClass: 'text-center bg-gray-50 font-medium'
     },
     {
       headerName: '수량',
       field: 'quantity',
-      width: 100,
+      width: 80,
+      minWidth: 80,
       editable: true,
       type: 'numericColumn',
-      cellClass: 'text-right',
+      headerClass: 'ag-header-cell-center',
+      cellClass: 'text-center',
       valueFormatter: (params) => {
         const value = params.value || 0
         return value.toLocaleString()
@@ -267,9 +268,11 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     {
       headerName: '단가',
       field: 'unit_cost',
-      width: 120,
+      width: 110,
+      minWidth: 110,
       editable: true,
       type: 'numericColumn',
+      headerClass: 'ag-header-cell-center',
       cellClass: 'text-right',
       valueFormatter: (params) => {
         const value = params.value || 0
@@ -280,8 +283,10 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       headerName: '공급가',
       field: 'supply_price',
       width: 130,
+      minWidth: 130,
       editable: false,
       type: 'numericColumn',
+      headerClass: 'ag-header-cell-center',
       cellClass: 'bg-gray-50 text-right font-medium',
       valueFormatter: (params) => {
         const value = params.value || 0
@@ -292,8 +297,10 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       headerName: '부가세',
       field: 'tax_amount',
       width: 120,
+      minWidth: 120,
       editable: false,
       type: 'numericColumn',
+      headerClass: 'ag-header-cell-center',
       cellClass: 'bg-gray-50 text-right font-medium text-orange-600',
       valueFormatter: (params) => {
         const value = params.value || 0
@@ -303,9 +310,11 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     {
       headerName: '합계',
       field: 'total_price',
-      width: 140,
+      width: 130,
+      minWidth: 130,
       editable: false,
       type: 'numericColumn',
+      headerClass: 'ag-header-cell-center',
       cellClass: 'bg-blue-50 text-right font-bold text-blue-700',
       valueFormatter: (params) => {
         const value = params.value || 0
@@ -315,14 +324,15 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     {
       headerName: '비고',
       field: 'notes',
-      width: 200,
+      width: 130,
+      minWidth: 130,
       editable: true,
-      cellClass: 'text-sm'
+      cellClass: 'text-center text-sm'
     },
     {
       headerName: '삭제',
-      width: 80,
-      pinned: 'right',
+      width: 60,
+      minWidth: 60,
       cellRenderer: DeleteButtonRenderer,
       cellRendererParams: {
         handleDeleteRow: handleDeleteRow
@@ -397,7 +407,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       if (item.quantity <= 0) {
         errors.push(`${index + 1}번째 행: 수량을 입력해주세요.`)
       }
-      if (item.unit_cost <= 0) {
+      if (item.unit_cost < 0) {
         errors.push(`${index + 1}번째 행: 단가를 입력해주세요.`)
       }
     })
@@ -464,7 +474,9 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
           defaultColDef={{
             sortable: true,
             resizable: true,
-            minWidth: 100
+            minWidth: 100,
+            headerClass: 'ag-header-cell-center',
+            cellClass: 'text-center'
           }}
           singleClickEdit={false}
           stopEditingWhenCellsLoseFocus={true}

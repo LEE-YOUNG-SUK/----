@@ -120,7 +120,6 @@ export default function ProductSelectModal({
       category: selectedProduct.category || '',
       unit: selectedProduct.unit,
       specification: selectedProduct.specification || '',
-      manufacturer: selectedProduct.manufacturer || '',
       quantity: qty,
       supply_price: calculated.supply_price,
       tax_amount: calculated.tax_amount,

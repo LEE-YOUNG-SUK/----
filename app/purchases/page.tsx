@@ -5,8 +5,14 @@ import { getProductsList, getSuppliersList, getPurchasesHistory } from './action
 import { PageLayout } from '@/components/shared/PageLayout'
 import { ContentCard } from '@/components/ui/Card'
 
-export default async function PurchasesPage() {
+export default async function PurchasesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>
+}) {
   const userSession = await requireSession()
+  const resolvedParams = await searchParams
+  const defaultTab = resolvedParams.tab === 'history' ? 'history' : 'input' as 'input' | 'history'
 
   const [productsResult, suppliersResult, historyResult] = await Promise.all([
     getProductsList(),
@@ -64,9 +70,6 @@ export default async function PurchasesPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">📥 입고 관리</h1>
-                  <p className="text-sm text-gray-600 mt-1">
-                    품목별 입고 데이터를 입력하고 FIFO 재고 레이어를 생성합니다
-                  </p>
                 </div>
                 <div className="text-left sm:text-right">
                   <div className="text-sm text-gray-600">
@@ -85,6 +88,7 @@ export default async function PurchasesPage() {
                 suppliers={suppliers}
                 history={history}
                 session={formSession}
+                defaultTab={defaultTab}
               />
             </div>
           </div>

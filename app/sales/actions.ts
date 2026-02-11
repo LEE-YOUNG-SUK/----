@@ -183,7 +183,6 @@ export async function getProductsWithStock(branchId: string | null) {
       category: product.category,
       unit: product.unit,
       specification: product.specification,
-      manufacturer: product.manufacturer,
       standard_sale_price: product.standard_sale_price,
       current_stock: stockMap.get(product.id) || 0
     }))
@@ -269,6 +268,7 @@ export async function getSalesHistory(
         profit: item.profit || 0,
         profit_margin: item.total_price > 0 ? ((item.profit || 0) / item.total_price) * 100 : 0,
         reference_number: item.reference_number || null,
+        notes: item.notes || '',
         created_by_name: item.created_by_name || '알 수 없음',  // ✅ 추가: RPC에서 반환
         created_at: item.created_at,
         transaction_type: item.transaction_type || 'SALE'
@@ -347,8 +347,8 @@ export async function updateSale(data: SaleUpdateRequest) {
       return { success: false, message: '수량은 0보다 커야 합니다.' }
     }
 
-    if (data.unit_price <= 0) {
-      return { success: false, message: '단가는 0보다 커야 합니다.' }
+    if (data.unit_price < 0) {
+      return { success: false, message: '단가는 0 이상이어야 합니다.' }
     }
 
     // ✅ RPC 호출 (권한 및 지점 검증 포함, audit_logs 직접 기록)
@@ -356,7 +356,7 @@ export async function updateSale(data: SaleUpdateRequest) {
       p_sale_id: data.sale_id,
       p_user_id: data.user_id,
       p_user_role: data.user_role,
-      p_user_branch_id: data.user_branch_id,
+      p_user_branch_id: data.user_branch_id || null,
       p_quantity: data.quantity,
       p_unit_price: data.unit_price,
       p_supply_price: data.supply_price,
@@ -431,7 +431,7 @@ export async function deleteSale(data: SaleDeleteRequest) {
       p_sale_id: data.sale_id,
       p_user_id: data.user_id,
       p_user_role: data.user_role,
-      p_user_branch_id: data.user_branch_id
+      p_user_branch_id: data.user_branch_id || null
     })
 
     if (error) {

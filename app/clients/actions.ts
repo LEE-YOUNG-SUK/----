@@ -34,7 +34,6 @@ export async function saveClient(formData: {
   id?: string
   code: string
   name: string
-  type: 'supplier' | 'customer' | 'both'
   contact_person: string | null
   phone: string | null
   email: string | null
@@ -54,7 +53,7 @@ export async function saveClient(formData: {
         .update({
           code: formData.code,
           name: formData.name,
-          type: formData.type,
+
           contact_person: formData.contact_person,
           phone: formData.phone,
           email: formData.email,
@@ -77,7 +76,7 @@ export async function saveClient(formData: {
         .insert({
           code: formData.code,
           name: formData.name,
-          type: formData.type,
+
           contact_person: formData.contact_person,
           phone: formData.phone,
           email: formData.email,

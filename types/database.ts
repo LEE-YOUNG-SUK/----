@@ -26,7 +26,6 @@ export interface DbClient {
   id: string              // uuid
   code: string            // unique
   name: string
-  type: 'supplier' | 'customer' | 'both'
   contact_person: string | null
   phone: string | null
   email: string | null

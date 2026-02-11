@@ -2,6 +2,15 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getPaginationRowModel,
+  flexRender,
+  createColumnHelper,
+  type SortingState,
+} from '@tanstack/react-table'
 import type { Product } from '@/types'
 import { ContentCard } from '@/components/ui/Card'
 import { Button } from '../ui/Button'
@@ -21,6 +30,13 @@ interface ProductTableProps {
   onAddNew: () => void
 }
 
+const columnHelper = createColumnHelper<Product>()
+
+const formatPrice = (price: number | null) => {
+  if (price === null || price === 0) return '-'
+  return `${price.toLocaleString('ko-KR')}원`
+}
+
 export default function ProductTable({
   products,
   filteredProducts,
@@ -31,15 +47,7 @@ export default function ProductTable({
 }: ProductTableProps) {
   const router = useRouter()
   const [deletingId, setDeletingId] = useState<string | null>(null)
-
-  const formatPrice = (price: number | null) => {
-    if (price === null || price === 0) return '-'
-    return `${price.toLocaleString('ko-KR')}원`
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ko-KR')
-  }
+  const [sorting, setSorting] = useState<SortingState>([])
 
   const handleDelete = async (product: Product) => {
     if (!confirm(`'${product.name}' 품목을 삭제하시겠습니까?\n\n연결된 입고/판매 내역이 있으면 삭제할 수 없습니다.`)) {
@@ -62,12 +70,107 @@ export default function ProductTable({
     }
   }
 
+  const columns = [
+    columnHelper.accessor('code', {
+      header: '품목코드',
+      size: 120,
+      cell: (info) => (
+        <span className="font-mono text-sm font-medium text-gray-900 truncate block">{info.getValue()}</span>
+      ),
+    }),
+    columnHelper.accessor('name', {
+      header: '품명',
+      size: 240,
+      cell: (info) => (
+        <span className="text-sm font-medium text-gray-900 truncate block">{info.getValue()}</span>
+      ),
+    }),
+    columnHelper.accessor('specification', {
+      header: '규격',
+      size: 200,
+      cell: (info) => (
+        <span className="text-sm text-gray-700 truncate block">{info.getValue() || '-'}</span>
+      ),
+    }),
+    columnHelper.accessor('unit', {
+      header: '단위',
+      size: 70,
+      cell: (info) => (
+        <span className="text-sm text-gray-700">{info.getValue() || '-'}</span>
+      ),
+    }),
+    columnHelper.accessor('standard_purchase_price', {
+      header: '표준구매가',
+      size: 130,
+      cell: (info) => (
+        <span className="text-sm text-gray-700">{formatPrice(info.getValue())}</span>
+      ),
+    }),
+    columnHelper.accessor('category_name', {
+      header: '카테고리',
+      size: 130,
+      cell: (info) => {
+        const value = info.getValue()
+        return value ? (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 truncate max-w-full">
+            {value}
+          </span>
+        ) : (
+          <span className="text-sm text-gray-500">-</span>
+        )
+      },
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: '관리',
+      size: 160,
+      enableSorting: false,
+      cell: (info) => {
+        const product = info.row.original
+        return (
+          <div className="flex justify-end gap-2">
+            {permissions.canUpdate && (
+              <button
+                onClick={() => onEdit(product)}
+                className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
+              >
+                ✏️ 수정
+              </button>
+            )}
+            {permissions.canDelete && (
+              <button
+                onClick={() => handleDelete(product)}
+                disabled={deletingId === product.id}
+                className="px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deletingId === product.id ? '⏳ 삭제중' : '🗑️ 삭제'}
+              </button>
+            )}
+          </div>
+        )
+      },
+    }),
+  ]
+
+  const table = useReactTable({
+    data: filteredProducts,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: { pageSize: 20 },
+    },
+  })
+
   return (
     <ContentCard>
       {/* 필터 및 버튼 */}
       <div className="mb-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-          <ProductFilters 
+          <ProductFilters
             products={products}
             onFilterChange={onFilterChange}
           />
@@ -79,93 +182,127 @@ export default function ProductTable({
         </div>
       </div>
 
+      {/* 페이지네이션 */}
+      {table.getPageCount() > 1 && (
+        <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+              className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              «
+            </button>
+            <button
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              ‹
+            </button>
+            {generatePageNumbers(table.getState().pagination.pageIndex, table.getPageCount()).map(
+              (page, i) =>
+                page === -1 ? (
+                  <span key={`ellipsis-${i}`} className="px-2 text-sm text-gray-400">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={page}
+                    onClick={() => table.setPageIndex(page)}
+                    className={`px-3 py-1.5 text-sm rounded-lg transition ${
+                      table.getState().pagination.pageIndex === page
+                        ? 'bg-blue-600 text-white font-medium'
+                        : 'border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page + 1}
+                  </button>
+                )
+            )}
+            <button
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              ›
+            </button>
+            <button
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              disabled={!table.getCanNextPage()}
+              className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              »
+            </button>
+          </div>
+          <span className="text-sm text-gray-600">
+            총 {filteredProducts.length}개 중 {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-
+            {Math.min(
+              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+              filteredProducts.length
+            )}
+            개 표시
+          </span>
+        </div>
+      )}
+
       {/* 테이블 */}
       <div className="overflow-x-auto -mx-4 sm:-mx-6">
-        <table className="w-full min-w-[1100px]">
+        <table className="w-full min-w-[1050px] table-fixed">
+          <colgroup>
+            {table.getAllColumns().map((col) => (
+              <col key={col.id} style={{ width: col.getSize() }} />
+            ))}
+          </colgroup>
           <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">품목코드</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">품명</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">카테고리</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">단위</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">표준구매가</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">표준판매가</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제조사</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">등록일</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">관리</th>
-            </tr>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  const canSort = header.column.getCanSort()
+                  const sorted = header.column.getIsSorted()
+                  return (
+                    <th
+                      key={header.id}
+                      onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                      className={`px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center ${
+                        canSort ? 'cursor-pointer select-none hover:bg-gray-100 transition' : ''
+                      }`}
+                    >
+                      <span className="inline-flex items-center justify-center gap-1">
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {canSort && (
+                          <span className="text-gray-400">
+                            {sorted === 'asc' ? ' ▲' : sorted === 'desc' ? ' ▼' : ' ↕'}
+                          </span>
+                        )}
+                      </span>
+                    </th>
+                  )
+                })}
+              </tr>
+            ))}
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredProducts.length === 0 ? (
+            {table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
                   검색 결과가 없습니다
                 </td>
               </tr>
             ) : (
-              filteredProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50 transition">
-                  <td className="px-4 py-3">
-                    <span className="font-mono text-sm font-medium text-gray-900">{product.code}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm font-medium text-gray-900">{product.name}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {product.category_name ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {product.category_name}
-                      </span>
-                    ) : (
-                      <span className="text-sm text-gray-500">-</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm text-gray-700">{product.unit}</span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span className="text-sm text-gray-700">{formatPrice(product.standard_purchase_price)}</span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span className="text-sm text-gray-700">{formatPrice(product.standard_sale_price)}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm text-gray-700">{product.manufacturer || '-'}</span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      product.is_active 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {product.is_active ? '✅ 활성' : '❌ 비활성'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm text-gray-700">{formatDate(product.created_at)}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-2">
-                      {permissions.canUpdate && (
-                        <button
-                          onClick={() => onEdit(product)}
-                          className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
-                        >
-                          ✏️ 수정
-                        </button>
-                      )}
-                      {permissions.canDelete && (
-                        <button
-                          onClick={() => handleDelete(product)}
-                          disabled={deletingId === product.id}
-                          className="px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {deletingId === product.id ? '⏳ 삭제NULL' : '🗑️ 삭제'}
-                        </button>
-                      )}
-                    </div>
-                  </td>
+              table.getRowModel().rows.map((row) => (
+                <tr key={row.id} className="hover:bg-gray-50 transition">
+                  {row.getVisibleCells().map((cell) => {
+                    const isLeft = cell.column.id === 'name'
+                    return (
+                      <td
+                        key={cell.id}
+                        className={`px-4 py-3 ${isLeft ? 'text-left' : 'text-center'}`}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    )
+                  })}
                 </tr>
               ))
             )}
@@ -174,4 +311,23 @@ export default function ProductTable({
       </div>
     </ContentCard>
   )
+}
+
+/** 현재 페이지 주변 번호 + 처음/끝 표시, -1은 ellipsis */
+function generatePageNumbers(current: number, total: number): number[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i)
+
+  const pages: number[] = []
+  pages.push(0)
+
+  if (current > 2) pages.push(-1)
+
+  const start = Math.max(1, current - 1)
+  const end = Math.min(total - 2, current + 1)
+  for (let i = start; i <= end; i++) pages.push(i)
+
+  if (current < total - 3) pages.push(-1)
+
+  pages.push(total - 1)
+  return pages
 }

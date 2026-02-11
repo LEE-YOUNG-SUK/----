@@ -25,7 +25,6 @@ export default function ClientForm({ client, onClose, onSuccess, userId }: Clien
   const [formData, setFormData] = useState({
     code: client?.code || '',
     name: client?.name || '',
-    type: client?.type || 'supplier',
     contact_person: client?.contact_person || '',
     phone: client?.phone || '',
     email: client?.email || '',
@@ -57,7 +56,6 @@ export default function ClientForm({ client, onClose, onSuccess, userId }: Clien
         id: client?.id,
         code: formData.code.trim(),
         name: formData.name.trim(),
-        type: formData.type as 'supplier' | 'customer' | 'both',
         contact_person: formData.contact_person.trim() || null,
         phone: formData.phone.trim() || null,
         email: formData.email.trim() || null,
@@ -131,24 +129,6 @@ export default function ClientForm({ client, onClose, onSuccess, userId }: Clien
             </FormGrid>
 
             <FormGrid columns={2}>
-              <div className="space-y-2">
-                <Label htmlFor="type">거래처 유형 *</Label>
-                <select
-                  id="type"
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as 'supplier' | 'customer' | 'both' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="supplier">공급업체</option>
-                  <option value="customer">고객</option>
-                  <option value="both">공급업체 + 고객</option>
-                </select>
-                <p className="text-xs text-muted-foreground">
-                  입고와 판매 모두 거래 시 '공급업체 + 고객' 선택
-                </p>
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="tax_id">사업자등록번호</Label>
                 <Input

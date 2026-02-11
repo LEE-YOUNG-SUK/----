@@ -269,7 +269,7 @@ export async function updatePurchase(data: PurchaseUpdateRequest) {
       return { success: false, message: '수량은 0보다 커야 합니다.' }
     }
 
-    if (data.unit_cost <= 0) {
+    if (data.unit_cost < 0) {
       return { success: false, message: '단가는 0보다 커야 합니다.' }
     }
 
@@ -278,7 +278,7 @@ export async function updatePurchase(data: PurchaseUpdateRequest) {
       p_purchase_id: data.purchase_id,
       p_user_id: data.user_id,
       p_user_role: data.user_role,
-      p_user_branch_id: data.user_branch_id,
+      p_user_branch_id: data.user_branch_id || null,
       p_quantity: data.quantity,
       p_unit_cost: data.unit_cost,
       p_supply_price: data.supply_price,
@@ -353,7 +353,7 @@ export async function deletePurchase(data: PurchaseDeleteRequest) {
       p_purchase_id: data.purchase_id,
       p_user_id: data.user_id,
       p_user_role: data.user_role,
-      p_user_branch_id: data.user_branch_id
+      p_user_branch_id: data.user_branch_id || null
     })
 
     if (error) {

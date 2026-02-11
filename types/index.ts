@@ -48,7 +48,6 @@ export interface Client {
   id: string
   code: string
   name: string
-  type: 'supplier' | 'customer' | 'both'
   contact_person: string | null
   phone: string | null
   email: string | null

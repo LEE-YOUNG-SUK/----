@@ -10,9 +10,12 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.81.1",
+    "@tanstack/react-table": "^8.21.3",
+    "@types/papaparse": "^5.5.2",
     "ag-grid-community": "^32.3.3",
     "ag-grid-react": "^32.3.3",
     "next": "^16.0.8",
+    "papaparse": "^5.5.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "uuid": "^13.0.0"

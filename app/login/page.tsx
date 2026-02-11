@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase/client'
 
 interface Branch {
@@ -149,14 +150,11 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8">
           {/* 헤더 */}
           <div className="text-center mb-8">
-            <div className="inline-block p-3 bg-blue-50 rounded-full mb-4">
-              <span className="text-4xl">🏥</span>
+            <div className="mb-1 flex justify-center">
+              <Image src="/logo.png" alt="DR.Evers ERP" width={300} height={80} priority />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-              DR.Evers ERP
-            </h1>
-            <p className="mt-2 text-gray-600">
-              의료 소모품 재고관리 시스템
+            <p className="mt-0 text-2xl text-gray-700 font-medium">
+              &nbsp;&nbsp;재고관리 시스템
             </p>
           </div>
           

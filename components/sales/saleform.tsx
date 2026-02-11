@@ -13,6 +13,7 @@ import MobileSaleInput from './MobileSaleInput'
 import { saveSales, getBranchesList, getProductsWithStock } from '@/app/sales/actions'
 import { TabNav } from '@/components/shared/TabNav'
 import { FormGrid } from '@/components/shared/FormGrid'
+import SearchableSelect from '@/components/shared/SearchableSelect'
 import { FormField } from '@/components/shared/FormField'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import type { ProductWithStock, SaleGridRow, SaleHistory } from '@/types/sales'
@@ -53,10 +54,11 @@ interface Props {
   customers: Customer[]
   history: SaleHistory[]
   session: SessionData
-  transactionType?: 'SALE' | 'USAGE'  // ✅ 추가
+  transactionType?: 'SALE' | 'USAGE'
+  defaultTab?: 'input' | 'history'
 }
 
-export function SaleForm({ products: initialProducts, customers, history, session, transactionType = 'SALE' }: Props) {
+export function SaleForm({ products: initialProducts, customers, history, session, transactionType = 'SALE', defaultTab = 'input' }: Props) {
   const router = useRouter()
 
   if (!Array.isArray(initialProducts) || !Array.isArray(customers) || !Array.isArray(history)) {
@@ -67,7 +69,12 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
     )
   }
 
-  const [activeTab, setActiveTab] = useState<'input' | 'history'>('input')
+  const [activeTab, setActiveTab] = useState<'input' | 'history'>(defaultTab)
+
+  useEffect(() => {
+    setActiveTab(defaultTab)
+  }, [defaultTab])
+
   const [branches, setBranches] = useState<Branch[]>([])
   const [selectedBranchId, setSelectedBranchId] = useState(session.branch_id)
   const [products, setProducts] = useState<ProductWithStock[]>(initialProducts)
@@ -76,7 +83,6 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
     new Date().toISOString().split('T')[0]
   )
   const [referenceNumber, setReferenceNumber] = useState('')
-  const [notes, setNotes] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   // 부가세 구분 (true: 포함, false: 미포함)
   const [taxIncluded, setTaxIncluded] = useState(true)
@@ -182,7 +188,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
         customer_id: customerId || null,  // ✅ 빈 값일 경우 null 전달
         sale_date: saleDate,
         reference_number: referenceNumber,
-        notes: notes,
+        notes: '',
         items: itemsWithCalc,
         created_by: session.user_id,
         transaction_type: transactionType  // ✅ 추가
@@ -207,7 +213,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
       <TabNav
         tabs={[
           { id: 'input', label: transactionType === 'USAGE' ? '사용 입력' : '판매 입력' },
-          { id: 'history', label: transactionType === 'USAGE' ? '사용 내역' : '판매 내역', count: history.length }
+          { id: 'history', label: transactionType === 'USAGE' ? '사용 조회' : '판매 조회', count: history.length }
         ]}
         activeTab={activeTab}
         onChange={(tabId) => setActiveTab(tabId as 'input' | 'history')}
@@ -217,27 +223,21 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
         {activeTab === 'input' ? (
           <div className="flex flex-col h-full">
             <div className="bg-white border-b p-3 sm:p-4 flex-shrink-0">
-              <FormGrid columns={isSystemAdmin ? 6 : 5}>
+              <FormGrid columns={isSystemAdmin ? 5 : 4}>
                 {/* 시스템 관리자만 지점 선택 */}
                 {isSystemAdmin && (
                   <FormField label="지점" required>
-                    <select
+                    <SearchableSelect
                       value={selectedBranchId || ''}
-                      onChange={(e) => handleBranchChange(e.target.value)}
+                      onChange={(val) => handleBranchChange(val)}
+                      options={branches.map((b) => ({ value: b.id, label: b.name }))}
+                      placeholder="선택하세요"
                       disabled={isSaving}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                    >
-                      <option value="">선택하세요</option>
-                      {branches.map((branch) => (
-                        <option key={branch.id} value={branch.id}>
-                          {branch.name}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </FormField>
                 )}
 
-                <FormField label="고객">
+                <FormField label="거래처">
                   {transactionType === 'USAGE' ? (
                     /* 내부사용: 고객 고정 표시 */
                     <input
@@ -248,23 +248,18 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
                     />
                   ) : (
                     /* 판매: 고객 선택 */
-                    <select
+                    <SearchableSelect
                       value={customerId}
-                      onChange={(e) => setCustomerId(e.target.value)}
+                      onChange={(val) => setCustomerId(val)}
+                      options={customers
+                        .filter((c) => c.code !== 'INTERNAL')
+                        .map((c) => ({
+                          value: String(c.id || ''),
+                          label: String(c.name || '이름 없음'),
+                        }))}
+                      placeholder="선택하세요"
                       disabled={isSaving}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                    >
-                      <option value="">선택하세요</option>
-                      {customers.filter(c => c.code !== 'INTERNAL').map((customer) => {
-                        const id = String(customer.id || '')
-                        const name = String(customer.name || '이름 없음')
-                        return (
-                          <option key={id} value={id}>
-                            {name}
-                          </option>
-                        )
-                      })}
-                    </select>
+                    />
                   )}
                 </FormField>
 
@@ -290,16 +285,6 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
                   </select>
                 </FormField>
 
-                <FormField label="비고">
-                  <input
-                    type="text"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    disabled={isSaving}
-                    placeholder="메모 입력"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                  />
-                </FormField>
               </FormGrid>
             </div>
 
