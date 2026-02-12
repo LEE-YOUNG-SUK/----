@@ -22,7 +22,10 @@
       "Bash(if not exist \"C:\\\\Users\\\\k1her\\\\Desktop\\\\호스팅\\\\drevers-erp-next\\\\app\\\\admin\\\\import\" mkdir \"C:\\\\Users\\\\k1her\\\\Desktop\\\\호스팅\\\\drevers-erp-next\\\\app\\\\admin\\\\import\")",
       "Bash(git checkout:*)",
       "Bash(git merge:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git log:*)",
+      "Bash(dir:*)",
+      "WebSearch"
     ]
   },
   "enableAllProjectMcpServers": true,

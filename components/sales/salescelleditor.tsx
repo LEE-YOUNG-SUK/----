@@ -14,23 +14,23 @@ interface ProductCellEditorProps {
   products: ProductWithStock[]
   onProductSelect: (product: ProductWithStock) => void
   stopEditing: () => void
+  navigateToQuantity: () => void
 }
 
 export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref) => {
-  const { value, products, onProductSelect, stopEditing } = props
-  
+  const { value, products, onProductSelect, stopEditing, navigateToQuantity } = props
+
   const [inputValue, setInputValue] = useState(value || '')
   const [filteredProducts, setFilteredProducts] = useState<ProductWithStock[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [selectedProduct, setSelectedProduct] = useState<ProductWithStock | null>(null)
-  const isSelectingRef = useRef(false) // 클릭 중인지 추적
-  
+  const isSelectingRef = useRef(false)
+
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [dropdownPos, setDropdownPos] = useState<{left: number, top: number, width: number} | null>(null)
 
-  // AG Grid에서 값을 가져갈 때 사용
   useImperativeHandle(ref, () => ({
     getValue: () => {
       return selectedProduct ? selectedProduct.code : inputValue;
@@ -87,9 +87,10 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
     // 그리드에 값 반영
     onProductSelect(product)
     
-    // 편집 종료
+    // 편집 종료 후 수량 셀로 이동
     setTimeout(() => {
       stopEditing()
+      setTimeout(() => navigateToQuantity(), 50)
       isSelectingRef.current = false
     }, 100)
   }
@@ -106,16 +107,19 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault()
+        e.stopPropagation()
         setSelectedIndex((prev) =>
           prev < filteredProducts.length - 1 ? prev + 1 : prev
         )
         break
       case 'ArrowUp':
         e.preventDefault()
+        e.stopPropagation()
         setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0))
         break
       case 'Enter':
         e.preventDefault()
+        e.stopPropagation()
         if (filteredProducts[selectedIndex]) {
           handleSelect(filteredProducts[selectedIndex])
         }
@@ -128,6 +132,7 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
       case 'Tab':
         if (filteredProducts[selectedIndex]) {
           e.preventDefault()
+          e.stopPropagation()
           handleSelect(filteredProducts[selectedIndex])
         }
         break

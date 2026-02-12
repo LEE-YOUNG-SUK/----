@@ -1,229 +1,614 @@
 'use client'
 
 /**
- * 판매 상세 모달 - 거래번호별 품목 리스트
- * PurchaseDetailModal과 동일한 구조
+ * 거래번호별 판매 상세 모달
+ * AG Grid 기반 즉시 편집 + 일괄 저장 (입력 그리드 UX 동일)
  */
 
-import { useState } from 'react'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { AgGridReact } from 'ag-grid-react'
+import 'ag-grid-community/styles/ag-grid.css'
+import 'ag-grid-community/styles/ag-theme-alpine.css'
+import type { ColDef } from 'ag-grid-community'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
-import EditSaleModal from './EditSaleModal'
-import { deleteSale, updateSale } from '@/app/sales/actions'
+import { ProductCellEditor } from './salescelleditor'
+import { updateSale, deleteSale, addSaleItem } from '@/app/sales/actions'
+import { usePermissions } from '@/hooks/usePermissions'
 import type { SaleHistory } from '@/types/sales'
+import type { ProductWithStock } from '@/types/sales'
+
+// 그리드 행 타입
+interface DetailRow {
+  _rowId: string
+  _isNew: boolean
+  // DB 필드
+  id: string
+  product_id: string
+  product_code: string
+  product_name: string
+  specification: string
+  unit: string
+  quantity: number
+  unit_price: number
+  supply_price: number
+  tax_amount: number
+  total_amount: number
+  notes: string
+}
 
 interface Props {
   referenceNumber: string
   items: SaleHistory[]
+  products: ProductWithStock[]
   onClose: () => void
   userRole: string
   userId: string
   userBranchId: string
 }
 
+const MIN_ROWS = 10
+
 export default function SaleDetailModal({
   referenceNumber,
-  items: initialItems,
+  items,
+  products,
   onClose,
   userRole,
   userId,
   userBranchId
 }: Props) {
   const router = useRouter()
-  const [items, setItems] = useState<SaleHistory[]>(initialItems)
-  const [editingSale, setEditingSale] = useState<SaleHistory | null>(null)
-  const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const gridRef = useRef<AgGridReact>(null)
+  const { can } = usePermissions(userRole)
+  const canEdit = can('sales_management', 'update')
+  const [isSaving, setIsSaving] = useState(false)
 
-  const canEdit = userRole <= '0003' // 모든 역할
-  const canDelete = userRole <= '0002' // 원장 이상
+  // 빈 행 생성
+  const createEmptyRow = useCallback((): DetailRow => ({
+    _rowId: `new_${Date.now()}_${Math.random()}`,
+    _isNew: true,
+    id: '',
+    product_id: '',
+    product_code: '',
+    product_name: '',
+    specification: '',
+    unit: '',
+    quantity: 0,
+    unit_price: 0,
+    supply_price: 0,
+    tax_amount: 0,
+    total_amount: 0,
+    notes: ''
+  }), [])
 
-  // 판매 수정
-  const handleEdit = async (editData: {
-    quantity: number
-    unit_price: number
-    supply_price: number
-    tax_amount: number
-    total_price: number
-    notes: string
-  }) => {
-    if (!editingSale) return
-
-    try {
-      const result = await updateSale({
-        sale_id: editingSale.id,
-        user_id: userId,
-        user_role: userRole,
-        user_branch_id: userBranchId,
-        ...editData
-      })
-
-      if (result.success) {
-        alert(result.message || '판매 정보가 수정되었습니다.')
-        setEditingSale(null)
-        onClose()
-        router.refresh()
-      } else {
-        alert(result.message || '수정에 실패했습니다.')
+  // items → DetailRow 변환 + 빈 행으로 최소 10행 채우기
+  const buildInitialRows = useCallback((): DetailRow[] => {
+    const dataRows: DetailRow[] = items.map((item) => {
+      const product = products.find(p => p.id === item.product_id)
+      return {
+        _rowId: item.id,
+        _isNew: false,
+        id: item.id,
+        product_id: item.product_id,
+        product_code: item.product_code,
+        product_name: item.product_name,
+        specification: product?.specification || '',
+        unit: item.unit,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        supply_price: item.supply_price || 0,
+        tax_amount: item.tax_amount || 0,
+        total_amount: item.total_amount,
+        notes: item.notes || ''
       }
-    } catch (error) {
-      console.error('판매 수정 오류:', error)
-      alert('수정 중 오류가 발생했습니다.')
-    }
+    })
+    const emptyCount = Math.max(0, MIN_ROWS - dataRows.length)
+    const emptyRows = Array.from({ length: emptyCount }, () => createEmptyRow())
+    return [...dataRows, ...emptyRows]
+  }, [items, products, createEmptyRow])
+
+  const [rowData, setRowData] = useState<DetailRow[]>(buildInitialRows)
+
+  // 총액 계산 (품목이 있는 행만)
+  const validRows = rowData.filter(r => r.product_id)
+  const totalAmount = validRows.reduce((sum, r) => sum + (r.total_amount || 0), 0)
+  const totalSupply = validRows.reduce((sum, r) => sum + (r.supply_price || 0), 0)
+  const totalTax = validRows.reduce((sum, r) => sum + (r.tax_amount || 0), 0)
+  const validRowCount = validRows.length
+
+  // 가격 자동 계산 (부가세 포함 기준)
+  function calculatePrices(row: DetailRow) {
+    const quantity = row.quantity || 0
+    const unitPrice = row.unit_price || 0
+    const totalPrice = quantity * unitPrice
+    const supplyPrice = Math.round(totalPrice / 1.1)
+    const taxAmount = totalPrice - supplyPrice
+    row.supply_price = supplyPrice
+    row.tax_amount = taxAmount
+    row.total_amount = totalPrice
   }
 
-  // 판매 삭제
-  const handleDelete = async (sale: SaleHistory) => {
-    if (!confirm(`${sale.product_name} 판매를 삭제하시겠습니까?\n\n삭제하면 재고가 복원됩니다.`)) {
+  // 품목 선택 핸들러
+  const handleProductSelect = useCallback((rowNode: any, product: ProductWithStock) => {
+    const targetId = rowNode?.data?._rowId
+    if (!targetId) return
+
+    setRowData(prev => prev.map(r => {
+      if (r._rowId !== targetId) return r
+      const updated = {
+        ...r,
+        product_id: product.id,
+        product_code: product.code,
+        product_name: product.name,
+        specification: product.specification || '',
+        unit: product.unit,
+        unit_price: product.standard_sale_price || 0
+      }
+      calculatePrices(updated)
+      return updated
+    }))
+
+    setTimeout(() => {
+      if (gridRef.current?.api && rowNode) {
+        gridRef.current.api.refreshCells({
+          force: true,
+          rowNodes: [rowNode],
+          columns: ['product_code', 'product_name', 'specification', 'unit', 'supply_price', 'tax_amount', 'total_amount']
+        })
+      }
+    }, 0)
+  }, [])
+
+  // 셀 값 변경 시 자동 계산
+  const onCellValueChanged = useCallback((params: any) => {
+    const { data } = params
+    const field = params.column.getColId()
+
+    if (field === 'quantity' || field === 'unit_price') {
+      calculatePrices(data)
+      setRowData(prev => prev.map(r => r._rowId === data._rowId ? { ...data } : r))
+      params.api.refreshCells({
+        rowNodes: [params.node],
+        columns: ['supply_price', 'tax_amount', 'total_amount']
+      })
+    } else {
+      setRowData(prev => prev.map(r => r._rowId === data._rowId ? { ...data } : r))
+    }
+  }, [])
+
+  // 마지막 행 편집 시 자동으로 새 행 추가
+  const onCellEditingStarted = useCallback((params: any) => {
+    const rowIndex = params.rowIndex
+    const colKey = params.column.getColId()
+    const totalRows = params.api.getDisplayedRowCount()
+    if (rowIndex === totalRows - 1) {
+      setRowData(prev => [...prev, createEmptyRow()])
+      setTimeout(() => {
+        try {
+          if (gridRef.current?.api) {
+            gridRef.current.api.startEditingCell({ rowIndex, colKey })
+          }
+        } catch (e) {}
+      }, 50)
+    }
+  }, [createEmptyRow])
+
+  // 다음 편집 가능 셀 찾기
+  const findNextEditableColumn = useCallback((api: any, currentCol: any, backwards = false) => {
+    const allCols = api.getAllDisplayedColumns()
+    const curIdx = allCols.indexOf(currentCol)
+    const dir = backwards ? -1 : 1
+    for (let i = curIdx + dir; i >= 0 && i < allCols.length; i += dir) {
+      const colDef = allCols[i].getColDef()
+      if (colDef.editable === true || typeof colDef.editable === 'function') return allCols[i]
+    }
+    return null
+  }, [])
+
+  // Tab: 편집 불가 셀 건너뛰기
+  const tabToNextCell = useCallback((params: any) => {
+    const nextCol = findNextEditableColumn(params.api, params.previousCellPosition.column, params.backwards)
+    if (nextCol) {
+      return {
+        rowIndex: params.previousCellPosition.rowIndex,
+        column: nextCol,
+        floating: params.previousCellPosition.floating
+      }
+    }
+    return params.nextCellPosition
+  }, [findNextEditableColumn])
+
+  // Enter / Right Arrow: 다음 편집 가능 셀로 이동
+  const onCellKeyDown = useCallback((params: any) => {
+    const key = params.event.key
+    if (key !== 'Enter' && key !== 'ArrowRight') return
+    const col = params.column
+    const field = col.getColDef().field
+    if (field === 'product_code' || field === 'product_name') return
+
+    const nextCol = findNextEditableColumn(params.api, col)
+    if (nextCol) {
+      params.event.preventDefault()
+      params.event.stopPropagation()
+      setTimeout(() => {
+        params.api.startEditingCell({
+          rowIndex: params.node.rowIndex,
+          colKey: nextCol.getColId()
+        })
+      }, 50)
+    } else if (key === 'Enter') {
+      const nextRowIndex = params.node.rowIndex + 1
+      params.event.preventDefault()
+      params.event.stopPropagation()
+      if (nextRowIndex >= params.api.getDisplayedRowCount()) {
+        setRowData(prev => [...prev, createEmptyRow()])
+      }
+      setTimeout(() => {
+        params.api.startEditingCell({
+          rowIndex: nextRowIndex,
+          colKey: 'product_code'
+        })
+      }, 50)
+    }
+  }, [findNextEditableColumn, createEmptyRow])
+
+  // 행 삭제 핸들러
+  const handleDeleteRow = useCallback(async (rowIndex: number) => {
+    const row = rowData[rowIndex]
+    if (!row) return
+
+    // 빈 행이면 그냥 제거
+    if (!row.product_id) {
+      setRowData(prev => prev.filter((_, i) => i !== rowIndex))
       return
     }
 
-    setIsDeleting(sale.id)
-    try {
+    // 기존 DB 행이면 확인 후 삭제
+    if (!row._isNew) {
+      if (!confirm(`판매 데이터를 삭제하시겠습니까?\n\n품목: ${row.product_name}\n수량: ${row.quantity} ${row.unit}\n\n삭제하면 재고가 복원됩니다.`)) {
+        return
+      }
       const result = await deleteSale({
-        sale_id: sale.id,
+        sale_id: row.id,
         user_id: userId,
         user_role: userRole,
         user_branch_id: userBranchId
       })
-
-      if (result.success) {
-        alert(result.message || '판매가 삭제되었습니다.')
-        onClose()
-        router.refresh()
-      } else {
-        alert(result.message || '삭제에 실패했습니다.')
+      if (!result.success) {
+        alert(result.message)
+        return
       }
-    } catch (error) {
-      console.error('판매 삭제 오류:', error)
-      alert('삭제 중 오류가 발생했습니다.')
-    } finally {
-      setIsDeleting(null)
     }
-  }
 
-  const totalAmount = items.reduce((sum, item) => sum + (item.total_amount || 0), 0)
-  const totalProfit = items.reduce((sum, item) => sum + (item.profit || 0), 0)
+    setRowData(prev => prev.filter((_, i) => i !== rowIndex))
+  }, [rowData, userId, userRole, userBranchId])
+
+  // 일괄 저장 핸들러
+  const handleBulkSave = useCallback(async () => {
+    const toUpdate: DetailRow[] = []
+    const toAdd: DetailRow[] = []
+
+    rowData.forEach(row => {
+      if (!row.product_id) return
+
+      if (row._isNew) {
+        if (row.quantity > 0) toAdd.push(row)
+      } else {
+        const original = items.find(item => item.id === row.id)
+        if (!original) return
+        if (
+          row.quantity !== original.quantity ||
+          row.unit_price !== original.unit_price ||
+          row.notes !== (original.notes || '')
+        ) {
+          toUpdate.push(row)
+        }
+      }
+    })
+
+    if (toUpdate.length === 0 && toAdd.length === 0) {
+      alert('변경된 내용이 없습니다.')
+      return
+    }
+
+    const errors: string[] = []
+    ;[...toUpdate, ...toAdd].forEach((row) => {
+      if (row.quantity <= 0) errors.push(`${row.product_name}: 수량은 0보다 커야 합니다.`)
+    })
+    if (errors.length > 0) {
+      alert(errors.join('\n'))
+      return
+    }
+
+    setIsSaving(true)
+    const results: string[] = []
+    let hasError = false
+
+    for (const row of toUpdate) {
+      const result = await updateSale({
+        sale_id: row.id,
+        user_id: userId,
+        user_role: userRole,
+        user_branch_id: userBranchId,
+        quantity: row.quantity,
+        unit_price: row.unit_price,
+        supply_price: row.supply_price,
+        tax_amount: row.tax_amount,
+        total_price: row.total_amount,
+        notes: row.notes
+      })
+      if (!result.success) {
+        results.push(`수정 실패: ${row.product_name} - ${result.message}`)
+        hasError = true
+      }
+    }
+
+    for (const row of toAdd) {
+      const firstItem = items[0]
+      const result = await addSaleItem({
+        reference_number: referenceNumber,
+        branch_id: firstItem.branch_id,
+        product_id: row.product_id,
+        client_id: firstItem.client_id,
+        sale_date: firstItem.sale_date,
+        quantity: row.quantity,
+        unit_price: row.unit_price,
+        supply_price: row.supply_price,
+        tax_amount: row.tax_amount,
+        total_price: row.total_amount,
+        notes: row.notes,
+        user_id: userId,
+        user_role: userRole,
+        user_branch_id: userBranchId,
+        transaction_type: firstItem.transaction_type || 'SALE'
+      })
+      if (!result.success) {
+        results.push(`추가 실패: ${row.product_name} - ${result.message}`)
+        hasError = true
+      }
+    }
+
+    setIsSaving(false)
+
+    if (hasError) {
+      alert(results.join('\n'))
+    } else {
+      alert(`저장 완료 (수정: ${toUpdate.length}건, 추가: ${toAdd.length}건)`)
+      onClose()
+      router.refresh()
+    }
+  }, [rowData, items, referenceNumber, userId, userRole, userBranchId, onClose, router])
+
+  // 삭제 버튼 렌더러
+  const DeleteButtonRenderer = useCallback((props: any) => {
+    return (
+      <button
+        onClick={() => handleDeleteRow(props.node.rowIndex)}
+        className="w-full h-full text-red-600 hover:bg-red-50 transition"
+      >
+        🗑️
+      </button>
+    )
+  }, [handleDeleteRow])
+
+  // 컬럼 정의 (입력 그리드와 동일)
+  const columnDefs = useMemo<ColDef<DetailRow>[]>(() => [
+    {
+      headerName: 'No',
+      valueGetter: 'node.rowIndex + 1',
+      width: 60,
+      minWidth: 60,
+      pinned: 'left',
+      cellClass: 'text-center font-medium text-gray-600'
+    },
+    {
+      headerName: '품목코드',
+      field: 'product_code',
+      width: 110,
+      pinned: 'left',
+      editable: (params) => !params.data?.product_id || !!params.data?._isNew,
+      cellEditor: ProductCellEditor,
+      cellEditorParams: (params: any) => ({
+        products,
+        onProductSelect: (product: ProductWithStock) => handleProductSelect(params.node, product),
+        stopEditing: () => params.api.stopEditing(),
+        navigateToQuantity: () => {
+          params.api.startEditingCell({
+            rowIndex: params.node.rowIndex!,
+            colKey: 'quantity'
+          })
+        }
+      }),
+      suppressKeyboardEvent: (params) => {
+        if (!params.editing) return false
+        const key = params.event.key
+        return key === 'Enter' || key === 'ArrowDown' || key === 'ArrowUp'
+      },
+      cellClass: 'text-center font-medium text-blue-600'
+    },
+    {
+      headerName: '품목명',
+      field: 'product_name',
+      width: 200,
+      minWidth: 200,
+      pinned: 'left',
+      editable: (params) => !params.data?.product_id || !!params.data?._isNew,
+      cellEditor: ProductCellEditor,
+      cellEditorParams: (params: any) => ({
+        products,
+        onProductSelect: (product: ProductWithStock) => handleProductSelect(params.node, product),
+        stopEditing: () => params.api.stopEditing(),
+        navigateToQuantity: () => {
+          params.api.startEditingCell({
+            rowIndex: params.node.rowIndex!,
+            colKey: 'quantity'
+          })
+        }
+      }),
+      suppressKeyboardEvent: (params) => {
+        if (!params.editing) return false
+        const key = params.event.key
+        return key === 'Enter' || key === 'ArrowDown' || key === 'ArrowUp'
+      },
+      cellClass: 'text-center'
+    },
+    {
+      headerName: '규격',
+      field: 'specification',
+      width: 130,
+      minWidth: 130,
+      editable: false,
+      cellClass: 'text-center bg-gray-50 text-sm'
+    },
+    {
+      headerName: '단위',
+      field: 'unit',
+      width: 80,
+      minWidth: 80,
+      editable: false,
+      cellClass: 'text-center bg-gray-50 font-medium'
+    },
+    {
+      headerName: '수량',
+      field: 'quantity',
+      width: 80,
+      minWidth: 80,
+      editable: true,
+      type: 'numericColumn',
+      headerClass: 'ag-header-cell-center',
+      cellClass: 'text-center',
+      valueFormatter: (params) => (params.value || 0).toLocaleString()
+    },
+    {
+      headerName: '단가',
+      field: 'unit_price',
+      width: 110,
+      minWidth: 110,
+      editable: true,
+      type: 'numericColumn',
+      headerClass: 'ag-header-cell-center',
+      cellClass: 'text-right',
+      valueFormatter: (params) => `₩${(params.value || 0).toLocaleString()}`
+    },
+    {
+      headerName: '공급가',
+      field: 'supply_price',
+      width: 130,
+      minWidth: 130,
+      editable: false,
+      type: 'numericColumn',
+      headerClass: 'ag-header-cell-center',
+      cellClass: 'bg-gray-50 text-right font-medium',
+      valueFormatter: (params) => `₩${(params.value || 0).toLocaleString()}`
+    },
+    {
+      headerName: '부가세',
+      field: 'tax_amount',
+      width: 120,
+      minWidth: 120,
+      editable: false,
+      type: 'numericColumn',
+      headerClass: 'ag-header-cell-center',
+      cellClass: 'bg-gray-50 text-right font-medium text-orange-600',
+      valueFormatter: (params) => `₩${(params.value || 0).toLocaleString()}`
+    },
+    {
+      headerName: '합계',
+      field: 'total_amount',
+      width: 130,
+      minWidth: 130,
+      editable: false,
+      type: 'numericColumn',
+      headerClass: 'ag-header-cell-center',
+      cellClass: 'bg-blue-50 text-right font-bold text-blue-700',
+      valueFormatter: (params) => `₩${(params.value || 0).toLocaleString()}`
+    },
+    {
+      headerName: '비고',
+      field: 'notes',
+      width: 130,
+      minWidth: 130,
+      editable: true,
+      cellClass: 'text-center text-sm'
+    },
+    {
+      headerName: '삭제',
+      width: 60,
+      minWidth: 60,
+      cellRenderer: DeleteButtonRenderer,
+      sortable: false,
+      editable: false
+    }
+  ], [products, handleProductSelect, DeleteButtonRenderer])
+
+  const defaultColDef = useMemo(() => ({
+    sortable: false,
+    resizable: true,
+    headerClass: 'ag-header-cell-center',
+    cellClass: 'text-center'
+  }), [])
 
   return (
-    <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-          {/* 헤더 */}
-          <div className="p-6 border-b flex justify-between items-center">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">판매 상세</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                거래번호: <span className="font-medium text-blue-600">{referenceNumber || '(없음)'}</span> |
-                담당자: <span className="font-medium">{items[0]?.created_by_name || '알 수 없음'}</span>
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-            >
-              ×
-            </button>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-[75vw] max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">
+            거래번호: {referenceNumber || '(없음)'}
+          </DialogTitle>
+          <div className="text-base text-gray-600 mt-2">
+            판매일: {new Date(items[0]?.sale_date).toLocaleDateString('ko-KR')} |
+            거래처: {items[0]?.customer_name || '(없음)'} |
+            품목 수: <span className="font-semibold text-blue-600">{validRowCount}</span>개 |
+            공급가: <span className="font-semibold">₩{totalSupply.toLocaleString()}</span> |
+            부가세: <span className="font-semibold text-orange-600">₩{totalTax.toLocaleString()}</span> |
+            총액: <span className="font-semibold text-blue-600">₩{totalAmount.toLocaleString()}</span> |
+            담당자: <span className="font-medium">{items[0]?.created_by_name || '알 수 없음'}</span>
+            {(() => { const latest = items.filter(i => i.updated_by_name && i.updated_at).sort((a, b) => new Date(b.updated_at!).getTime() - new Date(a.updated_at!).getTime())[0]; return latest ? <> | 수정담당자: <span className="font-medium text-purple-600">{latest.updated_by_name}</span></> : null; })()}
           </div>
+        </DialogHeader>
 
-          {/* 통계 */}
-          <div className="px-6 py-4 bg-gray-50 border-b">
-            <div className="grid grid-cols-3 gap-4 mb-2">
-              <div>
-                <p className="text-xs text-gray-600">품목 수</p>
-                <p className="text-lg font-bold text-gray-900">{items.length}개</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-600">총 판매액</p>
-                <p className="text-lg font-bold text-blue-600">₩{totalAmount.toLocaleString()}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-600">총 이익</p>
-                <p className="text-lg font-bold text-green-600">₩{totalProfit.toLocaleString()}</p>
-              </div>
-            </div>
-            <div className="text-sm text-gray-600 mt-2">
-              판매일: {new Date(items[0]?.sale_date).toLocaleDateString('ko-KR')} |
-              고객: {items[0]?.customer_name || '(없음)'}
-            </div>
+        <div className="flex-1 ag-theme-alpine" style={{ minHeight: 500 }}>
+          <AgGridReact
+            ref={gridRef}
+            rowData={rowData}
+            columnDefs={columnDefs}
+            defaultColDef={defaultColDef}
+            singleClickEdit={true}
+            stopEditingWhenCellsLoseFocus={true}
+            suppressMovableColumns={true}
+            rowHeight={40}
+            headerHeight={45}
+            domLayout="autoHeight"
+            onCellValueChanged={onCellValueChanged}
+            onCellEditingStarted={onCellEditingStarted}
+            onCellKeyDown={onCellKeyDown}
+            tabToNextCell={tabToNextCell}
+          />
+        </div>
+
+        <div className="border-t pt-3 flex justify-between items-center">
+          <div className="text-sm text-gray-600">
+            입력 품목: <span className="font-bold text-blue-600">{validRowCount}</span>개 |
+            합계: <span className="font-bold text-red-600">₩{totalAmount.toLocaleString()}</span>
           </div>
-
-          {/* 품목 리스트 */}
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">품목코드</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">품목명</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">단위</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">수량</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">단가</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">금액</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">이익</th>
-                    {(canEdit || canDelete) && (
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">액션</th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {items.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-center font-medium text-blue-600">{item.product_code}</td>
-                      <td className="px-4 py-3 text-sm text-center text-gray-900">{item.product_name}</td>
-                      <td className="px-4 py-3 text-sm text-center text-gray-600">{item.unit}</td>
-                      <td className="px-4 py-3 text-sm text-center font-medium text-gray-900">{item.quantity.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-sm text-center text-gray-900">₩{item.unit_price.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-sm text-center font-semibold text-blue-600">₩{item.total_amount.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-sm text-center font-semibold text-green-600">₩{item.profit.toLocaleString()}</td>
-                      {(canEdit || canDelete) && (
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-2">
-                            {canEdit && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setEditingSale(item)}
-                              >
-                                편집
-                              </Button>
-                            )}
-                            {canDelete && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleDelete(item)}
-                                disabled={isDeleting === item.id}
-                              >
-                                {isDeleting === item.id ? '...' : '삭제'}
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* 푸터 */}
-          <div className="p-6 border-t flex justify-end">
-            <Button onClick={onClose} variant="outline">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={onClose}>
               닫기
             </Button>
+            {canEdit && (
+              <button
+                onClick={handleBulkSave}
+                disabled={isSaving}
+                className="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold shadow-lg"
+              >
+                {isSaving ? '저장 중...' : '일괄 저장'}
+              </button>
+            )}
           </div>
         </div>
-      </div>
-
-      {/* 편집 모달 */}
-      {editingSale && (
-        <EditSaleModal
-          sale={editingSale}
-          onClose={() => setEditingSale(null)}
-          onSave={handleEdit}
-        />
-      )}
-    </>
+      </DialogContent>
+    </Dialog>
   )
 }

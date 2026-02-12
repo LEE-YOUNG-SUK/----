@@ -72,6 +72,7 @@ export function PurchaseForm({ products, suppliers, history, session, defaultTab
   )
   const [referenceNumber, setReferenceNumber] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [gridResetKey, setGridResetKey] = useState(0)
   // 부가세 구분 (true: 포함, false: 미포함)
   const [taxIncluded, setTaxIncluded] = useState(true)
   const isMobile = useIsMobile()
@@ -131,6 +132,10 @@ export function PurchaseForm({ products, suppliers, history, session, defaultTab
 
       if (result.success) {
         alert(result.message || '입고 처리가 완료되었습니다.')
+        setIsSaving(false)
+        setSupplierId('')
+        setReferenceNumber('')
+        setGridResetKey(prev => prev + 1)
         router.refresh()
       } else {
         setIsSaving(false)
@@ -213,6 +218,7 @@ export function PurchaseForm({ products, suppliers, history, session, defaultTab
             <div className="flex-1 h-full">
               {/* 임시: 항상 그리드 표시 (디버깅용) */}
               <PurchaseGrid
+                key={gridResetKey}
                 products={products}
                 onSave={handleSave}
                 isSaving={isSaving}
@@ -224,6 +230,7 @@ export function PurchaseForm({ products, suppliers, history, session, defaultTab
           <div className="h-full">
             <PurchaseHistoryTable
               data={history}
+              products={products}
               branchName={session.branch_name || '전체 지점'}
               userRole={session.role}
               userId={session.user_id}

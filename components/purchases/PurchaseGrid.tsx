@@ -16,7 +16,6 @@ import type { ColDef, ICellEditorParams } from 'ag-grid-community'
 import type { Product } from '@/types'
 import type { PurchaseGridRow } from '@/types/purchases'
 import { ProductCellEditor } from './ProductCellEditor'
-import { Button } from '@/components/ui/Button'
 
 const DeleteButtonRenderer = (props: any) => {
   return (
@@ -51,8 +50,8 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
   }, [])
   
   const [rowData, setRowData] = useState<PurchaseGridRow[]>(() => {
-    // 기본 5개 행 생성
-    return Array.from({ length: 5 }, (_, index) => ({
+    // 기본 10개 행 생성
+    return Array.from({ length: 10 }, (_, index) => ({
       id: `temp_${Date.now()}_${index}`,
       product_id: null,
       product_code: '',
@@ -214,8 +213,19 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
         onProductSelect: (product: Product) => {
           handleProductSelect(params.node, product)
         },
-        stopEditing: () => params.api.stopEditing()
+        stopEditing: () => params.api.stopEditing(),
+        navigateToQuantity: () => {
+          params.api.startEditingCell({
+            rowIndex: params.node.rowIndex!,
+            colKey: 'quantity'
+          })
+        }
       }),
+      suppressKeyboardEvent: (params) => {
+        if (!params.editing) return false
+        const key = params.event.key
+        return key === 'Enter' || key === 'ArrowDown' || key === 'ArrowUp'
+      },
       cellClass: 'text-center font-medium text-blue-600'
     },
     {
@@ -231,8 +241,19 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
         onProductSelect: (product: Product) => {
           handleProductSelect(params.node, product)
         },
-        stopEditing: () => params.api.stopEditing()
+        stopEditing: () => params.api.stopEditing(),
+        navigateToQuantity: () => {
+          params.api.startEditingCell({
+            rowIndex: params.node.rowIndex!,
+            colKey: 'quantity'
+          })
+        }
       }),
+      suppressKeyboardEvent: (params) => {
+        if (!params.editing) return false
+        const key = params.event.key
+        return key === 'Enter' || key === 'ArrowDown' || key === 'ArrowUp'
+      },
       cellClass: 'text-center'
     },
     {
@@ -366,16 +387,84 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     }
   }, [taxIncluded])
 
-  const handleAddRow = useCallback(() => {
-    const newRow = createEmptyRow()
-    setRowData((prev) => [...prev, newRow])
-  }, [createEmptyRow])
-
-  const handleClearAll = useCallback(() => {
-    if (confirm('모든 입력 데이터를 삭제하시겠습니까?')) {
-      setRowData([createEmptyRow()])
+  // 마지막 행 편집 시 자동으로 새 행 추가 + 편집 모드 복원
+  const onCellEditingStarted = useCallback((params: any) => {
+    const rowIndex = params.rowIndex
+    const colKey = params.column.getColId()
+    const totalRows = params.api.getDisplayedRowCount()
+    if (rowIndex === totalRows - 1) {
+      setRowData((prev) => [...prev, createEmptyRow()])
+      setTimeout(() => {
+        try {
+          if (gridRef.current?.api) {
+            gridRef.current.api.startEditingCell({ rowIndex, colKey })
+          }
+        } catch (e) {}
+      }, 50)
     }
   }, [createEmptyRow])
+
+  // 다음 편집 가능 셀 찾기 (공통 유틸)
+  const findNextEditableColumn = useCallback((api: any, currentCol: any, backwards = false) => {
+    const allCols = api.getAllDisplayedColumns()
+    const curIdx = allCols.indexOf(currentCol)
+    const dir = backwards ? -1 : 1
+    for (let i = curIdx + dir; i >= 0 && i < allCols.length; i += dir) {
+      if (allCols[i].getColDef().editable) return allCols[i]
+    }
+    return null
+  }, [])
+
+  // Tab: 편집 불가 셀 건너뛰기
+  const tabToNextCell = useCallback((params: any) => {
+    const nextCol = findNextEditableColumn(params.api, params.previousCellPosition.column, params.backwards)
+    if (nextCol) {
+      return {
+        rowIndex: params.previousCellPosition.rowIndex,
+        column: nextCol,
+        floating: params.previousCellPosition.floating
+      }
+    }
+    return params.nextCellPosition
+  }, [findNextEditableColumn])
+
+  // Enter / Right Arrow: 다음 편집 가능 셀로 이동
+  const onCellKeyDown = useCallback((params: any) => {
+    const key = params.event.key
+    if (key !== 'Enter' && key !== 'ArrowRight') return
+    const col = params.column
+    const field = col.getColDef().field
+    // 품목코드/품목명은 자체 키보드 처리 사용
+    if (field === 'product_code' || field === 'product_name') return
+
+    const nextCol = findNextEditableColumn(params.api, col)
+    if (nextCol) {
+      params.event.preventDefault()
+      params.event.stopPropagation()
+      setTimeout(() => {
+        params.api.startEditingCell({
+          rowIndex: params.node.rowIndex,
+          colKey: nextCol.getColId()
+        })
+      }, 50)
+    } else if (key === 'Enter') {
+      // 마지막 편집 셀(비고)에서 Enter → 다음 행 품목코드로 이동
+      const nextRowIndex = params.node.rowIndex + 1
+      params.event.preventDefault()
+      params.event.stopPropagation()
+      // 다음 행이 없으면 자동 생성
+      if (nextRowIndex >= params.api.getDisplayedRowCount()) {
+        setRowData((prev) => [...prev, createEmptyRow()])
+      }
+      setTimeout(() => {
+        params.api.startEditingCell({
+          rowIndex: nextRowIndex,
+          colKey: 'product_code'
+        })
+      }, 50)
+    }
+  }, [findNextEditableColumn, createEmptyRow])
+
 
   const handleSave = useCallback(() => {
     if (isGridDestroyed || !isMountedRef.current) return  // ✅ 파괴 상태 체크
@@ -433,16 +522,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 bg-white border-b">
-        <div className="flex items-center gap-2">
-          <Button variant="primary" onClick={handleAddRow} disabled={isSaving}>
-            ➕ 행 추가
-          </Button>
-          <Button variant="secondary" onClick={handleClearAll} disabled={isSaving}>
-            🗑️ 전체 삭제
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-6 ml-auto">
           <div className="text-sm">
             <span className="text-gray-600">입력 품목:</span>
             <span className="ml-2 font-bold text-lg text-blue-600">
@@ -478,12 +558,15 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
             headerClass: 'ag-header-cell-center',
             cellClass: 'text-center'
           }}
-          singleClickEdit={false}
+          singleClickEdit={true}
           stopEditingWhenCellsLoseFocus={true}
           suppressMovableColumns={true}
           rowHeight={40}
           headerHeight={45}
           onCellValueChanged={onCellValueChanged}
+          onCellEditingStarted={onCellEditingStarted}
+          onCellKeyDown={onCellKeyDown}
+          tabToNextCell={tabToNextCell}
         />
       </div>
 

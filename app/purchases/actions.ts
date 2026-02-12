@@ -390,3 +390,74 @@ export async function deletePurchase(data: PurchaseDeleteRequest) {
     }
   }
 }
+
+/**
+ * 기존 거래에 입고 품목 추가
+ */
+export async function addPurchaseItem(data: {
+  reference_number: string
+  branch_id: string
+  product_id: string
+  client_id: string | null
+  purchase_date: string
+  quantity: number
+  unit_cost: number
+  supply_price: number
+  tax_amount: number
+  total_price: number
+  notes: string
+  user_id: string
+  user_role: string
+  user_branch_id: string
+}) {
+  try {
+    const supabase = await createServerClient()
+
+    const cookieStore = await cookies()
+    const sessionCookie = cookieStore.get('erp_session_token')
+    if (!sessionCookie) {
+      return { success: false, message: '인증되지 않은 사용자입니다.' }
+    }
+
+    if (data.quantity <= 0) {
+      return { success: false, message: '수량은 0보다 커야 합니다.' }
+    }
+
+    const { data: rpcData, error } = await supabase.rpc('add_purchase_item', {
+      p_reference_number: data.reference_number,
+      p_branch_id: data.branch_id,
+      p_product_id: data.product_id,
+      p_client_id: data.client_id,
+      p_purchase_date: data.purchase_date,
+      p_quantity: data.quantity,
+      p_unit_cost: data.unit_cost,
+      p_supply_price: data.supply_price,
+      p_tax_amount: data.tax_amount,
+      p_total_price: data.total_price,
+      p_notes: data.notes || '',
+      p_user_id: data.user_id,
+      p_user_role: data.user_role,
+      p_user_branch_id: data.user_branch_id || null
+    })
+
+    if (error) {
+      return { success: false, message: `품목 추가 실패: ${error.message}` }
+    }
+
+    const result = rpcData?.[0]
+    if (!result || !result.success) {
+      return { success: false, message: result?.message || '품목 추가 실패' }
+    }
+
+    revalidatePath('/purchases')
+    revalidatePath('/inventory')
+
+    return { success: true, message: result.message, purchase_id: result.purchase_id }
+  } catch (error) {
+    console.error('Add purchase item error:', error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : '품목 추가 중 오류가 발생했습니다.'
+    }
+  }
+}

@@ -84,6 +84,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
   )
   const [referenceNumber, setReferenceNumber] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [gridResetKey, setGridResetKey] = useState(0)
   // 부가세 구분 (true: 포함, false: 미포함)
   const [taxIncluded, setTaxIncluded] = useState(true)
   const isMobile = useIsMobile()
@@ -196,6 +197,10 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
 
       if (result.success) {
         alert(result.message || '판매 처리가 완료되었습니다.')
+        setIsSaving(false)
+        if (transactionType !== 'USAGE') setCustomerId('')
+        setReferenceNumber('')
+        setGridResetKey(prev => prev + 1)
         router.refresh()
       } else {
         setIsSaving(false)
@@ -291,6 +296,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
             <div className="flex-1 h-full">
               {/* 임시: 항상 그리드 표시 (디버깅용) */}
               <SaleGrid
+                key={gridResetKey}
                 products={products}
                 onSave={handleSave}
                 isSaving={isSaving}
@@ -303,6 +309,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
           <div className="h-full">
             <SaleHistoryTable
               data={history}
+              products={products}
               branchName={session.branch_name || '전체 지점'}
               userRole={session.role}
               userId={session.user_id}

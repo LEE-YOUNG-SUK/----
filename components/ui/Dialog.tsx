@@ -15,7 +15,7 @@ export const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
         className="fixed inset-0 bg-black/50" 
         onClick={() => onOpenChange?.(false)}
       />
-      <div className="relative z-50">
+      <div className="relative z-50 w-full px-4">
         {children}
       </div>
     </div>
@@ -29,7 +29,7 @@ export interface DialogContentProps {
 
 export const DialogContent = ({ children, className = '' }: DialogContentProps) => {
   return (
-    <div className={`bg-white rounded-lg shadow-xl w-full ${className}`}>
+    <div className={`bg-white rounded-lg shadow-xl w-full mx-auto ${className}`}>
       <div className="px-6 py-4">
         {children}
       </div>

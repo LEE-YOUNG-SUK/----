@@ -251,6 +251,9 @@ export async function getSalesHistory(
       .filter((item: any) => !transactionType || item.transaction_type === transactionType)  // ✅ 클라이언트에서 필터링
       .map((item: any) => ({
         id: item.id,
+        branch_id: item.branch_id || '',
+        client_id: item.client_id || null,
+        product_id: item.product_id || '',
         sale_date: item.sale_date,
         branch_name: item.branch_name || '',
         customer_name: item.customer_name || '',
@@ -259,15 +262,20 @@ export async function getSalesHistory(
         unit: item.unit || '',
         quantity: item.quantity || 0,
         unit_price: item.unit_price || 0,
-        total_amount: item.total_price || 0,  // ✅ 수정: total_price → total_amount
-        cost_of_goods: item.cost_of_goods_sold || 0,  // ✅ 수정: cost_of_goods_sold
+        supply_price: item.supply_price || 0,
+        tax_amount: item.tax_amount || 0,
+        total_amount: item.total_price || 0,
+        cost_of_goods: item.cost_of_goods_sold || 0,
         profit: item.profit || 0,
         profit_margin: item.total_price > 0 ? ((item.profit || 0) / item.total_price) * 100 : 0,
         reference_number: item.reference_number || null,
         notes: item.notes || '',
         created_by_name: item.created_by_name || '알 수 없음',  // ✅ 추가: RPC에서 반환
         created_at: item.created_at,
-        transaction_type: item.transaction_type || 'SALE'
+        transaction_type: item.transaction_type || 'SALE',
+        updated_by: item.updated_by || null,
+        updated_by_name: item.updated_by_name || null,
+        updated_at: item.updated_at || null
       }))
 
     return { 
@@ -461,6 +469,79 @@ export async function deleteSale(data: SaleDeleteRequest) {
     return {
       success: false,
       message: error instanceof Error ? error.message : '판매 삭제 중 오류가 발생했습니다.'
+    }
+  }
+}
+
+/**
+ * 기존 거래에 판매 품목 추가
+ */
+export async function addSaleItem(data: {
+  reference_number: string
+  branch_id: string
+  product_id: string
+  client_id: string | null
+  sale_date: string
+  quantity: number
+  unit_price: number
+  supply_price: number
+  tax_amount: number
+  total_price: number
+  notes: string
+  user_id: string
+  user_role: string
+  user_branch_id: string
+  transaction_type: 'SALE' | 'USAGE'
+}) {
+  try {
+    const supabase = await createServerClient()
+
+    const cookieStore = await cookies()
+    const sessionCookie = cookieStore.get('erp_session_token')
+    if (!sessionCookie) {
+      return { success: false, message: '인증되지 않은 사용자입니다.' }
+    }
+
+    if (data.quantity <= 0) {
+      return { success: false, message: '수량은 0보다 커야 합니다.' }
+    }
+
+    const { data: rpcData, error } = await supabase.rpc('add_sale_item', {
+      p_reference_number: data.reference_number,
+      p_branch_id: data.branch_id,
+      p_product_id: data.product_id,
+      p_client_id: data.client_id,
+      p_sale_date: data.sale_date,
+      p_quantity: data.quantity,
+      p_unit_price: data.unit_price,
+      p_supply_price: data.supply_price,
+      p_tax_amount: data.tax_amount,
+      p_total_price: data.total_price,
+      p_notes: data.notes || '',
+      p_user_id: data.user_id,
+      p_user_role: data.user_role,
+      p_user_branch_id: data.user_branch_id || null,
+      p_transaction_type: data.transaction_type || 'SALE'
+    })
+
+    if (error) {
+      return { success: false, message: `품목 추가 실패: ${error.message}` }
+    }
+
+    const result = rpcData?.[0]
+    if (!result || !result.success) {
+      return { success: false, message: result?.message || '품목 추가 실패' }
+    }
+
+    revalidatePath('/sales')
+    revalidatePath('/inventory')
+
+    return { success: true, message: result.message, sale_id: result.sale_id }
+  } catch (error) {
+    console.error('Add sale item error:', error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : '품목 추가 중 오류가 발생했습니다.'
     }
   }
 }

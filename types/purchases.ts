@@ -69,12 +69,16 @@ export interface PurchaseHistory {
   quantity: number
   unit_cost: number
   total_cost: number
+  supply_price: number  // 공급가 (세전)
+  tax_amount: number    // 부가세
   reference_number: string
   notes: string
   created_at: string
   created_by: string
   created_by_name: string  // 담당자 이름
-    tax_amount?: number; // 부가세 (선택)
+  updated_by: string | null  // 수정 담당자 ID
+  updated_by_name: string | null  // 수정 담당자 이름
+  updated_at: string | null  // 수정 시각
 }
 
 /**

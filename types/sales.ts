@@ -54,6 +54,9 @@ export interface SaleSaveRequest {
 // 판매 내역
 export interface SaleHistory {
   id: string
+  branch_id: string        // 지점 ID (품목 추가용)
+  client_id: string | null // 거래처 ID (품목 추가용)
+  product_id: string       // 품목 ID (품목 추가용)
   sale_date: string
   branch_name: string
   customer_name: string
@@ -66,12 +69,16 @@ export interface SaleHistory {
   cost_of_goods: number
   profit: number
   profit_margin: number
+  supply_price: number   // 공급가 (세전)
+  tax_amount: number     // 부가세
   reference_number: string | null
   notes: string
   created_by_name: string  // 담당자 이름
   created_at: string
-  tax_amount?: number // 부가세 (선택)
   transaction_type?: TransactionType // 거래유형
+  updated_by: string | null  // 수정 담당자 ID
+  updated_by_name: string | null  // 수정 담당자 이름
+  updated_at: string | null  // 수정 시각
 }
 
 /**
@@ -106,6 +113,8 @@ export interface SaleDeleteRequest {
 export interface SaleGroup {
   reference_number: string // 거래번호
   sale_date: string
+  branch_id: string        // 지점 ID (품목 추가용)
+  client_id: string | null // 거래처 ID (품목 추가용)
   customer_name: string
   items: SaleHistory[]
   total_amount: number
