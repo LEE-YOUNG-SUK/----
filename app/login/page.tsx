@@ -101,25 +101,18 @@ export default function LoginPage() {
         return
       }
 
-      // 세션 생성
-      const token = crypto.randomUUID()
-      const expiresAt = new Date()
-      expiresAt.setHours(expiresAt.getHours() + 24) // 24시간 후 만료
+      // 세션 생성 (서버 측에서 토큰 생성 + 만료시간 설정)
+      const { data: sessionData, error: sessionError } = await supabase.rpc('create_session', {
+        p_user_id: result.user_id
+      })
 
-      const { error: sessionError } = await supabase
-        .from('sessions')
-        .insert({
-          user_id: result.user_id,
-          token: token,
-          expires_at: expiresAt.toISOString(),
-          is_valid: true
-        })
-
-      if (sessionError) {
+      if (sessionError || !sessionData || sessionData.length === 0) {
         setError('세션 생성 중 오류가 발생했습니다.')
         console.error('세션 에러:', sessionError)
         return
       }
+
+      const token = sessionData[0].token
 
       // 쿠키에 세션 토큰 저장
       document.cookie = `erp_session_token=${token}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`
