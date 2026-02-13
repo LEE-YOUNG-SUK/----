@@ -6,6 +6,7 @@
 
 import { createServerClient } from '@/lib/supabase/server'
 import type { AuditLogFilter } from '@/types/audit'
+import { validateDateRange } from '@/lib/date-utils'
 
 /**
  * 감사 로그 목록 조회
@@ -28,6 +29,9 @@ export async function getAuditLogs(
         message: '감사 로그 조회 권한이 없습니다. (원장 이상 필요)'
       }
     }
+
+    const dateError = validateDateRange(filters?.start_date, filters?.end_date)
+    if (dateError) return { success: false, data: [], message: dateError }
 
     const { data, error } = await supabase.rpc('get_audit_logs', {
       p_user_id: userId,
@@ -166,6 +170,9 @@ export async function getAuditStats(
       }
     }
 
+    const dateError = validateDateRange(startDate, endDate)
+    if (dateError) return { success: false, data: [], message: dateError }
+
     const { data, error } = await supabase.rpc('get_audit_stats', {
       p_user_id: userId,
       p_user_role: userRole,
@@ -216,6 +223,9 @@ export async function getUserActivity(
         message: '사용자 활동 조회 권한이 없습니다. (원장 이상 필요)'
       }
     }
+
+    const dateError = validateDateRange(startDate, endDate)
+    if (dateError) return { success: false, data: [], message: dateError }
 
     const { data, error } = await supabase.rpc('get_user_activity', {
       p_user_id: userId,

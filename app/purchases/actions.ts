@@ -1,8 +1,9 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/session'
 import { revalidatePath } from 'next/cache'
-import { cookies } from 'next/headers'
+import { validateDateRange } from '@/lib/date-utils'
 import type { 
   PurchaseSaveRequest, 
   BatchPurchaseResponse,
@@ -18,18 +19,12 @@ import type {
  */
 export async function savePurchases(data: PurchaseSaveRequest) {
   try {
-    const supabase = await createServerClient()
-    
-    // 세션 확인
-    const cookieStore = await cookies()
-    const sessionCookie = cookieStore.get('erp_session_token')
-    
-    if (!sessionCookie) {
-      return { 
-        success: false, 
-        message: '인증되지 않은 사용자입니다.' 
-      }
+    const session = await getSession()
+    if (!session) {
+      return { success: false, message: '인증되지 않은 사용자입니다.' }
     }
+
+    const supabase = await createServerClient()
 
     // 검증
     // ✅ 공급업체 필수 검증 제거 (선택사항으로 변경)
@@ -53,6 +48,16 @@ export async function savePurchases(data: PurchaseSaveRequest) {
       return { success: false, message: '유효한 품목이 없습니다.' }
     }
 
+    // 서버 측 item 유효성 검증
+    for (const item of validItems) {
+      if (!item.quantity || item.quantity <= 0) {
+        return { success: false, message: `수량은 0보다 커야 합니다. (품목: ${item.product_name || item.product_id})` }
+      }
+      if (item.unit_cost < 0) {
+        return { success: false, message: `단가는 0 이상이어야 합니다. (품목: ${item.product_name || item.product_id})` }
+      }
+    }
+
     // JSONB 형식으로 변환
     const itemsJson = validItems.map(item => ({
       product_id: item.product_id,
@@ -66,12 +71,11 @@ export async function savePurchases(data: PurchaseSaveRequest) {
 
     // ✅ Phase 3: Audit Log - 사용자 컨텍스트 설정 (SQL 인젝션 방지)
     const { error: configError } = await supabase.rpc('set_current_user_context', {
-      p_user_id: data.created_by
+      p_user_id: session.user_id
     })
-    
+
     if (configError) {
       console.error('❌ Config Error:', configError)
-      // 컨텍스트 설정 실패는 warning으로 처리 (비즈니스 로직 중단 안함)
     }
 
     // ✅ 단일 RPC 호출 (트랜잭션 보장)
@@ -79,9 +83,9 @@ export async function savePurchases(data: PurchaseSaveRequest) {
       p_branch_id: data.branch_id,
       p_client_id: data.supplier_id,
       p_purchase_date: data.purchase_date,
-      p_reference_number: data.reference_number || null,  // NULL이면 자동 생성
+      p_reference_number: data.reference_number || null,
       p_notes: data.notes || '',
-      p_created_by: data.created_by,
+      p_created_by: session.user_id,
       p_items: itemsJson as any
     })
 
@@ -180,13 +184,15 @@ export async function getSuppliersList() {
  */
 export async function getPurchasesHistory(
   branchId: string | null,
-  userId: string,
   startDate?: string,
   endDate?: string
 ) {
   try {
+    const dateError = validateDateRange(startDate, endDate)
+    if (dateError) return { success: false, data: [], message: dateError }
+
     const supabase = await createServerClient()
-    
+
     const { data, error } = await supabase
       .rpc('get_purchases_list', {
         p_branch_id: branchId,
@@ -247,18 +253,12 @@ export async function getBranchesList() {
  */
 export async function updatePurchase(data: PurchaseUpdateRequest) {
   try {
-    const supabase = await createServerClient()
-    
-    // 세션 확인
-    const cookieStore = await cookies()
-    const sessionCookie = cookieStore.get('erp_session_token')
-    
-    if (!sessionCookie) {
-      return { 
-        success: false, 
-        message: '인증되지 않은 사용자입니다.' 
-      }
+    const session = await getSession()
+    if (!session) {
+      return { success: false, message: '인증되지 않은 사용자입니다.' }
     }
+
+    const supabase = await createServerClient()
 
     // 검증
     if (!data.purchase_id) {
@@ -270,15 +270,15 @@ export async function updatePurchase(data: PurchaseUpdateRequest) {
     }
 
     if (data.unit_cost < 0) {
-      return { success: false, message: '단가는 0보다 커야 합니다.' }
+      return { success: false, message: '단가는 0 이상이어야 합니다.' }
     }
 
     // ✅ RPC 호출 (권한 및 지점 검증 포함, audit_logs 직접 기록)
     const { data: rpcData, error } = await supabase.rpc('update_purchase', {
       p_purchase_id: data.purchase_id,
-      p_user_id: data.user_id,
-      p_user_role: data.user_role,
-      p_user_branch_id: data.user_branch_id || null,
+      p_user_id: session.user_id,
+      p_user_role: session.role,
+      p_user_branch_id: session.branch_id || null,
       p_quantity: data.quantity,
       p_unit_cost: data.unit_cost,
       p_supply_price: data.supply_price,
@@ -330,18 +330,12 @@ export async function updatePurchase(data: PurchaseUpdateRequest) {
  */
 export async function deletePurchase(data: PurchaseDeleteRequest) {
   try {
-    const supabase = await createServerClient()
-    
-    // 세션 확인
-    const cookieStore = await cookies()
-    const sessionCookie = cookieStore.get('erp_session_token')
-    
-    if (!sessionCookie) {
-      return { 
-        success: false, 
-        message: '인증되지 않은 사용자입니다.' 
-      }
+    const session = await getSession()
+    if (!session) {
+      return { success: false, message: '인증되지 않은 사용자입니다.' }
     }
+
+    const supabase = await createServerClient()
 
     // 검증
     if (!data.purchase_id) {
@@ -351,9 +345,9 @@ export async function deletePurchase(data: PurchaseDeleteRequest) {
     // ✅ RPC 호출 (권한 및 지점 검증 포함, audit_logs 직접 기록)
     const { data: rpcData, error } = await supabase.rpc('delete_purchase', {
       p_purchase_id: data.purchase_id,
-      p_user_id: data.user_id,
-      p_user_role: data.user_role,
-      p_user_branch_id: data.user_branch_id || null
+      p_user_id: session.user_id,
+      p_user_role: session.role,
+      p_user_branch_id: session.branch_id || null
     })
 
     if (error) {
@@ -406,21 +400,23 @@ export async function addPurchaseItem(data: {
   tax_amount: number
   total_price: number
   notes: string
-  user_id: string
-  user_role: string
-  user_branch_id: string
 }) {
   try {
-    const supabase = await createServerClient()
-
-    const cookieStore = await cookies()
-    const sessionCookie = cookieStore.get('erp_session_token')
-    if (!sessionCookie) {
+    const session = await getSession()
+    if (!session) {
       return { success: false, message: '인증되지 않은 사용자입니다.' }
     }
 
+    const supabase = await createServerClient()
+
+    if (!data.product_id) {
+      return { success: false, message: '품목을 선택해주세요.' }
+    }
     if (data.quantity <= 0) {
       return { success: false, message: '수량은 0보다 커야 합니다.' }
+    }
+    if (data.unit_cost < 0) {
+      return { success: false, message: '단가는 0 이상이어야 합니다.' }
     }
 
     const { data: rpcData, error } = await supabase.rpc('add_purchase_item', {
@@ -435,9 +431,9 @@ export async function addPurchaseItem(data: {
       p_tax_amount: data.tax_amount,
       p_total_price: data.total_price,
       p_notes: data.notes || '',
-      p_user_id: data.user_id,
-      p_user_role: data.user_role,
-      p_user_branch_id: data.user_branch_id || null
+      p_user_id: session.user_id,
+      p_user_role: session.role,
+      p_user_branch_id: session.branch_id || null
     })
 
     if (error) {

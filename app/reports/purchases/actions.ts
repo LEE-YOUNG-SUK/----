@@ -8,72 +8,41 @@
 // 패턴: 세션 검증 → 권한 체크 → RPC 호출 → revalidatePath
 // ============================================================
 
-import { cookies } from 'next/headers'
 import { createServerClient } from '@/lib/supabase/server'
-import { 
-  PurchaseReportResponse, 
-  PurchaseReportRow, 
-  ReportFilter 
+import { getSession } from '@/lib/session'
+import {
+  PurchaseReportResponse,
+  PurchaseReportRow,
+  ReportFilter
 } from '@/types/reports'
+import { validateDateRange } from '@/lib/date-utils'
 
-/**
- * 구매 레포트 조회 Server Action
- * @param filter - 레포트 필터 조건 (시작일, 종료일, 그룹핑 방식, 지점ID)
- * @returns PurchaseReportResponse - 성공 여부, 데이터, 오류 메시지
- */
 export async function getPurchaseReport(
   filter: ReportFilter
 ): Promise<PurchaseReportResponse> {
   try {
-    // 1. 세션 검증
-    const cookieStore = await cookies()
-    const token = cookieStore.get('erp_session_token')?.value
-
-    if (!token) {
-      return {
-        success: false,
-        data: [],
-        error: '로그인이 필요합니다.',
-        filter,
-      }
+    const session = await getSession()
+    if (!session) {
+      return { success: false, data: [], error: '로그인이 필요합니다.', filter }
     }
+
+    if (!['0000', '0001', '0002'].includes(session.role)) {
+      return { success: false, data: [], error: '레포트 조회 권한이 없습니다.', filter }
+    }
+
+    const dateError = validateDateRange(filter.startDate, filter.endDate)
+    if (dateError) return { success: false, data: [], error: dateError, filter }
+
+    // 비관리자는 본인 지점만 조회 가능
+    const branchId = session.role === '0000' ? (filter.branchId || null) : session.branch_id
 
     const supabase = await createServerClient()
 
-    // 2. 세션 검증 및 사용자 정보 조회
-    const { data: sessionData, error: sessionError } = await supabase.rpc(
-      'verify_session',
-      { p_token: token }
-    )
-
-    if (sessionError || !sessionData?.[0]?.valid) {
-      return {
-        success: false,
-        data: [],
-        error: '유효하지 않은 세션입니다.',
-        filter,
-      }
-    }
-
-    const userRole = sessionData[0].role as string
-    const userBranchId = sessionData[0].branch_id as string
-
-    // 3. 권한 체크 (원장/매니저 이상만 접근 가능)
-    if (!['0000', '0001', '0002'].includes(userRole)) {
-      return {
-        success: false,
-        data: [],
-        error: '레포트 조회 권한이 없습니다.',
-        filter,
-      }
-    }
-
-    // 4. RPC 함수 호출
     const { data: reportData, error: reportError } = await supabase.rpc(
       'get_purchase_report',
       {
-        p_user_role: userRole,
-        p_branch_id: filter.branchId || null,
+        p_user_role: session.role,
+        p_branch_id: branchId,
         p_start_date: filter.startDate,
         p_end_date: filter.endDate,
         p_group_by: filter.groupBy,
@@ -98,8 +67,8 @@ export async function getPurchaseReport(
       total_quantity: parseFloat(item.total_quantity) || 0,
       total_amount: parseFloat(item.total_amount) || 0,
       transaction_count: parseInt(item.transaction_count, 10) || 0,
-      average_unit_cost: parseFloat(item.avg_unit_cost) || 0,      // ✅ DB 컬럼명: avg_unit_cost
-      product_count: parseInt(item.unique_products, 10) || 0,      // ✅ DB 컬럼명: unique_products
+      average_unit_cost: parseFloat(item.average_unit_cost) || 0,
+      product_count: parseInt(item.product_count, 10) || 0,
     }))
 
     return {

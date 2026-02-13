@@ -1,8 +1,9 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/session'
 import { revalidatePath } from 'next/cache'
-import { cookies } from 'next/headers'
+import { validateDateRange } from '@/lib/date-utils'
 import type { 
   AdjustmentSaveRequest,
   AdjustmentProcessResponse,
@@ -22,19 +23,17 @@ import type {
  */
 export async function saveInventoryAdjustment(data: AdjustmentSaveRequest) {
   try {
-    const supabase = await createServerClient()
-    
-    // 세션 확인
-    const cookieStore = await cookies()
-    const sessionCookie = cookieStore.get('erp_session_token')
-    
-    if (!sessionCookie) {
-      return { 
-        success: false, 
-        message: '인증되지 않은 사용자입니다.',
-        adjustment_id: null
-      }
+    const session = await getSession()
+    if (!session) {
+      return { success: false, message: '인증되지 않은 사용자입니다.', adjustment_id: null }
     }
+
+    // 권한: 매니저 이상 (0000~0002)
+    if (!['0000', '0001', '0002'].includes(session.role)) {
+      return { success: false, message: '재고 조정 권한이 없습니다.', adjustment_id: null }
+    }
+
+    const supabase = await createServerClient()
 
     // 검증: INCREASE 시 unit_cost 필수
     if (data.adjustment_type === 'INCREASE' && (!data.unit_cost || data.unit_cost <= 0)) {
@@ -61,9 +60,9 @@ export async function saveInventoryAdjustment(data: AdjustmentSaveRequest) {
       p_adjustment_type: data.adjustment_type,
       p_adjustment_reason: data.adjustment_reason,
       p_quantity: data.quantity,
-      p_user_id: data.user_id,
-      p_user_role: data.user_role,
-      p_user_branch_id: data.user_branch_id,
+      p_user_id: session.user_id,
+      p_user_role: session.role,
+      p_user_branch_id: session.branch_id,
       p_unit_cost: data.unit_cost || null,
       p_supply_price: data.supply_price || null,
       p_tax_amount: data.tax_amount || null,
@@ -82,11 +81,11 @@ export async function saveInventoryAdjustment(data: AdjustmentSaveRequest) {
       }
     }
 
-    const result = rpcResult[0] as AdjustmentProcessResponse
+    const result = rpcResult?.[0] as AdjustmentProcessResponse | undefined
 
-    if (!result.success) {
-      console.error('❌ 재고 조정 실패:', result.message)
-      return result
+    if (!result || !result.success) {
+      console.error('❌ 재고 조정 실패:', result?.message)
+      return { success: false, message: result?.message || '재고 조정 처리 결과를 받지 못했습니다.', adjustment_id: null }
     }
 
     // 캐시 무효화
@@ -112,19 +111,22 @@ export async function saveInventoryAdjustment(data: AdjustmentSaveRequest) {
  * ✅ 필터링: 날짜, 유형, 사유
  */
 export async function getAdjustmentHistory(
-  user_id: string,
-  user_role: string,
-  user_branch_id: string,
   filters?: AdjustmentFilters
 ): Promise<InventoryAdjustment[]> {
   try {
+    const session = await getSession()
+    if (!session) return []
+
+    const dateError = validateDateRange(filters?.start_date, filters?.end_date)
+    if (dateError) return []
+
     const supabase = await createServerClient()
 
     // RPC 호출: get_inventory_adjustments
     const { data, error } = await supabase.rpc('get_inventory_adjustments', {
-      p_user_id: user_id,
-      p_user_role: user_role,
-      p_user_branch_id: user_branch_id,
+      p_user_id: session.user_id,
+      p_user_role: session.role,
+      p_user_branch_id: session.branch_id,
       p_start_date: filters?.start_date || null,
       p_end_date: filters?.end_date || null,
       p_adjustment_type: filters?.adjustment_type || null,
@@ -160,20 +162,23 @@ export async function getAdjustmentHistory(
  * ✅ 사유별 통계
  */
 export async function getAdjustmentSummary(
-  user_id: string,
-  user_role: string,
-  user_branch_id: string,
   start_date: string,
   end_date: string
 ): Promise<AdjustmentSummary | null> {
   try {
+    const session = await getSession()
+    if (!session) return null
+
+    const dateError = validateDateRange(start_date, end_date)
+    if (dateError) return null
+
     const supabase = await createServerClient()
 
     // RPC 호출: get_adjustment_summary
     const { data, error } = await supabase.rpc('get_adjustment_summary', {
-      p_user_id: user_id,
-      p_user_role: user_role,
-      p_user_branch_id: user_branch_id,
+      p_user_id: session.user_id,
+      p_user_role: session.role,
+      p_user_branch_id: session.branch_id,
       p_start_date: start_date,
       p_end_date: end_date
     })
@@ -200,18 +205,17 @@ export async function getAdjustmentSummary(
  */
 export async function cancelAdjustment(data: AdjustmentCancelRequest) {
   try {
-    const supabase = await createServerClient()
-    
-    // 세션 확인
-    const cookieStore = await cookies()
-    const sessionCookie = cookieStore.get('erp_session_token')
-    
-    if (!sessionCookie) {
-      return { 
-        success: false, 
-        message: '인증되지 않은 사용자입니다.'
-      }
+    const session = await getSession()
+    if (!session) {
+      return { success: false, message: '인증되지 않은 사용자입니다.' }
     }
+
+    // 권한: 원장 이상 (0000~0001)
+    if (!['0000', '0001'].includes(session.role)) {
+      return { success: false, message: '재고 조정 취소 권한이 없습니다.' }
+    }
+
+    const supabase = await createServerClient()
 
     // 취소 사유 검증
     if (!data.cancel_reason || data.cancel_reason.trim() === '') {
@@ -224,9 +228,9 @@ export async function cancelAdjustment(data: AdjustmentCancelRequest) {
     // RPC 호출: cancel_inventory_adjustment
     const { data: rpcResult, error } = await supabase.rpc('cancel_inventory_adjustment', {
       p_adjustment_id: data.adjustment_id,
-      p_user_id: data.user_id,
-      p_user_role: data.user_role,
-      p_user_branch_id: data.user_branch_id,
+      p_user_id: session.user_id,
+      p_user_role: session.role,
+      p_user_branch_id: session.branch_id,
       p_cancel_reason: data.cancel_reason
     })
 
@@ -238,11 +242,11 @@ export async function cancelAdjustment(data: AdjustmentCancelRequest) {
       }
     }
 
-    const result = rpcResult[0] as AdjustmentCancelResponse
+    const result = rpcResult?.[0] as AdjustmentCancelResponse | undefined
 
-    if (!result.success) {
-      console.error('❌ 재고 조정 취소 실패:', result.message)
-      return result
+    if (!result || !result.success) {
+      console.error('❌ 재고 조정 취소 실패:', result?.message)
+      return { success: false, message: result?.message || '재고 조정 취소 결과를 받지 못했습니다.' }
     }
 
     // 캐시 무효화

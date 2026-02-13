@@ -1,6 +1,7 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/session'
 import { revalidatePath } from 'next/cache'
 import type { Client } from '@/types'
 
@@ -9,17 +10,20 @@ import type { Client } from '@/types'
  */
 export async function getClients() {
   try {
+    const session = await getSession()
+    if (!session) return []
+
     const supabase = await createServerClient()
-    
+
     const { data, error } = await supabase
       .rpc('get_clients_list')
       .order('code', { ascending: true })
-    
+
     if (error) {
       console.error('❌ [Clients Actions] 거래처 조회 에러:', error)
       return []
     }
-    
+
     return Array.isArray(data) ? data : []
   } catch (error) {
     console.error('❌ [Clients Actions] 거래처 조회 실패:', error)
@@ -43,8 +47,12 @@ export async function saveClient(formData: {
   is_active: boolean
   created_by?: string | null
 }) {
+  const session = await getSession()
+  if (!session) return { success: false, message: '로그인이 필요합니다.' }
+  if (!['0000', '0001'].includes(session.role)) return { success: false, message: '거래처 관리 권한이 없습니다.' }
+
   const supabase = await createServerClient()
-  
+
   try {
     if (formData.id) {
       // 수정
@@ -61,7 +69,8 @@ export async function saveClient(formData: {
           tax_id: formData.tax_id,
           notes: formData.notes,
           is_active: formData.is_active,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          updated_by: session.user_id
         })
         .eq('id', formData.id)
       
@@ -84,7 +93,7 @@ export async function saveClient(formData: {
           tax_id: formData.tax_id,
           notes: formData.notes,
           is_active: formData.is_active,
-          created_by: formData.created_by || null
+          created_by: session.user_id
         })
       
       if (error) {
@@ -107,6 +116,10 @@ export async function saveClient(formData: {
  * 거래처 삭제
  */
 export async function deleteClient(clientId: string) {
+  const session = await getSession()
+  if (!session) return { success: false, message: '로그인이 필요합니다.' }
+  if (!['0000', '0001'].includes(session.role)) return { success: false, message: '거래처 삭제 권한이 없습니다.' }
+
   const supabase = await createServerClient()
   
   try {
