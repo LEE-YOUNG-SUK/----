@@ -319,14 +319,14 @@ export default function SaleHistoryTable({
     }),
     itemColumnHelper.accessor('supply_price', {
       header: '공급가',
-      size: 110,
+      size: 220,
       cell: (info) => (
         <span className="text-sm text-gray-900">₩{info.getValue().toLocaleString()}</span>
       ),
     }),
     itemColumnHelper.accessor('tax_amount', {
       header: '부가세',
-      size: 100,
+      size: 200,
       cell: (info) => (
         <span className="text-sm text-orange-600">₩{info.getValue().toLocaleString()}</span>
       ),
@@ -409,7 +409,7 @@ export default function SaleHistoryTable({
     columnHelper.display({
       id: 'supply_price',
       header: '공급가',
-      size: 120,
+      size: 240,
       cell: (info) => {
         const supply = info.row.original.items.reduce((sum, item) => sum + (item.supply_price || 0), 0)
         return <span className="text-sm text-gray-900">₩{supply.toLocaleString()}</span>
@@ -418,7 +418,7 @@ export default function SaleHistoryTable({
     columnHelper.display({
       id: 'tax_amount',
       header: '부가세',
-      size: 110,
+      size: 220,
       cell: (info) => {
         const tax = info.row.original.items.reduce((sum, item) => sum + (item.tax_amount || 0), 0)
         return <span className="text-sm text-orange-600">₩{tax.toLocaleString()}</span>
