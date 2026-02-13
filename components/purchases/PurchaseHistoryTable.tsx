@@ -431,7 +431,7 @@ export default function PurchaseHistoryTable({
     columnHelper.display({
       id: 'actions',
       header: '상세',
-      size: 120,
+      size: 160,
       enableSorting: false,
       cell: (info) => (
         <Button
