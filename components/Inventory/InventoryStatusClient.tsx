@@ -441,6 +441,8 @@ export default function InventoryStatusClient({ userSession, products, branches 
           startDate={startDate}
           endDate={endDate}
           onClose={() => setSelectedItem(null)}
+          userSession={userSession}
+          products={products}
         />
       )}
     </>

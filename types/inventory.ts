@@ -64,6 +64,7 @@ export interface InventoryMovement {
   incoming_qty: number
   outgoing_qty: number
   running_balance: number
+  reference_number: string | null
 }
 
 // 입/출고 상세조회 (개별 거래)

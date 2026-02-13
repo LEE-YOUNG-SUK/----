@@ -4,6 +4,8 @@ import { createServerClient } from '@/lib/supabase/server'
 import { getSession } from '@/lib/session'
 import { validateDateRange } from '@/lib/date-utils'
 import type { InventoryStatusItem } from '@/types/inventory'
+import type { PurchaseHistory } from '@/types/purchases'
+import type { SaleHistory } from '@/types/sales'
 
 export interface InventoryStatusFilter {
   branchId: string | null
@@ -73,5 +75,69 @@ export async function getBranchesList() {
     return data || []
   } catch {
     return []
+  }
+}
+
+/**
+ * 거래번호로 입고 내역 조회 (수정 모달용)
+ */
+export async function getPurchasesByReferenceNumber(referenceNumber: string, branchId: string | null) {
+  try {
+    const session = await getSession()
+    if (!session) return { success: false, data: [] as PurchaseHistory[], message: '로그인이 필요합니다.' }
+
+    const effectiveBranchId = ['0001', '0002', '0003'].includes(session.role)
+      ? session.branch_id
+      : branchId
+
+    const supabase = await createServerClient()
+    const { data, error } = await supabase.rpc('get_purchases_list', {
+      p_branch_id: effectiveBranchId,
+      p_start_date: null,
+      p_end_date: null
+    })
+
+    if (error) {
+      console.error('입고 내역 조회 오류:', error)
+      return { success: false, data: [] as PurchaseHistory[], message: error.message }
+    }
+
+    const filtered = (data || []).filter((item: PurchaseHistory) => item.reference_number === referenceNumber)
+    return { success: true, data: filtered as PurchaseHistory[] }
+  } catch (error) {
+    console.error('getPurchasesByReferenceNumber 오류:', error)
+    return { success: false, data: [] as PurchaseHistory[], message: '입고 내역 조회 실패' }
+  }
+}
+
+/**
+ * 거래번호로 판매 내역 조회 (수정 모달용)
+ */
+export async function getSalesByReferenceNumber(referenceNumber: string, branchId: string | null) {
+  try {
+    const session = await getSession()
+    if (!session) return { success: false, data: [] as SaleHistory[], message: '로그인이 필요합니다.' }
+
+    const effectiveBranchId = ['0001', '0002', '0003'].includes(session.role)
+      ? session.branch_id
+      : branchId
+
+    const supabase = await createServerClient()
+    const { data, error } = await supabase.rpc('get_sales_list', {
+      p_branch_id: effectiveBranchId,
+      p_start_date: null,
+      p_end_date: null
+    })
+
+    if (error) {
+      console.error('판매 내역 조회 오류:', error)
+      return { success: false, data: [] as SaleHistory[], message: error.message }
+    }
+
+    const filtered = (data || []).filter((item: SaleHistory) => item.reference_number === referenceNumber)
+    return { success: true, data: filtered as SaleHistory[] }
+  } catch (error) {
+    console.error('getSalesByReferenceNumber 오류:', error)
+    return { success: false, data: [] as SaleHistory[], message: '판매 내역 조회 실패' }
   }
 }
