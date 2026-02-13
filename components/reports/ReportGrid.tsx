@@ -36,8 +36,7 @@ export default function ReportGrid<T>({
     () => ({
       sortable: true,
       resizable: true,
-      filter: true,
-      floatingFilter: false,
+      filter: false,
       suppressMovable: true,
     }),
     []

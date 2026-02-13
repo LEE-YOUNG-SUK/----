@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveInventoryAdjustment, getCurrentStock } from '@/app/inventory-adjustments/actions'
+import { useConfirm } from '@/hooks/useConfirm'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
@@ -29,6 +30,7 @@ interface Props {
 
 export default function AdjustmentForm({ products, session }: Props) {
   const router = useRouter()
+  const { confirm, ConfirmDialogComponent } = useConfirm()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [currentStock, setCurrentStock] = useState<number>(0)
@@ -46,7 +48,7 @@ export default function AdjustmentForm({ products, session }: Props) {
     total_cost: 0,
     notes: '',
     reference_number: '',
-    adjustment_date: new Date().toISOString().split('T')[0]
+    adjustment_date: new Date().toLocaleDateString('sv-SE')
   })
 
   // 품목 검색 필터링
@@ -132,14 +134,16 @@ export default function AdjustmentForm({ products, session }: Props) {
       DECREASE: '감소'
     }
 
-    const confirmed = confirm(
-      `재고 조정을 진행하시겠습니까?\n\n` +
-      `품목: ${selectedProduct.name}\n` +
-      `유형: ${typeLabels[formData.adjustment_type]}\n` +
-      `사유: ${reasonLabels[formData.adjustment_reason]}\n` +
-      `수량: ${formData.quantity} ${selectedProduct.unit}\n` +
-      `${formData.adjustment_type === 'INCREASE' ? `단위 원가: ₩${formData.unit_cost.toLocaleString()}` : ''}`
-    )
+    const confirmed = await confirm({
+      title: '재고 조정 확인',
+      message: `재고 조정을 진행하시겠습니까?\n\n` +
+        `품목: ${selectedProduct.name}\n` +
+        `유형: ${typeLabels[formData.adjustment_type]}\n` +
+        `사유: ${reasonLabels[formData.adjustment_reason]}\n` +
+        `수량: ${formData.quantity} ${selectedProduct.unit}\n` +
+        `${formData.adjustment_type === 'INCREASE' ? `단위 원가: ₩${formData.unit_cost.toLocaleString()}` : ''}`,
+      variant: 'warning'
+    })
 
     if (!confirmed) return
 
@@ -158,10 +162,7 @@ export default function AdjustmentForm({ products, session }: Props) {
         total_cost: formData.adjustment_type === 'INCREASE' ? formData.total_cost : null,
         notes: formData.notes || undefined,
         reference_number: formData.reference_number || undefined,
-        adjustment_date: formData.adjustment_date,
-        user_id: session.user_id,
-        user_role: session.role,
-        user_branch_id: session.branch_id
+        adjustment_date: formData.adjustment_date
       })
 
       if (result.success) {
@@ -180,7 +181,7 @@ export default function AdjustmentForm({ products, session }: Props) {
           total_cost: 0,
           notes: '',
           reference_number: '',
-          adjustment_date: new Date().toISOString().split('T')[0]
+          adjustment_date: new Date().toLocaleDateString('sv-SE')
         })
         router.refresh()
       } else {
@@ -203,6 +204,7 @@ export default function AdjustmentForm({ products, session }: Props) {
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* 품목 검색 */}
       <div className="space-y-2">
@@ -391,5 +393,7 @@ export default function AdjustmentForm({ products, session }: Props) {
         </Button>
       </div>
     </form>
+    {ConfirmDialogComponent}
+  </>
   )
 }

@@ -1,6 +1,7 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/session'
 import { revalidatePath } from 'next/cache'
 
 export interface ProductCategory {
@@ -47,6 +48,10 @@ export async function saveCategory(formData: {
   display_order: number
   is_active?: boolean
 }) {
+  const session = await getSession()
+  if (!session) return { success: false, message: '로그인이 필요합니다.' }
+  if (session.role !== '0000') return { success: false, message: '카테고리 관리 권한이 없습니다.' }
+
   const supabase = await createServerClient()
   
   try {
@@ -98,6 +103,10 @@ export async function saveCategory(formData: {
  * 카테고리 삭제
  */
 export async function deleteCategory(categoryId: string) {
+  const session = await getSession()
+  if (!session) return { success: false, message: '로그인이 필요합니다.' }
+  if (session.role !== '0000') return { success: false, message: '카테고리 삭제 권한이 없습니다.' }
+
   const supabase = await createServerClient()
   
   try {
@@ -123,6 +132,10 @@ export async function deleteCategory(categoryId: string) {
  * 카테고리 표시 순서 변경
  */
 export async function updateCategoriesOrder(orders: { id: string; display_order: number }[]) {
+  const session = await getSession()
+  if (!session) return { success: false, message: '로그인이 필요합니다.' }
+  if (session.role !== '0000') return { success: false, message: '카테고리 관리 권한이 없습니다.' }
+
   const supabase = await createServerClient()
   
   try {

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useConfirm } from '@/hooks/useConfirm'
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/Card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/Table'
 import { Badge } from '../../ui/Badge'
@@ -32,6 +33,7 @@ interface UserTableProps {
 
 export default function UserTable({ users, permissions, onEdit }: UserTableProps) {
   const router = useRouter()
+  const { confirm, ConfirmDialogComponent } = useConfirm()
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const getRoleVariant = (role: string) => {
@@ -59,9 +61,8 @@ export default function UserTable({ users, permissions, onEdit }: UserTableProps
       return
     }
 
-    if (!confirm(`'${user.username}' 사용자를 삭제하시겠습니까?`)) {
-      return
-    }
+    const ok = await confirm({ title: '삭제 확인', message: `'${user.username}' 사용자를 삭제하시겠습니까?`, variant: 'danger' })
+    if (!ok) return
 
     setDeletingId(user.id)
     try {
@@ -90,6 +91,7 @@ export default function UserTable({ users, permissions, onEdit }: UserTableProps
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>사용자 목록</CardTitle>
@@ -157,5 +159,7 @@ export default function UserTable({ users, permissions, onEdit }: UserTableProps
         </div>
       </CardContent>
     </Card>
+    {ConfirmDialogComponent}
+  </>
   )
 }

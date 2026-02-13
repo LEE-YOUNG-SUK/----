@@ -11,6 +11,7 @@ import dynamic from 'next/dynamic'
 import SaleHistoryTable from './salehistorytable'
 import MobileSaleInput from './MobileSaleInput'
 import { saveSales, getBranchesList, getProductsWithStock } from '@/app/sales/actions'
+import { useConfirm } from '@/hooks/useConfirm'
 import { TabNav } from '@/components/shared/TabNav'
 import { FormGrid } from '@/components/shared/FormGrid'
 import SearchableSelect from '@/components/shared/SearchableSelect'
@@ -60,6 +61,7 @@ interface Props {
 
 export function SaleForm({ products: initialProducts, customers, history, session, transactionType = 'SALE', defaultTab = 'input' }: Props) {
   const router = useRouter()
+  const { confirm, ConfirmDialogComponent } = useConfirm()
 
   if (!Array.isArray(initialProducts) || !Array.isArray(customers) || !Array.isArray(history)) {
     return (
@@ -80,7 +82,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
   const [products, setProducts] = useState<ProductWithStock[]>(initialProducts)
   const [customerId, setCustomerId] = useState('')
   const [saleDate, setSaleDate] = useState(
-    new Date().toISOString().split('T')[0]
+    new Date().toLocaleDateString('sv-SE')
   )
   const [referenceNumber, setReferenceNumber] = useState('')
   const [isSaving, setIsSaving] = useState(false)
@@ -153,12 +155,6 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
 
   // 저장 시 행은 이미 그리드에서 계산된 supply_price, tax_amount, total_price 사용
   const handleSave = async (items: SaleGridRow[]) => {
-    const itemsWithCalc = items.map(item => ({
-      ...item,
-      // total_amount는 표시용이므로 total_price와 동기화
-      total_amount: item.total_price
-    }))
-
     // ✅ 고객 필수 선택 제거 (선택사항으로 변경)
 
     if (!saleDate) {
@@ -173,11 +169,12 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
       return
     }
 
-    const totalAmount = itemsWithCalc.reduce((sum, item) => sum + item.total_price, 0)
+    const totalAmount = items.reduce((sum, item) => sum + item.total_price, 0)
     const actionText = transactionType === 'USAGE' ? '내부사용' : '판매'
-    const confirmed = confirm(
-      `${items.length}개 품목, 총 ₩${totalAmount.toLocaleString()}원을 ${actionText} 처리하시겠습니까?`
-    )
+    const confirmed = await confirm({
+      title: `${actionText} 확인`,
+      message: `${items.length}개 품목, 총 ₩${totalAmount.toLocaleString()}원을 ${actionText} 처리하시겠습니까?`
+    })
 
     if (!confirmed) return
 
@@ -186,13 +183,12 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
     try {
       const result = await saveSales({
         branch_id: branchId,
-        customer_id: customerId || null,  // ✅ 빈 값일 경우 null 전달
+        customer_id: customerId || null,
         sale_date: saleDate,
         reference_number: referenceNumber,
         notes: '',
-        items: itemsWithCalc,
-        created_by: session.user_id,
-        transaction_type: transactionType  // ✅ 추가
+        items: items,
+        transaction_type: transactionType
       })
 
       if (result.success) {
@@ -319,6 +315,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
           </div>
         )}
       </div>
+      {ConfirmDialogComponent}
     </div>
   )
 }

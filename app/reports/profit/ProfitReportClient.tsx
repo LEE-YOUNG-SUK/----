@@ -8,11 +8,11 @@
 // 변경: 이익 레포트 → 종합 레포트
 // ============================================================
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import type { ColDef } from 'ag-grid-community'
 import { getSummaryReport, type SummaryReportRow } from './actions'
 import ReportFilters from '@/components/reports/ReportFilters'
-import ReportGrid, { currencyFormatter, percentFormatter } from '@/components/reports/ReportGrid'
+import ReportGrid, { currencyFormatter, numberFormatter } from '@/components/reports/ReportGrid'
 import { 
   ReportFilter, 
   PROFIT_GROUP_BY_OPTIONS 
@@ -20,13 +20,13 @@ import {
 import { UserData } from '@/types'
 import { StatCard } from '@/components/ui/Card'
 import { FormGrid } from '@/components/shared/FormGrid'
-import { supabase } from '@/lib/supabase/client'
-
 interface Props {
   userSession: UserData
+  branches: { id: string; name: string }[]
+  categories: { id: string; name: string }[]
 }
 
-export default function ProfitReportClient({ userSession }: Props) {
+export default function ProfitReportClient({ userSession, branches: initialBranches, categories: initialCategories }: Props) {
   // 초기 필터: 최근 1개월, 월별 그룹핑
   const getDefaultFilter = (): ReportFilter => {
     const today = new Date()
@@ -34,8 +34,8 @@ export default function ProfitReportClient({ userSession }: Props) {
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
 
     return {
-      startDate: oneMonthAgo.toISOString().split('T')[0],
-      endDate: today.toISOString().split('T')[0],
+      startDate: oneMonthAgo.toLocaleDateString('sv-SE'),
+      endDate: today.toLocaleDateString('sv-SE'),
       groupBy: 'monthly',
       branchId: userSession.branch_id || null,
     }
@@ -45,42 +45,8 @@ export default function ProfitReportClient({ userSession }: Props) {
   const [reportData, setReportData] = useState<SummaryReportRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [branches, setBranches] = useState<{id: string, name: string}[]>([])
-  const [categories, setCategories] = useState<{id: string, name: string}[]>([])
-
-  // 지점 목록 조회 (시스템 관리자만)
-  useEffect(() => {
-    if (userSession.role === '0000') {
-      const fetchBranches = async () => {
-        const { data, error } = await supabase
-          .from('branches')
-          .select('id, name')
-          .eq('is_active', true)
-          .order('name')
-        
-        if (!error && data) {
-          setBranches(data)
-        }
-      }
-      fetchBranches()
-    }
-  }, [userSession.role])
-
-  // 카테고리 목록 조회
-  useEffect(() => {
-    const fetchCategories = async () => {
-      const { data, error } = await supabase
-        .from('product_categories')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('display_order', { ascending: true })
-      
-      if (!error && data) {
-        setCategories(data)
-      }
-    }
-    fetchCategories()
-  }, [])
+  const [branches] = useState<{id: string, name: string}[]>(initialBranches)
+  const [categories] = useState<{id: string, name: string}[]>(initialCategories)
 
   /**
    * 필터 변경 핸들러
@@ -125,20 +91,34 @@ export default function ProfitReportClient({ userSession }: Props) {
       },
     },
     {
+      headerName: '구매수량',
+      field: 'purchase_quantity',
+      width: 120,
+      type: 'numericColumn',
+      valueFormatter: numberFormatter,
+    },
+    {
       headerName: '구매금액',
       field: 'purchase_amount',
       width: 140,
       type: 'numericColumn',
       valueFormatter: currencyFormatter,
-      cellStyle: () => ({ color: '#3B82F6' }),  // 파란색
+      cellStyle: () => ({ color: '#3B82F6' }),
+    },
+    {
+      headerName: '판매수량',
+      field: 'sale_quantity',
+      width: 120,
+      type: 'numericColumn',
+      valueFormatter: numberFormatter,
     },
     {
       headerName: '사용금액',
       field: 'usage_amount',
-      width: 140,
+      width: 130,
       type: 'numericColumn',
       valueFormatter: currencyFormatter,
-      cellStyle: () => ({ color: '#F59E0B' }),  // 주황색
+      cellStyle: () => ({ color: '#F59E0B' }),
     },
     {
       headerName: '판매금액',
@@ -146,15 +126,14 @@ export default function ProfitReportClient({ userSession }: Props) {
       width: 140,
       type: 'numericColumn',
       valueFormatter: currencyFormatter,
-      cellStyle: () => ({ color: '#10B981', fontWeight: 'bold' }),  // 초록색
+      cellStyle: () => ({ color: '#10B981', fontWeight: 'bold' }),
     },
     {
       headerName: '판매원가',
       field: 'sale_cost',
-      width: 140,
+      width: 130,
       type: 'numericColumn',
       valueFormatter: currencyFormatter,
-      cellStyle: () => ({ color: '#6B7280' }),  // 회색
     },
     {
       headerName: '판매이익',
@@ -164,18 +143,21 @@ export default function ProfitReportClient({ userSession }: Props) {
       valueFormatter: currencyFormatter,
       cellStyle: (params) => ({
         fontWeight: 'bold',
-        color: params.value >= 0 ? '#10B981' : '#DC2626',
+        color: (params.value ?? 0) >= 0 ? '#10B981' : '#DC2626',
       }),
     },
     {
       headerName: '이익률',
       field: 'profit_margin',
-      width: 120,
+      width: 100,
       type: 'numericColumn',
-      valueFormatter: percentFormatter,
+      valueFormatter: (params) => {
+        if (params.value == null || isNaN(params.value)) return '0.0%'
+        return `${parseFloat(params.value).toFixed(1)}%`
+      },
       cellStyle: (params) => ({
         fontWeight: 'bold',
-        color: params.value >= 0 ? '#8B5CF6' : '#DC2626',  // 보라색
+        color: (params.value ?? 0) >= 0 ? '#10B981' : '#DC2626',
       }),
     },
   ], [filter.groupBy])
@@ -199,6 +181,49 @@ export default function ProfitReportClient({ userSession }: Props) {
         categories={categories}
       />
 
+      {/* 요약 카드 */}
+      {reportData.length > 0 && !loading && (
+        <FormGrid columns={4}>
+          <StatCard
+            label="총 구매수량"
+            value={reportData.reduce((sum, row) => sum + row.purchase_quantity, 0)}
+            variant="primary"
+          />
+          <StatCard
+            label="총 구매금액"
+            value={reportData.reduce((sum, row) => sum + row.purchase_amount, 0)}
+            unit="원"
+            subtitle="부가세포함"
+            variant="primary"
+          />
+          <StatCard
+            label="총 판매수량"
+            value={reportData.reduce((sum, row) => sum + row.sale_quantity, 0)}
+            variant="success"
+          />
+          <StatCard
+            label="총 판매금액"
+            value={reportData.reduce((sum, row) => sum + row.sale_amount, 0)}
+            unit="원"
+            subtitle="부가세포함"
+            variant="success"
+          />
+          <StatCard
+            label="총 사용금액"
+            value={reportData.reduce((sum, row) => sum + row.usage_amount, 0)}
+            unit="원"
+            variant="warning"
+          />
+          <StatCard
+            label="총 판매이익"
+            value={reportData.reduce((sum, row) => sum + row.sale_profit, 0)}
+            unit="원"
+            subtitle="판매금액-판매원가"
+            variant="success"
+          />
+        </FormGrid>
+      )}
+
       {/* 레포트 그리드 */}
       <ReportGrid
         data={reportData}
@@ -206,44 +231,6 @@ export default function ProfitReportClient({ userSession }: Props) {
         loading={loading}
         emptyMessage="조회 버튼을 클릭하여 레포트를 조회하세요."
       />
-
-      {/* 요약 정보 */}
-      {reportData.length > 0 && !loading && (
-        <div>
-          <h3 className="font-bold text-gray-700 mb-3">📊 요약</h3>
-          <FormGrid columns={4}>
-            <StatCard
-              label="총 구매금액"
-              value={reportData.reduce((sum, row) => sum + row.purchase_amount, 0)}
-              unit="원"
-              variant="primary"
-            />
-            <StatCard
-              label="총 사용금액"
-              value={reportData.reduce((sum, row) => sum + row.usage_amount, 0)}
-              unit="원"
-              variant="warning"
-            />
-            <StatCard
-              label="총 판매금액"
-              value={reportData.reduce((sum, row) => sum + row.sale_amount, 0)}
-              unit="원"
-              variant="success"
-            />
-            <StatCard
-              label="총 판매이익"
-              value={reportData.reduce((sum, row) => sum + row.sale_profit, 0)}
-              unit="원"
-              variant="success"
-            />
-          </FormGrid>
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-700">
-              💡 <strong>참고:</strong> 구매금액은 입고 비용, 사용금액은 내부소모 재료비, 판매금액은 고객 판매 수익을 나타냅니다. 이익률은 판매이익/판매금액으로 계산됩니다.
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

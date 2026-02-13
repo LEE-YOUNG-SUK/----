@@ -79,13 +79,12 @@ export interface DbPurchase {
   supply_price: number    // numeric(15,2) - 공급가
   tax_amount: number      // numeric(15,2) - 부가세
   total_price: number     // numeric(15,2) - 합계
-  total_cost: number | null  // numeric(15,2) - 기존 호환
   reference_number: string | null  // varchar(50)
   notes: string | null
   created_at: string      // timestamptz
   updated_at: string      // timestamptz
   created_by: string | null  // uuid, FK -> users
-  updated_by: string | null
+  updated_by: string | null  // uuid, FK -> users
 }
 
 // ============================================
@@ -111,7 +110,7 @@ export interface DbSale {
   created_at: string      // timestamptz
   updated_at: string      // timestamptz
   created_by: string | null  // uuid, FK -> users
-  updated_by: string | null
+  updated_by: string | null  // uuid, FK -> users
 }
 
 // ============================================
@@ -268,7 +267,6 @@ export interface PurchaseListItem {
   supply_price: number
   tax_amount: number
   total_price: number
-  total_cost: number
   reference_number: string | null
   notes: string | null
   created_at: string
@@ -292,10 +290,8 @@ export interface SaleListItem {
   supply_price: number
   tax_amount: number
   total_price: number
-  total_amount: number
-  cost_of_goods: number | null
+  cost_of_goods_sold: number | null
   profit: number | null
-  profit_margin: number | null
   reference_number: string | null
   notes: string | null
   created_at: string

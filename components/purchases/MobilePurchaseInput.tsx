@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useConfirm } from '@/hooks/useConfirm'
 import ProductSelectModal from '@/components/shared/ProductSelectModal'
 import type { Product } from '@/types'
 import type { PurchaseGridRow } from '@/types/purchases'
@@ -16,10 +17,12 @@ export default function MobilePurchaseInput({ products, onSave, isSaving, taxInc
   const [items, setItems] = useState<PurchaseGridRow[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const { confirm, ConfirmDialogComponent } = useConfirm()
 
   // 품목 삭제
-  const handleDelete = (index: number) => {
-    if (confirm('이 품목을 삭제하시겠습니까?')) {
+  const handleDelete = async (index: number) => {
+    const ok = await confirm({ title: '삭제 확인', message: '이 품목을 삭제하시겠습니까?', variant: 'danger' })
+    if (ok) {
       setItems(items.filter((_, i) => i !== index))
     }
   }
@@ -46,7 +49,7 @@ export default function MobilePurchaseInput({ products, onSave, isSaving, taxInc
   }
 
   // 합계 계산
-  const totalAmount = items.reduce((sum, item) => sum + item.total_cost, 0)
+  const totalAmount = items.reduce((sum, item) => sum + item.total_price, 0)
 
   // 일괄 저장
   const handleSaveAll = () => {
@@ -115,7 +118,7 @@ export default function MobilePurchaseInput({ products, onSave, isSaving, taxInc
                 </div>
                 <div className="flex justify-between text-base font-bold text-blue-700">
                   <span>합계</span>
-                  <span>₩{item.total_cost.toLocaleString()}</span>
+                  <span>₩{item.total_price.toLocaleString()}</span>
                 </div>
               </div>
 
@@ -201,6 +204,7 @@ export default function MobilePurchaseInput({ products, onSave, isSaving, taxInc
         taxIncluded={taxIncluded}
         editingItem={editingIndex !== null ? items[editingIndex] : null}
       />
+      {ConfirmDialogComponent}
     </div>
   )
 }

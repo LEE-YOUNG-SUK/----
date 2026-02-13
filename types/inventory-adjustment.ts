@@ -79,17 +79,13 @@ export interface AdjustmentSaveRequest {
   adjustment_type: AdjustmentType
   adjustment_reason: AdjustmentReason
   quantity: number
-  unit_cost?: number | null // INCREASE 시 필수
+  unit_cost?: number | null
   supply_price?: number | null
   tax_amount?: number | null
   total_cost?: number | null
   notes?: string
   reference_number?: string
   adjustment_date: string // YYYY-MM-DD
-  // 사용자 컨텍스트 (Server Action에서 세션에서 추출)
-  user_id: string
-  user_role: string
-  user_branch_id: string
 }
 
 /**
@@ -132,10 +128,6 @@ export interface AdjustmentSummary {
 export interface AdjustmentCancelRequest {
   adjustment_id: string
   cancel_reason: string
-  // 사용자 컨텍스트
-  user_id: string
-  user_role: string
-  user_branch_id: string
 }
 
 /**

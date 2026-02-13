@@ -10,6 +10,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { cancelAdjustment } from '@/app/inventory-adjustments/actions'
+import { useConfirm } from '@/hooks/useConfirm'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import type { 
@@ -24,18 +25,15 @@ interface AdjustmentHistoryTableProps {
   data: InventoryAdjustment[]
   branchName: string | null
   userRole: string
-  userId: string
-  userBranchId: string
 }
 
-export default function AdjustmentHistoryTable({ 
-  data, 
-  branchName, 
-  userRole, 
-  userId, 
-  userBranchId
+export default function AdjustmentHistoryTable({
+  data,
+  branchName,
+  userRole
 }: AdjustmentHistoryTableProps) {
   const router = useRouter()
+  const { confirm, ConfirmDialogComponent } = useConfirm()
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [typeFilter, setTypeFilter] = useState<AdjustmentType | ''>('')
@@ -47,7 +45,7 @@ export default function AdjustmentHistoryTable({
   const canCancel = ['0000', '0001'].includes(userRole)
 
   // 오늘 날짜
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toLocaleDateString('sv-SE')
 
   const reasonLabels: Record<AdjustmentReason, string> = {
     STOCK_COUNT: '실사',
@@ -107,18 +105,14 @@ export default function AdjustmentHistoryTable({
       return
     }
 
-    if (!confirm(`재고 조정을 취소하시겠습니까?\n\n품목: ${adjustment.product_name}\n유형: ${typeLabels[adjustment.adjustment_type]}\n수량: ${adjustment.quantity} ${adjustment.unit}`)) {
-      return
-    }
+    const ok = await confirm({ title: '조정 취소 확인', message: `재고 조정을 취소하시겠습니까?\n\n품목: ${adjustment.product_name}\n유형: ${typeLabels[adjustment.adjustment_type]}\n수량: ${adjustment.quantity} ${adjustment.unit}`, variant: 'danger' })
+    if (!ok) return
 
     setIsCancelling(adjustment.id)
 
     const result = await cancelAdjustment({
       adjustment_id: adjustment.id,
-      cancel_reason: reason,
-      user_id: userId,
-      user_role: userRole,
-      user_branch_id: userBranchId
+      cancel_reason: reason
     })
 
     setIsCancelling(null)
@@ -407,6 +401,7 @@ export default function AdjustmentHistoryTable({
           </div>
         </div>
       )}
+      {ConfirmDialogComponent}
     </div>
   )
 }

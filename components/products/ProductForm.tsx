@@ -57,6 +57,16 @@ export default function ProductForm({ product, onClose, onSuccess, userId }: Pro
       return
     }
 
+    if (!isEdit && !/^[A-Za-z][A-Za-z0-9]*$/.test(formData.code.trim())) {
+      alert('품목 코드는 영문으로 시작하고, 영문+숫자만 사용할 수 있습니다.')
+      return
+    }
+
+    if (!formData.category_id) {
+      alert('카테고리를 선택하세요')
+      return
+    }
+
     if (!formData.unit.trim()) {
       alert('단위를 입력하세요')
       return
@@ -112,7 +122,7 @@ export default function ProductForm({ product, onClose, onSuccess, userId }: Pro
                 <Input
                   id="code"
                   value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') })}
                   placeholder="예: MED001"
                   disabled={isEdit}
                   required
@@ -154,7 +164,7 @@ export default function ProductForm({ product, onClose, onSuccess, userId }: Pro
                     <option value="">카테고리 선택</option>
                     {categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>
-                        {cat.name}
+                        [{cat.code}] {cat.name}
                       </option>
                     ))}
                   </select>

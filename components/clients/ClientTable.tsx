@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useConfirm } from '@/hooks/useConfirm'
 import {
   useReactTable,
   getCoreRowModel,
@@ -53,13 +54,13 @@ export default function ClientTable({
   onAddNew
 }: ClientTableProps) {
   const router = useRouter()
+  const { confirm, ConfirmDialogComponent } = useConfirm()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [sorting, setSorting] = useState<SortingState>([])
 
   const handleDelete = async (client: Client) => {
-    if (!confirm(`'${client.name}' 거래처를 삭제하시겠습니까?\n\n연결된 입고/판매 내역이 있으면 삭제할 수 없습니다.`)) {
-      return
-    }
+    const ok = await confirm({ title: '삭제 확인', message: `'${client.name}' 거래처를 삭제하시겠습니까?\n\n연결된 입고/판매 내역이 있으면 삭제할 수 없습니다.`, variant: 'danger' })
+    if (!ok) return
 
     setDeletingId(client.id)
     try {
@@ -187,6 +188,7 @@ export default function ClientTable({
   })
 
   return (
+    <>
     <ContentCard>
       {/* 필터 및 버튼 */}
       <div className="mb-4">
@@ -332,6 +334,8 @@ export default function ClientTable({
         </table>
       </div>
     </ContentCard>
+    {ConfirmDialogComponent}
+  </>
   )
 }
 

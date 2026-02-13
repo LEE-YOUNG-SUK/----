@@ -1,4 +1,6 @@
-import React from 'react';
+'use client'
+
+import React, { useEffect } from 'react';
 
 export interface DialogProps {
   open?: boolean;
@@ -7,13 +9,32 @@ export interface DialogProps {
 }
 
 export const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
+  // ESC 키로 닫기
+  useEffect(() => {
+    if (!open) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onOpenChange?.(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [open, onOpenChange])
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div 
-        className="fixed inset-0 bg-black/50" 
-        onClick={() => onOpenChange?.(false)}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="fixed inset-0 bg-black/50"
+        onClick={(e) => {
+          e.stopPropagation()
+          onOpenChange?.(false)
+        }}
       />
       <div className="relative z-50 w-full px-4">
         {children}

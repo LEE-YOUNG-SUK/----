@@ -8,8 +8,7 @@
 import { useCallback, useRef, useState, useMemo, useEffect } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 
-// ✅ 그리드 파괴 상태 추적을 위한 전역 플래그
-let isGridDestroyed = false
+// (isGridDestroyedRef.current는 useRef로 컴포넌트 내부에서 관리)
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 import type { ColDef, ICellEditorParams } from 'ag-grid-community'
@@ -38,13 +37,14 @@ interface Props {
 export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }: Props) {
   const gridRef = useRef<any>(null)
   const isMountedRef = useRef(true)  // ✅ 컴포넌트 마운트 상태 추적
-  
+  const isGridDestroyedRef = useRef(false)  // ✅ 인스턴스별 그리드 파괴 상태
+
   // ✅ 컴포넌트 마운트/언마운트 시 플래그 설정
   useEffect(() => {
-    isGridDestroyed = false
+    isGridDestroyedRef.current = false
     isMountedRef.current = true
     return () => {
-      isGridDestroyed = true
+      isGridDestroyedRef.current = true
       isMountedRef.current = false
     }
   }, [])
@@ -63,7 +63,6 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       supply_price: 0,
       tax_amount: 0,
       total_price: 0,
-      total_cost: 0,
       specification: '',
       notes: ''
     }))
@@ -87,7 +86,6 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       row.supply_price = supplyPrice
       row.tax_amount = taxAmount
       row.total_price = totalPrice
-      row.total_cost = totalPrice
     } else {
       // 부가세 미포함: 수량 * 단가 = 공급가
       const supplyPrice = quantity * unitCost
@@ -97,7 +95,6 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       row.supply_price = supplyPrice
       row.tax_amount = taxAmount
       row.total_price = totalPrice
-      row.total_cost = totalPrice
     }
     // unit_cost는 사용자 입력값 그대로 유지
   }
@@ -116,7 +113,6 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       supply_price: 0,
       tax_amount: 0,
       total_price: 0,
-      total_cost: 0,
       specification: '',
       notes: ''
     })
@@ -124,7 +120,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
 
   // 부가세 구분 변경 시 전체 행 재계산
   useEffect(() => {
-    if (!isMountedRef.current || isGridDestroyed) return  // ✅ 파괴 상태 체크
+    if (!isMountedRef.current || isGridDestroyedRef.current) return  // ✅ 파괴 상태 체크
     if (rowData.length > 0) {
       const updatedData = rowData.map(row => {
         const updatedRow = { ...row }
@@ -136,7 +132,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       // 그리드 새로고침
       setTimeout(() => {
         try {
-          if (!isGridDestroyed && isMountedRef.current && gridRef.current?.api) {
+          if (!isGridDestroyedRef.current && isMountedRef.current && gridRef.current?.api) {
             gridRef.current.api.refreshCells({ force: true })
           }
         } catch (e) {
@@ -152,7 +148,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
 
   // RowNode 기반 불변 업데이트 패턴 (정렬/필터 안전)
   const handleProductSelect = useCallback((rowNode: any, product: Product) => {
-    if (isGridDestroyed || !isMountedRef.current) return  // ✅ 파괴 상태 체크
+    if (isGridDestroyedRef.current || !isMountedRef.current) return  // ✅ 파괴 상태 체크
     const targetId = rowNode?.data?.id
     if (!targetId) return
     
@@ -179,7 +175,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     // 선택한 행만 강제 리프레시
     setTimeout(() => {
       try {
-        if (!isGridDestroyed && isMountedRef.current && gridRef.current?.api && rowNode) {
+        if (!isGridDestroyedRef.current && isMountedRef.current && gridRef.current?.api && rowNode) {
           gridRef.current.api.refreshCells({
             force: true,
             rowNodes: [rowNode],
@@ -362,24 +358,25 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
   ], [handleDeleteRow, handleProductSelect, products])
 
   const onCellValueChanged = useCallback((params: any) => {
-    if (isGridDestroyed || !isMountedRef.current) return  // ✅ 파괴 상태 체크
+    if (isGridDestroyedRef.current || !isMountedRef.current) return  // ✅ 파괴 상태 체크
     const { data } = params
-    
-    // 자동계산 적용
-    calculatePrices(data, taxIncluded)
-    
+    const updated = { ...data }
+
+    // 자동계산 적용 (불변 복사본에 적용)
+    calculatePrices(updated, taxIncluded)
+
     // rowData 상태 업데이트 (id 기반 불변 업데이트)
     setRowData(prev => {
       if (!isMountedRef.current) return prev  // ✅ 추가 체크
-      return prev.map(r => r.id === data.id ? data : r)
+      return prev.map(r => r.id === updated.id ? updated : r)
     })
     
     // 계산된 필드들 새로고침
     try {
-      if (!isGridDestroyed && isMountedRef.current && params.api && params.node) {
+      if (!isGridDestroyedRef.current && isMountedRef.current && params.api && params.node) {
         params.api.refreshCells({
           rowNodes: [params.node],
-          columns: ['supply_price', 'tax_amount', 'total_price', 'total_cost']
+          columns: ['supply_price', 'tax_amount', 'total_price']
         })
       }
     } catch (e) {
@@ -467,7 +464,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
 
 
   const handleSave = useCallback(() => {
-    if (isGridDestroyed || !isMountedRef.current) return  // ✅ 파괴 상태 체크
+    if (isGridDestroyedRef.current || !isMountedRef.current) return  // ✅ 파괴 상태 체크
     const api = gridRef.current?.api
     if (!api) return
 

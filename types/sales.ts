@@ -33,7 +33,6 @@ export interface SaleGridRow {
   supply_price: number    // 공급가 (자동계산)
   tax_amount: number      // 부가세 (자동계산, 정수)
   total_price: number     // 합계 (자동계산)
-  total_amount: number    // 기존 호환성 유지
   notes: string
   transaction_type?: TransactionType  // 거래유형 (선택)
 }
@@ -41,14 +40,13 @@ export interface SaleGridRow {
 // 판매 저장 요청
 export interface SaleSaveRequest {
   branch_id: string
-  customer_id: string | null  // ✅ 선택사항으로 변경 (null 허용)
+  customer_id: string | null
   sale_date: string
   reference_number: string
   notes: string
   items: SaleGridRow[]
-  created_by: string
-  tax_amount?: number // 부가세 (선택, 일괄입력용)
-  transaction_type?: TransactionType // 거래유형 (선택, 기본값: SALE)
+  tax_amount?: number
+  transaction_type?: TransactionType
 }
 
 // 판매 내역
@@ -65,8 +63,8 @@ export interface SaleHistory {
   unit: string
   quantity: number
   unit_price: number
-  total_amount: number
-  cost_of_goods: number
+  total_price: number
+  cost_of_goods_sold: number
   profit: number
   profit_margin: number
   supply_price: number   // 공급가 (세전)
@@ -86,9 +84,6 @@ export interface SaleHistory {
  */
 export interface SaleUpdateRequest {
   sale_id: string
-  user_id: string
-  user_role: string
-  user_branch_id: string
   quantity: number
   unit_price: number
   supply_price: number
@@ -102,9 +97,6 @@ export interface SaleUpdateRequest {
  */
 export interface SaleDeleteRequest {
   sale_id: string
-  user_id: string
-  user_role: string
-  user_branch_id: string
 }
 
 /**
@@ -117,7 +109,7 @@ export interface SaleGroup {
   client_id: string | null // 거래처 ID (품목 추가용)
   customer_name: string
   items: SaleHistory[]
-  total_amount: number
+  total_price: number
   total_items: number
   first_product_name: string
 }
@@ -150,7 +142,7 @@ export interface SaleRpcResponse {
   product_id: string
   quantity: number
   unit_price: number
-  cost_of_goods: number
+  cost_of_goods_sold: number
   profit: number
   message: string
 }

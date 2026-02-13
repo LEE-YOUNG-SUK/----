@@ -20,8 +20,15 @@ export default async function PurchasesPage({
     getSuppliersList()
   ])
 
+  // 초기 조회: 최근 30일
+  const today = new Date()
+  const thirtyDaysAgo = new Date(today)
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const initialStartDate = thirtyDaysAgo.toLocaleDateString('sv-SE')
+  const initialEndDate = today.toLocaleDateString('sv-SE')
+
   // 세션 필요한 쿼리는 이후 실행
-  const historyResult = await getPurchasesHistory(userSession.branch_id, userSession.user_id)
+  const historyResult = await getPurchasesHistory(userSession.branch_id, initialStartDate, initialEndDate)
 
   if (!productsResult.success || !suppliersResult.success) {
     return (

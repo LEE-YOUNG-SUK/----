@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useConfirm } from '@/hooks/useConfirm'
 import ProductSelectModal from '@/components/shared/ProductSelectModal'
 import type { ProductWithStock } from '@/types/sales'
 import type { SaleGridRow } from '@/types/sales'
@@ -16,10 +17,12 @@ export default function MobileSaleInput({ products, onSave, isSaving, taxInclude
   const [items, setItems] = useState<SaleGridRow[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const { confirm, ConfirmDialogComponent } = useConfirm()
 
   // 품목 삭제
-  const handleDelete = (index: number) => {
-    if (confirm('이 품목을 삭제하시겠습니까?')) {
+  const handleDelete = async (index: number) => {
+    const ok = await confirm({ title: '삭제 확인', message: '이 품목을 삭제하시겠습니까?', variant: 'danger' })
+    if (ok) {
       setItems(items.filter((_, i) => i !== index))
     }
   }
@@ -197,6 +200,7 @@ export default function MobileSaleInput({ products, onSave, isSaving, taxInclude
         taxIncluded={taxIncluded}
         editingItem={editingIndex !== null ? items[editingIndex] : undefined}
       />
+      {ConfirmDialogComponent}
     </div>
   )
 }

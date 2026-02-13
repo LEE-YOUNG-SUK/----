@@ -6,8 +6,7 @@
 import { useCallback, useRef, useState, useMemo, useEffect } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 
-// ✅ 그리드 파괴 상태 추적을 위한 전역 플래그
-let isGridDestroyed = false
+// (isGridDestroyedRef.current는 useRef로 컴포넌트 내부에서 관리)
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 import type { ColDef, ICellEditorParams } from 'ag-grid-community'
@@ -34,13 +33,14 @@ interface Props {
 export default function SaleGrid({ products, onSave, isSaving, taxIncluded, transactionType = 'SALE' }: Props) {
   const gridRef = useRef<any>(null)
   const isMountedRef = useRef(true)  // ✅ 컴포넌트 마운트 상태 추적
-  
+  const isGridDestroyedRef = useRef(false)  // ✅ 인스턴스별 그리드 파괴 상태
+
   // ✅ 컴포넌트 마운트/언마운트 시 플래그 설정
   useEffect(() => {
-    isGridDestroyed = false
+    isGridDestroyedRef.current = false
     isMountedRef.current = true
     return () => {
-      isGridDestroyed = true
+      isGridDestroyedRef.current = true
       isMountedRef.current = false
     }
   }, [])
@@ -61,7 +61,6 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
       supply_price: 0,
       tax_amount: 0,
       total_price: 0,
-      total_amount: 0,
       notes: ''
     }))
   })
@@ -82,7 +81,6 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
       supply_price: 0,
       tax_amount: 0,
       total_price: 0,
-      total_amount: 0,
       notes: ''
     })
   }, [])
@@ -97,7 +95,6 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
       row.supply_price = supply
       row.tax_amount = tax
       row.total_price = total
-      row.total_amount = total
     } else {
       const supply = qty * unit
       const tax = Math.round(supply * 0.1)
@@ -105,13 +102,12 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
       row.supply_price = supply
       row.tax_amount = tax
       row.total_price = total
-      row.total_amount = total
     }
   }
 
   // 부가세 구분 변경 시 전체 재계산
   useEffect(() => {
-    if (!isMountedRef.current || isGridDestroyed) return
+    if (!isMountedRef.current || isGridDestroyedRef.current) return
     setRowData(prev => prev.map(r => {
       const copy = { ...r }
       calculatePrices(copy, taxIncluded)
@@ -119,7 +115,7 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
     }))
     setTimeout(() => {
       try {
-        if (!isGridDestroyed && isMountedRef.current && gridRef.current?.api) {
+        if (!isGridDestroyedRef.current && isMountedRef.current && gridRef.current?.api) {
           gridRef.current.api.refreshCells({ force: true })
         }
       } catch (e) {
@@ -134,7 +130,7 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
 
   // 행 인덱스 기반 직접 변경 → 정렬/필터 후 잘못된 행 갱신 가능성 있으므로 RowNode와 id를 기준으로 불변 업데이트
   const handleProductSelect = useCallback((rowNode: any, product: ProductWithStock) => {
-    if (isGridDestroyed || !isMountedRef.current) return  // ✅ 파괴 상태 체크
+    if (isGridDestroyedRef.current || !isMountedRef.current) return  // ✅ 파괴 상태 체크
     const targetId = rowNode?.data?.id
     if (!targetId) return
     setRowData(prev => prev.map(r => {
@@ -156,7 +152,7 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
     // 선택한 행만 강제 리프레시 (rowNode 그대로 사용)
     setTimeout(() => {
       try {
-        if (!isGridDestroyed && isMountedRef.current && gridRef.current?.api && rowNode?.data) {
+        if (!isGridDestroyedRef.current && isMountedRef.current && gridRef.current?.api && rowNode?.data) {
           gridRef.current.api.refreshCells({
             force: true,
             rowNodes: [rowNode],
@@ -356,20 +352,19 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
   ]}, [handleDeleteRow, handleProductSelect, products, transactionType])
 
   const onCellValueChanged = useCallback((params: any) => {
-    if (isGridDestroyed || !isMountedRef.current) return  // ✅ 파괴 상태 체크
+    if (isGridDestroyedRef.current || !isMountedRef.current) return  // ✅ 파괴 상태 체크
     const { data } = params
-    calculatePrices(data, taxIncluded)
+    const updated = { ...data }
+    calculatePrices(updated, taxIncluded)
     setRowData(prev => {
       if (!isMountedRef.current) return prev  // ✅ 추가 체크
-      const copy = [...prev]
-      copy[params.node.rowIndex] = data
-      return copy
+      return prev.map(r => r.id === updated.id ? updated : r)
     })
     try {
-      if (!isGridDestroyed && isMountedRef.current && params.api && params.node) {
+      if (!isGridDestroyedRef.current && isMountedRef.current && params.api && params.node) {
         params.api.refreshCells({
           rowNodes: [params.node],
-          columns: ['supply_price','tax_amount','total_price','total_amount']
+          columns: ['supply_price','tax_amount','total_price']
         })
       }
     } catch (e) {
@@ -457,7 +452,7 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
 
 
   const handleSave = useCallback(() => {
-    if (isGridDestroyed || !isMountedRef.current) return  // ✅ 파괴 상태 체크
+    if (isGridDestroyedRef.current || !isMountedRef.current) return  // ✅ 파괴 상태 체크
     const api = gridRef.current?.api
     if (!api) return
 

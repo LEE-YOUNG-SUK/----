@@ -50,15 +50,10 @@ export default async function InventoryAdjustmentsPage() {
   
   const [productsResult, historyResult] = await Promise.all([
     productsPromise,
-    getAdjustmentHistory(
-      userSession.user_id,
-      userSession.role,
-      branchIdForQuery,
-      {
-        start_date: thirtyDaysAgo.toISOString().split('T')[0],
-        end_date: today.toISOString().split('T')[0]
-      }
-    )
+    getAdjustmentHistory({
+      start_date: thirtyDaysAgo.toLocaleDateString('sv-SE'),
+      end_date: today.toLocaleDateString('sv-SE')
+    })
   ])
 
   if (!productsResult.success) {
@@ -101,11 +96,8 @@ export default async function InventoryAdjustmentsPage() {
 
           {/* 통계 카드 */}
           <AdjustmentStats
-            userId={userSession.user_id}
-            userRole={userSession.role}
-            userBranchId={branchIdForQuery}
-            startDate={thirtyDaysAgo.toISOString().split('T')[0]}
-            endDate={today.toISOString().split('T')[0]}
+            startDate={thirtyDaysAgo.toLocaleDateString('sv-SE')}
+            endDate={today.toLocaleDateString('sv-SE')}
           />
 
           {/* 조정 입력 폼 */}
@@ -128,8 +120,6 @@ export default async function InventoryAdjustmentsPage() {
               data={history}
               branchName={userSession.branch_name}
               userRole={userSession.role}
-              userId={userSession.user_id}
-              userBranchId={branchIdForQuery}
             />
           </ContentCard>
         </div>

@@ -75,7 +75,7 @@ export default function ProductSelectModal({
       return {
         supply_price: supplyPrice,
         tax_amount: taxAmount,
-        total_cost: totalPrice
+        total_price: totalPrice
       }
     } else {
       // 부가세 미포함: 수량 * 단가 = 공급가
@@ -86,7 +86,7 @@ export default function ProductSelectModal({
       return {
         supply_price: supplyPrice,
         tax_amount: taxAmount,
-        total_cost: totalPrice
+        total_price: totalPrice
       }
     }
   }, [quantity, unitCost, taxIncluded])
@@ -131,11 +131,9 @@ export default function ProductSelectModal({
       ...baseItem,
       // 입고용 필드
       unit_cost: cost,
-      total_cost: calculated.total_cost,
-      total_price: calculated.total_cost,
+      total_price: calculated.total_price,
       // 판매용 필드
       unit_price: cost,
-      total_amount: calculated.total_cost,
       current_stock: 'current_stock' in selectedProduct ? selectedProduct.current_stock : 0
     }
 
@@ -264,7 +262,7 @@ export default function ProductSelectModal({
               </div>
               <div className="flex justify-between text-lg font-bold text-blue-700 pt-2 border-t">
                 <span>합계</span>
-                <span>₩{calculated.total_cost.toLocaleString()}</span>
+                <span>₩{calculated.total_price.toLocaleString()}</span>
               </div>
             </div>
           )}

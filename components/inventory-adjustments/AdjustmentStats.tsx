@@ -12,17 +12,11 @@ import { getAdjustmentSummary } from '@/app/inventory-adjustments/actions'
 import type { AdjustmentSummary, AdjustmentReason } from '@/types/inventory-adjustment'
 
 interface AdjustmentStatsProps {
-  userId: string
-  userRole: string
-  userBranchId: string
   startDate: string // YYYY-MM-DD
   endDate: string   // YYYY-MM-DD
 }
 
-export default function AdjustmentStats({ 
-  userId, 
-  userRole, 
-  userBranchId,
+export default function AdjustmentStats({
   startDate,
   endDate
 }: AdjustmentStatsProps) {
@@ -32,13 +26,13 @@ export default function AdjustmentStats({
   useEffect(() => {
     const fetchSummary = async () => {
       setIsLoading(true)
-      const data = await getAdjustmentSummary(userId, userRole, userBranchId, startDate, endDate)
+      const data = await getAdjustmentSummary(startDate, endDate)
       setSummary(data)
       setIsLoading(false)
     }
 
     fetchSummary()
-  }, [userId, userRole, userBranchId, startDate, endDate])
+  }, [startDate, endDate])
 
   const reasonLabels: Record<AdjustmentReason, string> = {
     STOCK_COUNT: '실사',

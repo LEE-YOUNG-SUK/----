@@ -60,7 +60,7 @@ export function Navigation({ user, onLogout }: Props) {
     }, 150)
   }
   
-  // 일반 메뉴 항목 (순서: 대시보드, 품목, 재고)
+  // 일반 메뉴 항목 (순서: 대시보드, 품목)
   const mainMenuItems: MenuItem[] = [
     {
       href: '/',
@@ -74,14 +74,29 @@ export function Navigation({ user, onLogout }: Props) {
       resource: 'products_management',
       action: 'read',
     },
-    {
-      href: '/inventory',
-      label: '재고',
-      icon: '📊',
-      resource: 'inventory_view',
-      action: 'read',
-    },
   ]
+
+  // 재고 드롭다운 메뉴
+  const inventoryMenu: DropdownMenu = {
+    label: '재고',
+    icon: '📦',
+    items: [
+      {
+        href: '/inventory',
+        label: '재고현황',
+        icon: '📊',
+        resource: 'inventory_view',
+        action: 'read',
+      },
+      {
+        href: '/inventory/movements',
+        label: '재고수불부',
+        icon: '🔍',
+        resource: 'inventory_view',
+        action: 'read',
+      },
+    ],
+  }
 
   // 입고 드롭다운 메뉴
   const purchasesMenu: DropdownMenu = {
@@ -222,6 +237,7 @@ export function Navigation({ user, onLogout }: Props) {
   }
   
   const visibleMainItems = filterByPermission(mainMenuItems)
+  const visibleInventoryItems = filterByPermission(inventoryMenu.items)
   const visiblePurchasesItems = filterByPermission(purchasesMenu.items)
   const visibleSalesItems = filterByPermission(salesMenu.items)
   const visibleReportsItems = filterByPermission(reportsMenu.items)
@@ -273,6 +289,50 @@ export function Navigation({ user, onLogout }: Props) {
               )
             })}
             
+            {/* 재고 드롭다운 */}
+            {visibleInventoryItems.length > 0 && (
+              <div className="relative" onMouseEnter={() => handleMouseEnter('inventory')} onMouseLeave={handleMouseLeave}>
+                <button
+                  onClick={() => toggleDropdown('inventory')}
+                  className={`
+                    px-3 py-2 rounded-lg text-sm font-medium transition flex items-center
+                    ${isDropdownActive(inventoryMenu.items)
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    }
+                  `}
+                >
+                  <span>{inventoryMenu.icon}</span>
+                  <span className="ml-1 hidden lg:inline">{inventoryMenu.label}</span>
+                  <svg className={`ml-1 h-4 w-4 transition-transform ${openDropdown === 'inventory' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {openDropdown === 'inventory' && (
+                  <div className="absolute top-full left-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    {visibleInventoryItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setOpenDropdown(null)}
+                        className={`
+                          block px-4 py-2 text-sm transition
+                          ${pathname === item.href
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-gray-700 hover:bg-gray-100'
+                          }
+                        `}
+                      >
+                        <span className="mr-2">{item.icon}</span>
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* 입고 드롭다운 */}
             {visiblePurchasesItems.length > 0 && (
               <div className="relative" onMouseEnter={() => handleMouseEnter('purchases')} onMouseLeave={handleMouseLeave}>
@@ -514,6 +574,36 @@ export function Navigation({ user, onLogout }: Props) {
               )
             })}
             
+            {/* 재고 섹션 */}
+            {visibleInventoryItems.length > 0 && (
+              <>
+                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-4">
+                  {inventoryMenu.icon} {inventoryMenu.label}
+                </div>
+                {visibleInventoryItems.map((item) => {
+                  const isActive = pathname === item.href
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`
+                        block px-3 py-2 pl-6 rounded-lg text-base font-medium transition-all
+                        ${isActive
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                        }
+                      `}
+                    >
+                      <span className="mr-2">{item.icon}</span>
+                      {item.label}
+                    </Link>
+                  )
+                })}
+              </>
+            )}
+
             {/* 입고 섹션 */}
             {visiblePurchasesItems.length > 0 && (
               <>

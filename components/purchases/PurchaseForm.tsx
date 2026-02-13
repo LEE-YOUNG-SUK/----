@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic'
 import PurchaseHistoryTable from './PurchaseHistoryTable'
 import MobilePurchaseInput from './MobilePurchaseInput'
 import { savePurchases, getBranchesList } from '@/app/purchases/actions'
+import { useConfirm } from '@/hooks/useConfirm'
 import { TabNav } from '@/components/shared/TabNav'
 import { FormGrid } from '@/components/shared/FormGrid'
 import SearchableSelect from '@/components/shared/SearchableSelect'
@@ -49,6 +50,7 @@ interface Props {
 
 export function PurchaseForm({ products, suppliers, history, session, defaultTab = 'input' }: Props) {
   const router = useRouter()
+  const { confirm, ConfirmDialogComponent } = useConfirm()
 
   if (!Array.isArray(products) || !Array.isArray(suppliers) || !Array.isArray(history)) {
     return (
@@ -68,7 +70,7 @@ export function PurchaseForm({ products, suppliers, history, session, defaultTab
   const [selectedBranchId, setSelectedBranchId] = useState(session.branch_id)
   const [supplierId, setSupplierId] = useState('')
   const [purchaseDate, setPurchaseDate] = useState(
-    new Date().toISOString().split('T')[0]
+    new Date().toLocaleDateString('sv-SE')
   )
   const [referenceNumber, setReferenceNumber] = useState('')
   const [isSaving, setIsSaving] = useState(false)
@@ -110,10 +112,11 @@ export function PurchaseForm({ products, suppliers, history, session, defaultTab
       return
     }
 
-    const totalAmount = items.reduce((sum, item) => sum + item.total_cost, 0)
-    const confirmed = confirm(
-      `${items.length}개 품목, 총 ₩${totalAmount.toLocaleString()}원을 입고 처리하시겠습니까?`
-    )
+    const totalAmount = items.reduce((sum, item) => sum + item.total_price, 0)
+    const confirmed = await confirm({
+      title: '입고 확인',
+      message: `${items.length}개 품목, 총 ₩${totalAmount.toLocaleString()}원을 입고 처리하시겠습니까?`
+    })
 
     if (!confirmed) return
 
@@ -122,12 +125,11 @@ export function PurchaseForm({ products, suppliers, history, session, defaultTab
     try {
       const result = await savePurchases({
         branch_id: branchId,
-        supplier_id: supplierId || null,  // ✅ 빈 값일 경우 null 전달
+        supplier_id: supplierId || null,
         purchase_date: purchaseDate,
         reference_number: referenceNumber,
         notes: '',
-        items: items,
-        created_by: session.user_id
+        items: items
       })
 
       if (result.success) {
@@ -239,6 +241,7 @@ export function PurchaseForm({ products, suppliers, history, session, defaultTab
           </div>
         )}
       </div>
+      {ConfirmDialogComponent}
     </div>
   )
 }

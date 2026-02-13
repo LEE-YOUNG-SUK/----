@@ -7,7 +7,7 @@
 // 목적: 구매 레포트 클라이언트 컴포넌트 (상태 관리, UI)
 // ============================================================
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import type { ColDef } from 'ag-grid-community'
 import { getPurchaseReport } from './actions'
 import ReportFilters from '@/components/reports/ReportFilters'
@@ -20,13 +20,14 @@ import {
 import { UserData } from '@/types'
 import { StatCard } from '@/components/ui/Card'
 import { FormGrid } from '@/components/shared/FormGrid'
-import { supabase } from '@/lib/supabase/client'
 
 interface Props {
   userSession: UserData
+  branches: { id: string; name: string }[]
+  categories: { id: string; name: string }[]
 }
 
-export default function PurchaseReportClient({ userSession }: Props) {
+export default function PurchaseReportClient({ userSession, branches: initialBranches, categories: initialCategories }: Props) {
   // 초기 필터: 최근 1개월, 월별 그룹핑
   const getDefaultFilter = (): ReportFilter => {
     const today = new Date()
@@ -34,8 +35,8 @@ export default function PurchaseReportClient({ userSession }: Props) {
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
 
     return {
-      startDate: oneMonthAgo.toISOString().split('T')[0],
-      endDate: today.toISOString().split('T')[0],
+      startDate: oneMonthAgo.toLocaleDateString('sv-SE'),
+      endDate: today.toLocaleDateString('sv-SE'),
       groupBy: 'monthly',
       branchId: userSession.branch_id || null,
     }
@@ -45,42 +46,8 @@ export default function PurchaseReportClient({ userSession }: Props) {
   const [reportData, setReportData] = useState<PurchaseReportRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [branches, setBranches] = useState<{id: string, name: string}[]>([])
-  const [categories, setCategories] = useState<{id: string, name: string}[]>([])
-
-  // 지점 목록 조회 (시스템 관리자만)
-  useEffect(() => {
-    if (userSession.role === '0000') {
-      const fetchBranches = async () => {
-        const { data, error } = await supabase
-          .from('branches')
-          .select('id, name')
-          .eq('is_active', true)
-          .order('name')
-        
-        if (!error && data) {
-          setBranches(data)
-        }
-      }
-      fetchBranches()
-    }
-  }, [userSession.role])
-
-  // 카테고리 목록 조회
-  useEffect(() => {
-    const fetchCategories = async () => {
-      const { data, error } = await supabase
-        .from('product_categories')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('display_order', { ascending: true })
-      
-      if (!error && data) {
-        setCategories(data)
-      }
-    }
-    fetchCategories()
-  }, [])
+  const [branches] = useState<{id: string, name: string}[]>(initialBranches)
+  const [categories] = useState<{id: string, name: string}[]>(initialCategories)
 
   /**
    * 필터 변경 핸들러
@@ -189,6 +156,37 @@ export default function PurchaseReportClient({ userSession }: Props) {
         categories={categories}
       />
 
+      {/* 요약 카드 */}
+      {reportData.length > 0 && !loading && (
+        <FormGrid columns={4}>
+          <StatCard
+            label="총 수량"
+            value={reportData.reduce((sum, row) => sum + row.total_quantity, 0)}
+            variant="primary"
+          />
+          <StatCard
+            label="총 금액"
+            value={reportData.reduce((sum, row) => sum + row.total_amount, 0)}
+            unit="원"
+            variant="primary"
+          />
+          <StatCard
+            label="총 거래 건수"
+            value={reportData.reduce((sum, row) => sum + row.transaction_count, 0)}
+            unit="건"
+          />
+          <StatCard
+            label="평균 단가"
+            value={(() => {
+              const totalQty = reportData.reduce((sum, row) => sum + row.total_quantity, 0)
+              const totalAmt = reportData.reduce((sum, row) => sum + row.total_amount, 0)
+              return totalQty > 0 ? Math.round(totalAmt / totalQty) : 0
+            })()}
+            unit="원"
+          />
+        </FormGrid>
+      )}
+
       {/* 레포트 그리드 */}
       <ReportGrid
         data={reportData}
@@ -196,40 +194,6 @@ export default function PurchaseReportClient({ userSession }: Props) {
         loading={loading}
         emptyMessage="조회 버튼을 클릭하여 레포트를 조회하세요."
       />
-
-      {/* 요약 정보 */}
-      {reportData.length > 0 && !loading && (
-        <div>
-          <h3 className="font-bold text-gray-700 mb-3">📈 요약</h3>
-          <FormGrid columns={4}>
-            <StatCard
-              label="총 수량"
-              value={reportData.reduce((sum, row) => sum + row.total_quantity, 0)}
-              variant="primary"
-            />
-            <StatCard
-              label="총 금액"
-              value={reportData.reduce((sum, row) => sum + row.total_amount, 0)}
-              unit="원"
-              variant="primary"
-            />
-            <StatCard
-              label="총 거래 건수"
-              value={reportData.reduce((sum, row) => sum + row.transaction_count, 0)}
-              unit="건"
-            />
-            <StatCard
-              label="평균 단가"
-              value={(() => {
-                const totalQty = reportData.reduce((sum, row) => sum + row.total_quantity, 0)
-                const totalAmt = reportData.reduce((sum, row) => sum + row.total_amount, 0)
-                return totalQty > 0 ? Math.round(totalAmt / totalQty) : 0
-              })()}
-              unit="원"
-            />
-          </FormGrid>
-        </div>
-      )}
     </div>
   )
 }

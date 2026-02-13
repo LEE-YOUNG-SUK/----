@@ -111,6 +111,7 @@ export interface StatCardProps {
   label: string;
   value: string | number;
   unit?: string;
+  subtitle?: string;
   icon?: React.ReactNode;
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger';
   className?: string;
@@ -120,13 +121,14 @@ export interface StatCardProps {
  * 통계 카드 컴포넌트
  * - 대시보드/레포트에서 주요 수치 표시용
  */
-export const StatCard = ({ 
-  label, 
-  value, 
-  unit, 
-  icon, 
+export const StatCard = ({
+  label,
+  value,
+  unit,
+  subtitle,
+  icon,
   variant = 'default',
-  className = '' 
+  className = ''
 }: StatCardProps) => {
   const colorClass = {
     default: 'text-gray-900',
@@ -146,6 +148,7 @@ export const StatCard = ({
         {typeof value === 'number' ? value.toLocaleString() : value}
         {unit && <span className="text-xs sm:text-sm ml-1">{unit}</span>}
       </p>
+      {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
     </div>
   );
 };

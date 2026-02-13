@@ -24,10 +24,17 @@ export default async function SalesPage({
     getCustomersList()
   ])
 
+  // 초기 조회: 최근 30일
+  const today = new Date()
+  const thirtyDaysAgo = new Date(today)
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const initialStartDate = thirtyDaysAgo.toLocaleDateString('sv-SE')
+  const initialEndDate = today.toLocaleDateString('sv-SE')
+
   // 세션(branch_id) 필요한 쿼리는 이후 병렬 실행
   const [productsResult, historyResult] = await Promise.all([
     getProductsWithStock(userSession.branch_id),
-    getSalesHistory(userSession.branch_id, userSession.user_id, undefined, undefined, 'SALE')
+    getSalesHistory(userSession.branch_id, initialStartDate, initialEndDate, 'SALE')
   ])
 
   // 실패 처리

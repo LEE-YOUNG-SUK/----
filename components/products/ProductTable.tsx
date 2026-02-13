@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useConfirm } from '@/hooks/useConfirm'
 import {
   useReactTable,
   getCoreRowModel,
@@ -46,13 +47,13 @@ export default function ProductTable({
   onAddNew
 }: ProductTableProps) {
   const router = useRouter()
+  const { confirm, ConfirmDialogComponent } = useConfirm()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [sorting, setSorting] = useState<SortingState>([])
 
   const handleDelete = async (product: Product) => {
-    if (!confirm(`'${product.name}' 품목을 삭제하시겠습니까?\n\n연결된 입고/판매 내역이 있으면 삭제할 수 없습니다.`)) {
-      return
-    }
+    const ok = await confirm({ title: '삭제 확인', message: `'${product.name}' 품목을 삭제하시겠습니까?\n\n연결된 입고/판매 내역이 있으면 삭제할 수 없습니다.`, variant: 'danger' })
+    if (!ok) return
 
     setDeletingId(product.id)
     try {
@@ -166,6 +167,7 @@ export default function ProductTable({
   })
 
   return (
+    <>
     <ContentCard>
       {/* 필터 및 버튼 */}
       <div className="mb-4">
@@ -310,6 +312,8 @@ export default function ProductTable({
         </table>
       </div>
     </ContentCard>
+    {ConfirmDialogComponent}
+  </>
   )
 }
 

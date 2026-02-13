@@ -21,7 +21,6 @@ export interface PurchaseGridRow {
   supply_price: number // 공급가 (자동계산)
   tax_amount: number // 부가세 (자동계산, 정수)
   total_price: number // 합계 (자동계산)
-  total_cost: number // 기존 호환성 유지
   specification: string
   notes: string
 }
@@ -43,13 +42,12 @@ export interface BatchPurchaseResponse {
  */
 export interface PurchaseSaveRequest {
   branch_id: string
-  supplier_id: string | null  // ✅ 선택사항으로 변경 (null 허용)
+  supplier_id: string | null
   purchase_date: string // YYYY-MM-DD
   reference_number: string
   notes: string
   items: PurchaseGridRow[]
-  created_by: string
-    tax_amount?: number; // 부가세 (선택, 일괄입력용)
+  tax_amount?: number
 }
 
 /**
@@ -68,7 +66,7 @@ export interface PurchaseHistory {
   purchase_date: string
   quantity: number
   unit_cost: number
-  total_cost: number
+  total_price: number
   supply_price: number  // 공급가 (세전)
   tax_amount: number    // 부가세
   reference_number: string
@@ -86,9 +84,6 @@ export interface PurchaseHistory {
  */
 export interface PurchaseUpdateRequest {
   purchase_id: string
-  user_id: string
-  user_role: string
-  user_branch_id: string
   quantity: number
   unit_cost: number
   supply_price: number
@@ -120,9 +115,6 @@ export interface PurchaseGroup {
  */
 export interface PurchaseDeleteRequest {
   purchase_id: string
-  user_id: string
-  user_role: string
-  user_branch_id: string
 }
 
 /**

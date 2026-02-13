@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useConfirm } from '@/hooks/useConfirm'
 import type { Branch } from '@/types'
 import { ContentCard } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -25,6 +26,7 @@ export default function BranchTable({
   onAddNew
 }: BranchTableProps) {
   const router = useRouter()
+  const { confirm, ConfirmDialogComponent } = useConfirm()
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const formatDate = (dateString: string) => {
@@ -40,9 +42,8 @@ export default function BranchTable({
   }
 
   const handleDelete = async (branch: Branch) => {
-    if (!confirm(`'${branch.name}' 지점을 삭제하시겠습니까?\n\n연결된 사용자나 데이터가 있으면 삭제할 수 없습니다.`)) {
-      return
-    }
+    const ok = await confirm({ title: '삭제 확인', message: `'${branch.name}' 지점을 삭제하시겠습니까?\n\n연결된 사용자나 데이터가 있으면 삭제할 수 없습니다.`, variant: 'danger' })
+    if (!ok) return
 
     setDeletingId(branch.id)
     try {
@@ -61,6 +62,7 @@ export default function BranchTable({
   }
 
   return (
+    <>
     <ContentCard>
       {/* 헤더 및 버튼 */}
       <div className="mb-4">
@@ -174,5 +176,7 @@ export default function BranchTable({
         </table>
       </div>
     </ContentCard>
+    {ConfirmDialogComponent}
+  </>
   )
 }

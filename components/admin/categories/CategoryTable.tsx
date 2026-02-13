@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useConfirm } from '@/hooks/useConfirm'
 import type { ProductCategory } from '@/app/admin/categories/actions'
 import { ContentCard } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -19,6 +20,7 @@ export default function CategoryTable({
   onAddNew
 }: CategoryTableProps) {
   const router = useRouter()
+  const { confirm, ConfirmDialogComponent } = useConfirm()
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const handleDelete = async (category: ProductCategory) => {
@@ -27,9 +29,8 @@ export default function CategoryTable({
       return
     }
 
-    if (!confirm(`'${category.name}' 카테고리를 삭제하시겠습니까?`)) {
-      return
-    }
+    const ok = await confirm({ title: '삭제 확인', message: `'${category.name}' 카테고리를 삭제하시겠습니까?`, variant: 'danger' })
+    if (!ok) return
 
     setDeletingId(category.id)
     try {
@@ -48,6 +49,7 @@ export default function CategoryTable({
   }
 
   return (
+    <>
     <ContentCard>
       {/* 헤더 */}
       <div className="flex justify-between items-center mb-4">
@@ -135,6 +137,8 @@ export default function CategoryTable({
         </table>
       </div>
     </ContentCard>
+    {ConfirmDialogComponent}
+  </>
   )
 }
 

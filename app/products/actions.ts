@@ -1,6 +1,7 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/session'
 import { revalidatePath } from 'next/cache'
 import type { Product, ProductCategory } from '@/types'
 
@@ -9,6 +10,9 @@ import type { Product, ProductCategory } from '@/types'
  */
 export async function getProducts() {
   try {
+    const session = await getSession()
+    if (!session) return []
+
     const supabase = await createServerClient()
     
     const { data, error } = await supabase
@@ -67,6 +71,10 @@ export async function saveProduct(formData: {
   is_active: boolean
   created_by?: string | null
 }) {
+  const session = await getSession()
+  if (!session) return { success: false, message: '로그인이 필요합니다.' }
+  if (!['0000', '0001'].includes(session.role)) return { success: false, message: '품목 관리 권한이 없습니다.' }
+
   const supabase = await createServerClient()
   
   try {
@@ -107,7 +115,7 @@ export async function saveProduct(formData: {
         p_min_stock_level: formData.min_stock_level,
         p_standard_purchase_price: formData.standard_purchase_price,
         p_standard_sale_price: formData.standard_sale_price,
-        p_created_by: formData.created_by || null
+        p_created_by: session.user_id
       })
       
       if (error) throw error
@@ -130,6 +138,10 @@ export async function saveProduct(formData: {
  * 품목 삭제
  */
 export async function deleteProduct(productId: string) {
+  const session = await getSession()
+  if (!session) return { success: false, message: '로그인이 필요합니다.' }
+  if (!['0000', '0001'].includes(session.role)) return { success: false, message: '품목 삭제 권한이 없습니다.' }
+
   const supabase = await createServerClient()
   
   try {

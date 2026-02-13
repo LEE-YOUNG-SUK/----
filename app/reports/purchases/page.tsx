@@ -8,6 +8,7 @@
 
 import { redirect } from 'next/navigation'
 import { requireSession } from '@/lib/session'
+import { createServerClient } from '@/lib/supabase/server'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import PurchaseReportClient from './PurchaseReportClient'
 
@@ -19,17 +20,28 @@ export const metadata = {
 export default async function PurchaseReportPage() {
   const userSession = await requireSession()
 
-  // 권한 체크 (원장/매니저 이상만 접근 가능)
   if (!['0000', '0001', '0002'].includes(userSession.role)) {
     redirect('/')
   }
 
-  // 4. 클라이언트 컴포넌트로 전달
+  const supabase = await createServerClient()
+
+  const [branchesRes, categoriesRes] = await Promise.all([
+    userSession.role === '0000'
+      ? supabase.from('branches').select('id, name').eq('is_active', true).order('name')
+      : Promise.resolve({ data: [], error: null }),
+    supabase.from('product_categories').select('id, name').eq('is_active', true).order('display_order', { ascending: true })
+  ])
+
   return (
     <NavigationWrapper user={userSession}>
       <div className="max-w-[1400px] mx-auto p-6">
         <h1 className="text-2xl font-bold mb-6">📊 구매 레포트</h1>
-        <PurchaseReportClient userSession={userSession} />
+        <PurchaseReportClient
+          userSession={userSession}
+          branches={branchesRes.data || []}
+          categories={categoriesRes.data || []}
+        />
       </div>
     </NavigationWrapper>
   )
