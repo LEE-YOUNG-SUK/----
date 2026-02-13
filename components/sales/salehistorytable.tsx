@@ -443,7 +443,7 @@ export default function SaleHistoryTable({
     columnHelper.display({
       id: 'actions',
       header: '상세',
-      size: 90,
+      size: 120,
       enableSorting: false,
       cell: (info) => (
         <Button
