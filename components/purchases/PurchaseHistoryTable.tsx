@@ -381,7 +381,7 @@ export default function PurchaseHistoryTable({
     }),
     columnHelper.accessor('first_product_name', {
       header: '품목',
-      size: 220,
+      size: 240,
       cell: (info) => {
         const group = info.row.original
         return (
@@ -423,7 +423,7 @@ export default function PurchaseHistoryTable({
     }),
     columnHelper.accessor('client_name', {
       header: '거래처',
-      size: 140,
+      size: 150,
       cell: (info) => (
         <span className="text-sm text-gray-900 truncate block">{info.getValue() || '-'}</span>
       ),
