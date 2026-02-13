@@ -153,7 +153,7 @@ export default function LoginPage() {
             <div className="mb-1 flex justify-center">
               <Image src="/logo.png" alt="DR.Evers ERP" width={300} height={80} priority />
             </div>
-            <p className="mt-0 text-2xl text-gray-700 font-medium">
+            <p className="mt-0 text-2xl text-gray-900 font-medium">
               &nbsp;&nbsp;재고관리 시스템
             </p>
           </div>
@@ -162,7 +162,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* 지점 선택 */}
             <div>
-              <label htmlFor="branch" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="branch" className="block text-sm font-medium text-gray-900 mb-2">
                 🏢 지점 선택
               </label>
               <select
@@ -186,7 +186,7 @@ export default function LoginPage() {
 
             {/* 아이디 */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-900 mb-2">
                 👤 아이디
               </label>
               <input
@@ -203,7 +203,7 @@ export default function LoginPage() {
 
             {/* 비밀번호 */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-900 mb-2">
                 🔒 비밀번호
               </label>
               <input
@@ -227,7 +227,7 @@ export default function LoginPage() {
                 onChange={(e) => setRememberBranch(e.target.checked)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
-              <label htmlFor="remember" className="ml-2 text-sm text-gray-600">
+              <label htmlFor="remember" className="ml-2 text-sm text-gray-900">
                 지점 정보 기억하기
               </label>
             </div>
@@ -279,7 +279,7 @@ export default function LoginPage() {
           </div>
         </div>
         
-        <p className="mt-6 text-center text-sm text-gray-600">
+        <p className="mt-6 text-center text-sm text-gray-900">
           © 2025 DR.Evers. All rights reserved.
         </p>
       </div>

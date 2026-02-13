@@ -49,9 +49,10 @@ export interface DialogContentProps {
 }
 
 export const DialogContent = ({ children, className = '' }: DialogContentProps) => {
+  const hasFlex = className.includes('flex');
   return (
     <div className={`bg-white rounded-lg shadow-xl w-full mx-auto ${className}`}>
-      <div className="px-6 py-4">
+      <div className={`px-6 py-4${hasFlex ? ' flex flex-col flex-1 min-h-0 overflow-hidden' : ''}`}>
         {children}
       </div>
     </div>

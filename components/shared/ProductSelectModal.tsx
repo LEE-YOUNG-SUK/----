@@ -152,7 +152,7 @@ export default function ProductSelectModal({
           </h2>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            className="p-2 text-gray-800 hover:text-gray-900 rounded-lg hover:bg-gray-100"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -164,7 +164,7 @@ export default function ProductSelectModal({
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* 품목 검색 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               품목 검색 <span className="text-red-600">*</span>
             </label>
             <input
@@ -189,9 +189,9 @@ export default function ProductSelectModal({
                       selectedProduct?.id === product.id ? 'bg-blue-50 border-l-4 border-l-blue-600' : ''
                     }`}
                   >
-                    <p className="text-sm text-gray-500">{product.code}</p>
+                    <p className="text-sm text-gray-900">{product.code}</p>
                     <p className="font-medium text-gray-900">{product.name}</p>
-                    <p className="text-xs text-gray-500">{product.unit}</p>
+                    <p className="text-xs text-gray-900">{product.unit}</p>
                   </button>
                 ))}
               </div>
@@ -208,7 +208,7 @@ export default function ProductSelectModal({
 
           {/* 수량 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               수량 <span className="text-red-600">*</span>
             </label>
             <div className="flex gap-2">
@@ -219,7 +219,7 @@ export default function ProductSelectModal({
                 placeholder="0"
                 className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              <span className="px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
+              <span className="px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-900">
                 {selectedProduct?.unit || '단위'}
               </span>
             </div>
@@ -227,7 +227,7 @@ export default function ProductSelectModal({
 
           {/* 단가 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               단가 (원) <span className="text-red-600">*</span>
             </label>
             <input
@@ -241,10 +241,10 @@ export default function ProductSelectModal({
 
           {/* 부가세 구분 표시 */}
           <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-            <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span className="text-sm text-gray-700">
+            <span className="text-sm text-gray-900">
               {taxIncluded ? '부가세 포함' : '부가세 미포함'}
             </span>
           </div>
@@ -253,11 +253,11 @@ export default function ProductSelectModal({
           {quantity && unitCost && (
             <div className="border-t pt-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">공급가</span>
+                <span className="text-gray-900">공급가</span>
                 <span className="font-medium">₩{calculated.supply_price.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">부가세 (10%)</span>
+                <span className="text-gray-900">부가세 (10%)</span>
                 <span className="font-medium">₩{calculated.tax_amount.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-lg font-bold text-blue-700 pt-2 border-t">
@@ -272,7 +272,7 @@ export default function ProductSelectModal({
         <div className="flex gap-3 p-4 border-t bg-gray-50">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+            className="flex-1 px-4 py-3 text-base font-medium text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
           >
             취소
           </button>

@@ -424,7 +424,7 @@ export default function PurchaseDetailModal({
         width: 60,
         minWidth: 60,
         pinned: 'left',
-        cellClass: 'text-center font-medium text-gray-600'
+        cellClass: 'text-center font-medium text-gray-900'
       },
       {
         headerName: '품목코드',
@@ -591,7 +591,7 @@ export default function PurchaseDetailModal({
           <DialogTitle className="text-xl font-bold">
             거래번호: {referenceNumber || '(없음)'}
           </DialogTitle>
-          <div className="text-base text-gray-600 mt-2">
+          <div className="text-base text-gray-900 mt-2">
             입고일: {items[0]?.purchase_date ? new Date(items[0].purchase_date).toLocaleDateString('ko-KR') : '-'} |
             공급업체: {items[0]?.client_name || '(없음)'} |
             품목 수: <span className="font-semibold text-blue-600">{validRowCount}</span>개 |
@@ -603,7 +603,7 @@ export default function PurchaseDetailModal({
           </div>
         </DialogHeader>
 
-        <div className="flex-1 ag-theme-alpine" style={{ minHeight: 500 }}>
+        <div className="flex-1 min-h-0 overflow-y-auto ag-theme-alpine">
           <AgGridReact
             ref={gridRef}
             rowData={rowData}
@@ -625,7 +625,7 @@ export default function PurchaseDetailModal({
         </div>
 
         <div className="border-t pt-3 flex justify-between items-center">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-900">
             입력 품목: <span className="font-bold text-blue-600">{validRowCount}</span>개 |
             합계: <span className="font-bold text-red-600">₩{totalAmount.toLocaleString()}</span>
           </div>

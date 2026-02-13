@@ -202,7 +202,7 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
                   <div className="font-semibold text-sm text-gray-900">
                     [{product.code}] {product.name}
                   </div>
-                  <div className="text-xs text-gray-600 mt-1">
+                  <div className="text-xs text-gray-900 mt-1">
                     {product.specification && `${product.specification} | `}
                     {product.unit}
                   </div>
@@ -217,7 +217,7 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
                   }`}>
                     재고: {product.current_stock.toLocaleString()}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-gray-900 mt-1">
                     ₩{product.standard_sale_price.toLocaleString()}
                   </div>
                 </div>

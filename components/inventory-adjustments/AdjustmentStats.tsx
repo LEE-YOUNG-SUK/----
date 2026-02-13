@@ -57,7 +57,7 @@ export default function AdjustmentStats({
 
   if (!summary) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center text-gray-600">
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center text-gray-900">
         통계 데이터를 불러올 수 없습니다.
       </div>
     )
@@ -154,9 +154,9 @@ export default function AdjustmentStats({
                 key={index}
                 className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 transition-colors"
               >
-                <div className="text-sm text-gray-600 mb-1">{item.reason}</div>
+                <div className="text-sm text-gray-900 mb-1">{item.reason}</div>
                 <div className="text-xl font-bold text-gray-900">{item.count}건</div>
-                <div className="text-sm text-gray-600 mt-1">
+                <div className="text-sm text-gray-900 mt-1">
                   ₩{item.totalCost.toLocaleString()}
                 </div>
               </div>

@@ -37,7 +37,7 @@ export default async function ProfitReportPage() {
     <NavigationWrapper user={userSession}>
       <div className="max-w-[1400px] mx-auto p-6">
         <h1 className="text-2xl font-bold mb-6">📊 종합 레포트</h1>
-        <p className="text-gray-600 mb-4">구매, 사용(내부소모), 판매 현황을 한눈에 확인합니다</p>
+        <p className="text-gray-900 mb-4">구매, 사용(내부소모), 판매 현황을 한눈에 확인합니다</p>
         <ProfitReportClient
           userSession={userSession}
           branches={branchesRes.data || []}

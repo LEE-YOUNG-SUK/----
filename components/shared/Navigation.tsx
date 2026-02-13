@@ -279,7 +279,7 @@ export function Navigation({ user, onLogout }: Props) {
                     px-3 py-2 rounded-lg text-sm font-medium transition
                     ${isActive 
                       ? 'bg-blue-100 text-blue-700' 
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
                     }
                   `}
                 >
@@ -298,7 +298,7 @@ export function Navigation({ user, onLogout }: Props) {
                     px-3 py-2 rounded-lg text-sm font-medium transition flex items-center
                     ${isDropdownActive(inventoryMenu.items)
                       ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
                     }
                   `}
                 >
@@ -320,7 +320,7 @@ export function Navigation({ user, onLogout }: Props) {
                           block px-4 py-2 text-sm transition
                           ${pathname === item.href
                             ? 'bg-blue-50 text-blue-700'
-                            : 'text-gray-700 hover:bg-gray-100'
+                            : 'text-gray-900 hover:bg-gray-100'
                           }
                         `}
                       >
@@ -342,7 +342,7 @@ export function Navigation({ user, onLogout }: Props) {
                     px-3 py-2 rounded-lg text-sm font-medium transition flex items-center
                     ${isDropdownActive(purchasesMenu.items)
                       ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
                     }
                   `}
                 >
@@ -364,7 +364,7 @@ export function Navigation({ user, onLogout }: Props) {
                           block px-4 py-2 text-sm transition
                           ${pathname === item.href.split('?')[0] && item.href.includes(`tab=${new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('tab') || 'input'}`)
                             ? 'bg-blue-50 text-blue-700'
-                            : 'text-gray-700 hover:bg-gray-100'
+                            : 'text-gray-900 hover:bg-gray-100'
                           }
                         `}
                       >
@@ -386,7 +386,7 @@ export function Navigation({ user, onLogout }: Props) {
                     px-3 py-2 rounded-lg text-sm font-medium transition flex items-center
                     ${isDropdownActive(salesMenu.items)
                       ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
                     }
                   `}
                 >
@@ -408,7 +408,7 @@ export function Navigation({ user, onLogout }: Props) {
                           block px-4 py-2 text-sm transition
                           ${pathname === item.href.split('?')[0] && item.href.includes(`tab=${new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('tab') || 'input'}`)
                             ? 'bg-blue-50 text-blue-700'
-                            : 'text-gray-700 hover:bg-gray-100'
+                            : 'text-gray-900 hover:bg-gray-100'
                           }
                         `}
                       >
@@ -430,7 +430,7 @@ export function Navigation({ user, onLogout }: Props) {
                     px-3 py-2 rounded-lg text-sm font-medium transition flex items-center
                     ${isDropdownActive(reportsMenu.items)
                       ? 'bg-blue-100 text-blue-700' 
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
                     }
                   `}
                 >
@@ -452,7 +452,7 @@ export function Navigation({ user, onLogout }: Props) {
                           block px-4 py-2 text-sm transition
                           ${pathname === item.href
                             ? 'bg-blue-50 text-blue-700'
-                            : 'text-gray-700 hover:bg-gray-100'
+                            : 'text-gray-900 hover:bg-gray-100'
                           }
                         `}
                       >
@@ -474,7 +474,7 @@ export function Navigation({ user, onLogout }: Props) {
                     px-3 py-2 rounded-lg text-sm font-medium transition flex items-center
                     ${isDropdownActive(adminMenu.items)
                       ? 'bg-blue-100 text-blue-700' 
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
                     }
                   `}
                 >
@@ -496,7 +496,7 @@ export function Navigation({ user, onLogout }: Props) {
                           block px-4 py-2 text-sm transition
                           ${pathname === item.href
                             ? 'bg-blue-50 text-blue-700'
-                            : 'text-gray-700 hover:bg-gray-100'
+                            : 'text-gray-900 hover:bg-gray-100'
                           }
                         `}
                       >
@@ -516,13 +516,13 @@ export function Navigation({ user, onLogout }: Props) {
               <p className="text-sm font-medium text-gray-900">
                 {user.display_name}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-900">
                 {ROLE_LABELS[user.role]} • {user.branch_name || '전체'}
               </p>
             </div>
             <button
               onClick={onLogout}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+              className="px-4 py-2 text-sm font-medium text-gray-900 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
             >
               로그아웃
             </button>
@@ -531,7 +531,7 @@ export function Navigation({ user, onLogout }: Props) {
           {/* 모바일 햄버거 버튼 */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+            className="md:hidden p-2 rounded-lg text-gray-900 hover:bg-gray-100 transition-colors"
             aria-label="메뉴 열기/닫기"
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -564,7 +564,7 @@ export function Navigation({ user, onLogout }: Props) {
                     block px-3 py-2 rounded-lg text-base font-medium transition-all
                     ${isActive 
                       ? 'bg-blue-100 text-blue-700' 
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
                     }
                   `}
                 >
@@ -577,7 +577,7 @@ export function Navigation({ user, onLogout }: Props) {
             {/* 재고 섹션 */}
             {visibleInventoryItems.length > 0 && (
               <>
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-4">
+                <div className="px-3 py-2 text-xs font-semibold text-gray-900 uppercase tracking-wider mt-4">
                   {inventoryMenu.icon} {inventoryMenu.label}
                 </div>
                 {visibleInventoryItems.map((item) => {
@@ -592,7 +592,7 @@ export function Navigation({ user, onLogout }: Props) {
                         block px-3 py-2 pl-6 rounded-lg text-base font-medium transition-all
                         ${isActive
                           ? 'bg-blue-100 text-blue-700'
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                          : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
                         }
                       `}
                     >
@@ -607,7 +607,7 @@ export function Navigation({ user, onLogout }: Props) {
             {/* 입고 섹션 */}
             {visiblePurchasesItems.length > 0 && (
               <>
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-4">
+                <div className="px-3 py-2 text-xs font-semibold text-gray-900 uppercase tracking-wider mt-4">
                   {purchasesMenu.icon} {purchasesMenu.label}
                 </div>
                 {visiblePurchasesItems.map((item) => {
@@ -623,7 +623,7 @@ export function Navigation({ user, onLogout }: Props) {
                         block px-3 py-2 pl-6 rounded-lg text-base font-medium transition-all
                         ${isActive
                           ? 'bg-blue-100 text-blue-700'
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                          : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
                         }
                       `}
                     >
@@ -638,7 +638,7 @@ export function Navigation({ user, onLogout }: Props) {
             {/* 판매 섹션 */}
             {visibleSalesItems.length > 0 && (
               <>
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-4">
+                <div className="px-3 py-2 text-xs font-semibold text-gray-900 uppercase tracking-wider mt-4">
                   {salesMenu.icon} {salesMenu.label}
                 </div>
                 {visibleSalesItems.map((item) => {
@@ -654,7 +654,7 @@ export function Navigation({ user, onLogout }: Props) {
                         block px-3 py-2 pl-6 rounded-lg text-base font-medium transition-all
                         ${isActive
                           ? 'bg-blue-100 text-blue-700'
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                          : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
                         }
                       `}
                     >
@@ -669,7 +669,7 @@ export function Navigation({ user, onLogout }: Props) {
             {/* 레포트 섹션 */}
             {visibleReportsItems.length > 0 && (
               <>
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-4">
+                <div className="px-3 py-2 text-xs font-semibold text-gray-900 uppercase tracking-wider mt-4">
                   {reportsMenu.icon} {reportsMenu.label}
                 </div>
                 {visibleReportsItems.map((item) => {
@@ -684,7 +684,7 @@ export function Navigation({ user, onLogout }: Props) {
                         block px-3 py-2 pl-6 rounded-lg text-base font-medium transition-all
                         ${isActive 
                           ? 'bg-blue-100 text-blue-700' 
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                          : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
                         }
                       `}
                     >
@@ -699,7 +699,7 @@ export function Navigation({ user, onLogout }: Props) {
             {/* 관리 섹션 */}
             {visibleAdminItems.length > 0 && (
               <>
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-4">
+                <div className="px-3 py-2 text-xs font-semibold text-gray-900 uppercase tracking-wider mt-4">
                   {adminMenu.icon} {adminMenu.label}
                 </div>
                 {visibleAdminItems.map((item) => {
@@ -714,7 +714,7 @@ export function Navigation({ user, onLogout }: Props) {
                         block px-3 py-2 pl-6 rounded-lg text-base font-medium transition-all
                         ${isActive 
                           ? 'bg-blue-100 text-blue-700' 
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                          : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
                         }
                       `}
                     >
@@ -733,7 +733,7 @@ export function Navigation({ user, onLogout }: Props) {
               <p className="text-sm font-medium text-gray-900">
                 {user.display_name}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-900">
                 {ROLE_LABELS[user.role]} • {user.branch_name || '전체'}
               </p>
             </div>
@@ -742,7 +742,7 @@ export function Navigation({ user, onLogout }: Props) {
                 setMobileMenuOpen(false)
                 onLogout()
               }}
-              className="w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition"
+              className="w-full text-left px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100 rounded-lg transition"
             >
               로그아웃
             </button>

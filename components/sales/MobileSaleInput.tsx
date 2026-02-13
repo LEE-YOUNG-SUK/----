@@ -78,7 +78,7 @@ export default function MobileSaleInput({ products, onSave, isSaving, taxInclude
       {/* 품목 리스트 */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-3">
+          <div className="flex flex-col items-center justify-center h-full text-gray-800 space-y-3">
             <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
@@ -91,7 +91,7 @@ export default function MobileSaleInput({ products, onSave, isSaving, taxInclude
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-medium text-gray-500">#{item.product_code}</span>
+                    <span className="text-xs font-medium text-gray-900">#{item.product_code}</span>
                     {item.current_stock !== undefined && (
                       <span className={`text-xs font-medium ${item.current_stock < item.quantity ? 'text-red-600' : 'text-green-600'}`}>
                         재고: {item.current_stock.toLocaleString()}
@@ -100,7 +100,7 @@ export default function MobileSaleInput({ products, onSave, isSaving, taxInclude
                   </div>
                   <h3 className="text-base font-semibold text-gray-900">{item.product_name}</h3>
                   {item.specification && (
-                    <p className="text-sm text-gray-500 mt-1">{item.specification}</p>
+                    <p className="text-sm text-gray-900 mt-1">{item.specification}</p>
                   )}
                 </div>
                 <div className="flex gap-2 ml-3">
@@ -124,19 +124,19 @@ export default function MobileSaleInput({ products, onSave, isSaving, taxInclude
               {/* 금액 정보 */}
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">수량:</span>
+                  <span className="text-gray-900">수량:</span>
                   <span className="font-medium">{item.quantity.toLocaleString()} {item.unit}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">단가:</span>
+                  <span className="text-gray-900">단가:</span>
                   <span className="font-medium">{item.unit_price.toLocaleString()}원</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">공급가:</span>
+                  <span className="text-gray-900">공급가:</span>
                   <span className="font-medium">{item.supply_price.toLocaleString()}원</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">부가세:</span>
+                  <span className="text-gray-900">부가세:</span>
                   <span className="font-medium">{item.tax_amount.toLocaleString()}원</span>
                 </div>
                 <div className="flex justify-between col-span-2 pt-2 border-t border-gray-200">
@@ -148,7 +148,7 @@ export default function MobileSaleInput({ products, onSave, isSaving, taxInclude
               {/* 비고 */}
               {item.notes && (
                 <div className="mt-3 pt-3 border-t border-gray-100">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-900">
                     <span className="font-medium">비고:</span> {item.notes}
                   </p>
                 </div>
@@ -162,7 +162,7 @@ export default function MobileSaleInput({ products, onSave, isSaving, taxInclude
       <div className="flex-shrink-0 bg-white border-t border-gray-200 p-3 space-y-3">
         {/* 합계 표시 */}
         <div className="flex justify-between items-center px-3">
-          <span className="text-base font-semibold text-gray-700">전체 합계</span>
+          <span className="text-base font-semibold text-gray-900">전체 합계</span>
           <span className="text-xl font-bold text-blue-600">{totalAmount.toLocaleString()}원</span>
         </div>
 

@@ -22,12 +22,12 @@ export default async function BranchesPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">🏬 지점 관리</h1>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-gray-900 mt-1">
                     지점 정보를 등록하고 관리합니다
                   </p>
                 </div>
                 <div className="text-left sm:text-right">
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-gray-900">
                     {userData.display_name} ({userData.role === '0000' ? '시스템 관리자' : userData.branch_name})
                   </div>
                 </div>

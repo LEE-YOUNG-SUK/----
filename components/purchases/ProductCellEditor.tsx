@@ -205,7 +205,7 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
                       {product.code}
                     </span>
                     {product.category && (
-                      <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
+                      <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-900 rounded">
                         {product.category}
                       </span>
                     )}
@@ -213,7 +213,7 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
                   <div className="text-sm font-medium text-gray-900">
                     {product.name}
                   </div>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                  <div className="flex items-center gap-2 mt-1 text-xs text-gray-900">
                     {product.specification && (
                       <span>규격: {product.specification}</span>
                     )}
@@ -225,7 +225,7 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
                 
                 {/* 오른쪽: 가격 정보 */}
                 <div className="text-right">
-                  <div className="text-xs text-gray-500 mb-1">
+                  <div className="text-xs text-gray-900 mb-1">
                     {product.unit}
                   </div>
                   <div className="text-sm font-bold text-green-600">
@@ -233,7 +233,7 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
                   </div>
                   {(product as any).last_purchase_price && 
                    (product as any).last_purchase_price !== product.standard_purchase_price && (
-                    <div className="text-xs text-gray-400 line-through">
+                    <div className="text-xs text-gray-800 line-through">
                       ₩{(product as any).last_purchase_price.toLocaleString()}
                     </div>
                   )}

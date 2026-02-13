@@ -102,7 +102,7 @@ export default function ReportFilters({
       {/* 날짜 필터 */}
       <div className="flex flex-wrap gap-4 items-end">
         <div>
-          <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="startDate" className="block text-sm font-medium text-gray-900 mb-1">
             시작일
           </label>
           <input
@@ -114,7 +114,7 @@ export default function ReportFilters({
           />
         </div>
         <div>
-          <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="endDate" className="block text-sm font-medium text-gray-900 mb-1">
             종료일
           </label>
           <input
@@ -162,7 +162,7 @@ export default function ReportFilters({
       {/* 그룹핑 방식 & 지점 필터 */}
       <div className="flex flex-wrap gap-4 items-end">
         <div>
-          <label htmlFor="groupBy" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="groupBy" className="block text-sm font-medium text-gray-900 mb-1">
             그룹핑 방식
           </label>
           <select
@@ -182,7 +182,7 @@ export default function ReportFilters({
         {/* 지점 필터 (시스템 관리자만 표시) */}
         {showBranchFilter && branches.length > 0 && (
           <div>
-            <label htmlFor="branchId" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="branchId" className="block text-sm font-medium text-gray-900 mb-1">
               지점
             </label>
             <select
@@ -204,7 +204,7 @@ export default function ReportFilters({
         {/* 카테고리 필터 */}
         {categories.length > 0 && (
           <div>
-            <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="categoryId" className="block text-sm font-medium text-gray-900 mb-1">
               카테고리
             </label>
             <select

@@ -39,12 +39,12 @@ export default async function ImportPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">CSV 데이터 가져오기</h1>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-gray-900 mt-1">
                     구매/판매 CSV 파일을 업로드하여 일괄 등록합니다
                   </p>
                 </div>
                 <div className="text-left sm:text-right">
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-gray-900">
                     품목: {safeData.products.length}개 | 거래처: {safeData.clients.length}개
                   </div>
                 </div>

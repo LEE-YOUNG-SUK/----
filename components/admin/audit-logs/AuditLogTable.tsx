@@ -88,7 +88,7 @@ export function AuditLogTable({ logs, loading, userSession }: Props) {
 
   if (logs.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
+      <div className="text-center py-12 text-gray-900">
         <p className="text-lg">📭 감사 로그가 없습니다.</p>
         <p className="text-sm mt-2">데이터 등록/수정/삭제 시 자동으로 기록됩니다.</p>
       </div>
@@ -101,19 +101,19 @@ export function AuditLogTable({ logs, loading, userSession }: Props) {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                 일시
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                 변경내용
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                 사용자
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                 지점
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                 상세
               </th>
             </tr>
@@ -159,7 +159,7 @@ export function AuditLogTable({ logs, loading, userSession }: Props) {
                       <div className="font-medium">
                         ✏️ {productName ? `[${productName}]` : ''} {tableLabel} 데이터 <strong>수정</strong>
                       </div>
-                      <div className="text-xs text-gray-600 mt-1">
+                      <div className="text-xs text-gray-900 mt-1">
                         {fieldLabels}{moreCount > 0 && ` 외 ${moreCount}개`}
                       </div>
                     </div>
@@ -167,7 +167,7 @@ export function AuditLogTable({ logs, loading, userSession }: Props) {
                 }
 
                 return (
-                  <span className="text-gray-600">
+                  <span className="text-gray-900">
                     ✏️ {tableLabel} 데이터를 수정했습니다
                   </span>
                 )
@@ -184,10 +184,10 @@ export function AuditLogTable({ logs, loading, userSession }: Props) {
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div>
                       <div className="text-gray-900 font-medium">{log.username}</div>
-                      <div className="text-gray-500 text-xs">{ROLE_LABELS[log.user_role] || log.user_role}</div>
+                      <div className="text-gray-900 text-xs">{ROLE_LABELS[log.user_role] || log.user_role}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {log.branch_name || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">

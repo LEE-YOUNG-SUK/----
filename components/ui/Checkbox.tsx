@@ -34,7 +34,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
           />
         </div>
         {label && (
-          <label className="ml-2 text-sm text-gray-700">
+          <label className="ml-2 text-sm text-gray-900">
             {label}
           </label>
         )}

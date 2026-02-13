@@ -141,14 +141,14 @@ export const StatCard = ({
   return (
     <div className={`bg-white p-4 sm:p-6 rounded-lg border border-gray-200 hover:shadow-md transition-shadow ${className}`}>
       <div className="flex items-center justify-between mb-2">
-        <p className="text-xs sm:text-sm text-gray-600">{label}</p>
+        <p className="text-xs sm:text-sm text-gray-900">{label}</p>
         {icon && <span className="text-lg sm:text-xl">{icon}</span>}
       </div>
       <p className={`text-base sm:text-lg font-bold ${colorClass[variant]}`}>
         {typeof value === 'number' ? value.toLocaleString() : value}
         {unit && <span className="text-xs sm:text-sm ml-1">{unit}</span>}
       </p>
-      {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+      {subtitle && <p className="text-xs text-gray-800 mt-0.5">{subtitle}</p>}
     </div>
   );
 };

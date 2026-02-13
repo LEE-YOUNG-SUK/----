@@ -286,7 +286,7 @@ export default function SaleHistoryTable({
       header: '일자',
       size: 120,
       cell: (info) => (
-        <span className="text-sm text-gray-700">{new Date(info.getValue()).toLocaleDateString('ko-KR')}</span>
+        <span className="text-sm text-gray-900">{new Date(info.getValue()).toLocaleDateString('ko-KR')}</span>
       ),
     }),
     itemColumnHelper.accessor('product_code', {
@@ -314,7 +314,7 @@ export default function SaleHistoryTable({
       header: '단가',
       size: 110,
       cell: (info) => (
-        <span className="text-sm text-gray-700">₩{info.getValue().toLocaleString()}</span>
+        <span className="text-sm text-gray-900">₩{info.getValue().toLocaleString()}</span>
       ),
     }),
     itemColumnHelper.accessor('supply_price', {
@@ -342,14 +342,14 @@ export default function SaleHistoryTable({
       header: '거래처',
       size: 140,
       cell: (info) => (
-        <span className="text-sm text-gray-700 truncate block">{info.getValue() || '-'}</span>
+        <span className="text-sm text-gray-900 truncate block">{info.getValue() || '-'}</span>
       ),
     }),
     itemColumnHelper.accessor('notes', {
       header: '비고',
       size: 140,
       cell: (info) => (
-        <span className="text-sm text-gray-500 truncate block">{info.getValue() || '-'}</span>
+        <span className="text-sm text-gray-900 truncate block">{info.getValue() || '-'}</span>
       ),
     }),
     itemColumnHelper.accessor('reference_number', {
@@ -437,7 +437,7 @@ export default function SaleHistoryTable({
       header: '거래처',
       size: 150,
       cell: (info) => (
-        <span className="text-sm text-gray-700 truncate block">{info.getValue() || '-'}</span>
+        <span className="text-sm text-gray-900 truncate block">{info.getValue() || '-'}</span>
       ),
     }),
     columnHelper.display({
@@ -510,10 +510,10 @@ export default function SaleHistoryTable({
             <h2 className="text-lg sm:text-xl font-bold text-gray-900">
               {label} 내역
               {branchName && (
-                <span className="ml-2 text-sm text-gray-500">({branchName})</span>
+                <span className="ml-2 text-sm text-gray-900">({branchName})</span>
               )}
             </h2>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-900">
               총 <span className="font-semibold text-blue-600">{totalCount}</span>건
               {viewMode === 'transaction' && (
                 <> (<span className="font-semibold text-green-600">{totalItems}</span>품목)</>
@@ -524,13 +524,13 @@ export default function SaleHistoryTable({
 
           {/* 조회 기준 토글 */}
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-sm font-medium text-gray-700">조회 기준:</span>
+            <span className="text-sm font-medium text-gray-900">조회 기준:</span>
             <button
               onClick={() => setViewMode('transaction')}
               className={`px-4 py-1.5 text-sm rounded-lg border transition font-medium ${
                 viewMode === 'transaction'
                   ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-50'
               }`}
             >
               거래건
@@ -540,7 +540,7 @@ export default function SaleHistoryTable({
               className={`px-4 py-1.5 text-sm rounded-lg border transition font-medium ${
                 viewMode === 'product'
                   ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-50'
               }`}
             >
               품목별
@@ -591,9 +591,9 @@ export default function SaleHistoryTable({
                       <div className="flex items-center justify-between">
                         <div>
                           <span className="font-semibold text-sm text-blue-600">{product.code}</span>
-                          <span className="text-sm text-gray-700 ml-2">{product.name}</span>
+                          <span className="text-sm text-gray-900 ml-2">{product.name}</span>
                         </div>
-                        <span className="text-xs text-gray-400">{product.unit}</span>
+                        <span className="text-xs text-gray-800">{product.unit}</span>
                       </div>
                     </div>
                   ))}
@@ -611,7 +611,7 @@ export default function SaleHistoryTable({
             />
 
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700 font-medium whitespace-nowrap">시작일</span>
+              <span className="text-sm text-gray-900 font-medium whitespace-nowrap">시작일</span>
               <input
                 type="date"
                 value={startDate}
@@ -620,7 +620,7 @@ export default function SaleHistoryTable({
               />
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700 font-medium whitespace-nowrap">종료일</span>
+              <span className="text-sm text-gray-900 font-medium whitespace-nowrap">종료일</span>
               <input
                 type="date"
                 value={endDate}
@@ -669,7 +669,7 @@ export default function SaleHistoryTable({
               <button onClick={goPrevPage} disabled={!canPrevPage} className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">‹</button>
               {generatePageNumbers(activePageIndex, activePageCount).map((page, i) =>
                 page === -1 ? (
-                  <span key={`e-${i}`} className="px-2 text-sm text-gray-400">…</span>
+                  <span key={`e-${i}`} className="px-2 text-sm text-gray-800">…</span>
                 ) : (
                   <button
                     key={page}
@@ -687,7 +687,7 @@ export default function SaleHistoryTable({
               <button onClick={goNextPage} disabled={!canNextPage} className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">›</button>
               <button onClick={goLastPage} disabled={!canNextPage} className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">»</button>
             </div>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-900">
               총 {totalCount}건 중 {activePageIndex * activePageSize + 1}-
               {Math.min((activePageIndex + 1) * activePageSize, totalCount)}건 표시
             </span>
@@ -699,7 +699,7 @@ export default function SaleHistoryTable({
           {viewMode === 'transaction' ? (
             // 거래건 기준 모바일
             table.getRowModel().rows.length === 0 ? (
-              <div className="px-4 py-12 text-center text-gray-500">
+              <div className="px-4 py-12 text-center text-gray-900">
                 {(productSearch || customerSearch) ? '검색 결과가 없습니다.' : `${label} 내역이 없습니다.`}
               </div>
             ) : (
@@ -712,29 +712,29 @@ export default function SaleHistoryTable({
                         <p className="text-sm font-medium text-blue-600">
                           {group.reference_number?.startsWith('NO_REF_') ? '(없음)' : (group.reference_number || '(없음)')}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-900 mt-1">
                           {new Date(group.sale_date).toLocaleDateString('ko-KR')}
                         </p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm mb-3">
                       <div>
-                        <p className="text-gray-600">거래처</p>
+                        <p className="text-gray-900">거래처</p>
                         <p className="font-medium text-gray-900">{group.customer_name}</p>
                       </div>
                       <div>
-                        <p className="text-gray-600">품목</p>
+                        <p className="text-gray-900">품목</p>
                         <p className="font-medium text-gray-900">
                           {group.first_product_name}
                           {group.total_items > 1 && <span className="text-blue-600"> 외 {group.total_items - 1}개</span>}
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-600">품목 수</p>
+                        <p className="text-gray-900">품목 수</p>
                         <p className="font-medium text-gray-900">{group.total_items}개</p>
                       </div>
                       <div>
-                        <p className="text-gray-600">총액</p>
+                        <p className="text-gray-900">총액</p>
                         <p className="font-bold text-blue-700">₩{group.total_price.toLocaleString()}</p>
                       </div>
                     </div>
@@ -748,7 +748,7 @@ export default function SaleHistoryTable({
           ) : (
             // 품목별 기준 모바일
             itemTable.getRowModel().rows.length === 0 ? (
-              <div className="px-4 py-12 text-center text-gray-500">
+              <div className="px-4 py-12 text-center text-gray-900">
                 {(productSearch || customerSearch) ? '검색 결과가 없습니다.' : `${label} 내역이 없습니다.`}
               </div>
             ) : (
@@ -761,24 +761,24 @@ export default function SaleHistoryTable({
                         <span className="text-sm font-mono text-blue-600">{item.product_code}</span>
                         <span className="text-sm text-gray-900 ml-2">{item.product_name}</span>
                       </div>
-                      <span className="text-xs text-gray-500">{new Date(item.sale_date).toLocaleDateString('ko-KR')}</span>
+                      <span className="text-xs text-gray-900">{new Date(item.sale_date).toLocaleDateString('ko-KR')}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <p className="text-gray-600">수량</p>
+                        <p className="text-gray-900">수량</p>
                         <p className="font-semibold text-gray-900">{item.quantity.toLocaleString()}</p>
                       </div>
                       <div>
-                        <p className="text-gray-600">금액</p>
+                        <p className="text-gray-900">금액</p>
                         <p className="font-bold text-blue-700">₩{item.total_price.toLocaleString()}</p>
                       </div>
                       <div>
-                        <p className="text-gray-600">거래처</p>
+                        <p className="text-gray-900">거래처</p>
                         <p className="font-medium text-gray-900">{item.customer_name || '-'}</p>
                       </div>
                       <div>
-                        <p className="text-gray-600">비고</p>
-                        <p className="text-gray-500">{item.notes || '-'}</p>
+                        <p className="text-gray-900">비고</p>
+                        <p className="text-gray-900">{item.notes || '-'}</p>
                       </div>
                     </div>
                   </div>
@@ -808,14 +808,14 @@ export default function SaleHistoryTable({
                           <th
                             key={header.id}
                             onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                            className={`px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center ${
+                            className={`px-4 py-3 text-xs font-medium text-gray-900 uppercase tracking-wider text-center ${
                               canSort ? 'cursor-pointer select-none hover:bg-gray-100 transition' : ''
                             }`}
                           >
                             <span className="inline-flex items-center justify-center gap-1">
                               {flexRender(header.column.columnDef.header, header.getContext())}
                               {canSort && (
-                                <span className="text-gray-400">
+                                <span className="text-gray-800">
                                   {sorted === 'asc' ? ' ▲' : sorted === 'desc' ? ' ▼' : ' ↕'}
                                 </span>
                               )}
@@ -829,7 +829,7 @@ export default function SaleHistoryTable({
                 <tbody className="bg-white divide-y divide-gray-200">
                   {table.getRowModel().rows.length === 0 ? (
                     <tr>
-                      <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-900">
                         {(productSearch || customerSearch) ? '검색 결과가 없습니다.' : `${label} 내역이 없습니다.`}
                       </td>
                     </tr>
@@ -870,14 +870,14 @@ export default function SaleHistoryTable({
                           <th
                             key={header.id}
                             onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                            className={`px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center ${
+                            className={`px-4 py-3 text-xs font-medium text-gray-900 uppercase tracking-wider text-center ${
                               canSort ? 'cursor-pointer select-none hover:bg-gray-100 transition' : ''
                             }`}
                           >
                             <span className="inline-flex items-center justify-center gap-1">
                               {flexRender(header.column.columnDef.header, header.getContext())}
                               {canSort && (
-                                <span className="text-gray-400">
+                                <span className="text-gray-800">
                                   {sorted === 'asc' ? ' ▲' : sorted === 'desc' ? ' ▼' : ' ↕'}
                                 </span>
                               )}
@@ -891,7 +891,7 @@ export default function SaleHistoryTable({
                 <tbody className="bg-white divide-y divide-gray-200">
                   {itemTable.getRowModel().rows.length === 0 ? (
                     <tr>
-                      <td colSpan={itemColumns.length} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={itemColumns.length} className="px-4 py-8 text-center text-gray-900">
                         {(productSearch || customerSearch) ? '검색 결과가 없습니다.' : `${label} 내역이 없습니다.`}
                       </td>
                     </tr>

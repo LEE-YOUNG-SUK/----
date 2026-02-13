@@ -65,13 +65,13 @@ export default function MobilePurchaseInput({ products, onSave, isSaving, taxInc
       {/* 품목 목록 */}
       <div className="flex-1 overflow-auto p-4 space-y-3">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-gray-700">
+          <h3 className="text-sm font-semibold text-gray-900">
             추가된 품목 ({items.length})
           </h3>
         </div>
 
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+          <div className="flex flex-col items-center justify-center py-12 text-gray-800">
             <svg className="w-16 h-16 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
@@ -85,7 +85,7 @@ export default function MobilePurchaseInput({ products, onSave, isSaving, taxInc
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
-                  <p className="text-xs text-gray-500">{item.product_code}</p>
+                  <p className="text-xs text-gray-900">{item.product_code}</p>
                   <p className="text-base font-semibold text-gray-900 mt-1">
                     {item.product_name}
                   </p>
@@ -94,13 +94,13 @@ export default function MobilePurchaseInput({ products, onSave, isSaving, taxInc
 
               <div className="grid grid-cols-2 gap-2 text-sm mb-3">
                 <div>
-                  <p className="text-gray-600">수량</p>
+                  <p className="text-gray-900">수량</p>
                   <p className="font-medium text-gray-900">
                     {item.quantity.toLocaleString()} {item.unit}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-600">단가</p>
+                  <p className="text-gray-900">단가</p>
                   <p className="font-medium text-gray-900">
                     ₩{item.unit_cost.toLocaleString()}
                   </p>
@@ -109,11 +109,11 @@ export default function MobilePurchaseInput({ products, onSave, isSaving, taxInc
 
               <div className="border-t pt-3 space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">공급가</span>
+                  <span className="text-gray-900">공급가</span>
                   <span className="font-medium">₩{item.supply_price.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">부가세</span>
+                  <span className="text-gray-900">부가세</span>
                   <span className="font-medium">₩{item.tax_amount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-base font-bold text-blue-700">
@@ -146,7 +146,7 @@ export default function MobilePurchaseInput({ products, onSave, isSaving, taxInc
         {items.length > 0 && (
           <div className="bg-gray-50 rounded-lg p-3">
             <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-600">총 품목 수</span>
+              <span className="text-gray-900">총 품목 수</span>
               <span className="font-medium">{items.length}개</span>
             </div>
             <div className="flex justify-between text-base font-bold text-blue-700">

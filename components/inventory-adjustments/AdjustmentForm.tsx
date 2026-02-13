@@ -229,8 +229,8 @@ export default function AdjustmentForm({ products, session }: Props) {
                   className="w-full px-4 py-2 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none"
                 >
                   <div className="font-medium">{product.code}</div>
-                  <div className="text-sm text-gray-600">{product.name}</div>
-                  <div className="text-xs text-gray-500">{product.category} | {product.unit}</div>
+                  <div className="text-sm text-gray-900">{product.name}</div>
+                  <div className="text-xs text-gray-900">{product.category} | {product.unit}</div>
                 </button>
               ))}
             </div>
@@ -240,7 +240,7 @@ export default function AdjustmentForm({ products, session }: Props) {
         {selectedProduct && (
           <div className="text-sm bg-blue-50 border border-blue-200 rounded-lg p-3">
             <div className="font-medium">{selectedProduct.code} - {selectedProduct.name}</div>
-            <div className="text-gray-600 mt-1">
+            <div className="text-gray-900 mt-1">
               현재 재고: <span className="font-semibold text-blue-600">{currentStock} {selectedProduct.unit}</span>
             </div>
           </div>
@@ -350,18 +350,18 @@ export default function AdjustmentForm({ products, session }: Props) {
       {/* 금액 정보 (INCREASE인 경우만) */}
       {formData.adjustment_type === 'INCREASE' && formData.total_cost > 0 && (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
-          <div className="text-sm font-medium text-gray-700">금액 정보 (자동 계산)</div>
+          <div className="text-sm font-medium text-gray-900">금액 정보 (자동 계산)</div>
           <FormGrid columns={3}>
             <div>
-              <div className="text-gray-600">공급가</div>
+              <div className="text-gray-900">공급가</div>
               <div className="font-semibold">₩{formData.supply_price.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-gray-600">부가세</div>
+              <div className="text-gray-900">부가세</div>
               <div className="font-semibold">₩{formData.tax_amount.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-gray-600">합계</div>
+              <div className="text-gray-900">합계</div>
               <div className="font-semibold text-blue-600">₩{formData.total_cost.toLocaleString()}</div>
             </div>
           </FormGrid>

@@ -91,7 +91,7 @@ export default async function InventoryAdjustmentsPage() {
           {/* 페이지 헤더 */}
           <div>
             <h1 className="text-2xl font-bold text-gray-900">📝 재고 조정</h1>
-            <p className="text-sm text-gray-600 mt-1">입고/판매 외 재고 변동 관리</p>
+            <p className="text-sm text-gray-900 mt-1">입고/판매 외 재고 변동 관리</p>
           </div>
 
           {/* 통계 카드 */}

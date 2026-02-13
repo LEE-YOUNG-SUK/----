@@ -107,7 +107,7 @@ export function InventoryTable({ initialData, userRole, branchId }: Props) {
               <option value="부족">{'⚠️ 부족'}</option>
               <option value="재고없음">{'🚨 재고없음'}</option>
             </select>
-            <div className="text-sm text-gray-600 flex items-center">
+            <div className="text-sm text-gray-900 flex items-center">
               총 <span className="font-semibold mx-1">{filteredData.length}</span>개
             </div>
           </div>
@@ -118,20 +118,20 @@ export function InventoryTable({ initialData, userRole, branchId }: Props) {
           <table className="w-full min-w-[900px]">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">품목코드</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">품목명</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">지점</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">현재고</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">평균단가</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">재고금액</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">품목코드</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">품목명</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">지점</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider">현재고</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider">평균단가</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider">재고금액</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider">상태</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider">작업</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-900">
                     {searchTerm || statusFilter ? '검색 결과가 없습니다.' : '재고가 없습니다.'}
                   </td>
                 </tr>
@@ -148,10 +148,10 @@ export function InventoryTable({ initialData, userRole, branchId }: Props) {
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-sm font-medium text-gray-900">{item.product_name}</div>
-                        {item.category && <div className="text-xs text-gray-500">{item.category}</div>}
+                        {item.category && <div className="text-xs text-gray-900">{item.category}</div>}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-sm text-gray-700">{item.branch_name}</span>
+                        <span className="text-sm text-gray-900">{item.branch_name}</span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span className="text-sm font-semibold text-gray-900">
@@ -159,7 +159,7 @@ export function InventoryTable({ initialData, userRole, branchId }: Props) {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-gray-900">
                           {item.avg_unit_cost ? `₩${item.avg_unit_cost.toLocaleString()}` : '-'}
                         </span>
                       </td>
@@ -182,7 +182,7 @@ export function InventoryTable({ initialData, userRole, branchId }: Props) {
                             {'🔍 상세'}
                           </button>
                         ) : (
-                          <span className="text-gray-400 text-sm">-</span>
+                          <span className="text-gray-800 text-sm">-</span>
                         )}
                       </td>
                     </tr>

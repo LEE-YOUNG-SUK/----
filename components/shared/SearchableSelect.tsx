@@ -105,13 +105,13 @@ export default function SearchableSelect({
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <span className={`flex-1 text-sm truncate ${value ? 'text-gray-900' : 'text-gray-400'}`}>
+          <span className={`flex-1 text-sm truncate ${value ? 'text-gray-900' : 'text-gray-800'}`}>
             {selectedLabel || placeholder}
           </span>
         )}
         {/* 화살표 아이콘 */}
         <svg
-          className={`w-4 h-4 ml-1 flex-shrink-0 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 ml-1 flex-shrink-0 text-gray-800 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -126,7 +126,7 @@ export default function SearchableSelect({
           {/* 선택 해제 옵션 */}
           <div
             onClick={() => handleSelect('')}
-            className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 text-gray-400 ${
+            className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 text-gray-800 ${
               !value ? 'bg-blue-50 font-medium' : ''
             }`}
           >
@@ -145,7 +145,7 @@ export default function SearchableSelect({
               </div>
             ))
           ) : (
-            <div className="px-3 py-2 text-sm text-gray-400">검색 결과 없음</div>
+            <div className="px-3 py-2 text-sm text-gray-800">검색 결과 없음</div>
           )}
         </div>
       )}

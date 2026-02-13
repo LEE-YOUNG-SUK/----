@@ -150,7 +150,7 @@ export default function ProductForm({ product, onClose, onSuccess, userId }: Pro
               <div className="space-y-2">
                 <Label htmlFor="category_id">카테고리 *</Label>
                 {loadingCategories ? (
-                  <div className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400">
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800">
                     카테고리 로딩 중...
                   </div>
                 ) : (

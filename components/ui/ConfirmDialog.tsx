@@ -37,7 +37,7 @@ export function ConfirmDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
-        <div className="py-4 text-sm text-gray-700 whitespace-pre-line">
+        <div className="py-4 text-sm text-gray-900 whitespace-pre-line">
           {message}
         </div>
 

@@ -133,10 +133,10 @@ export default function AdjustmentHistoryTable({
           <h2 className="text-lg sm:text-xl font-bold text-gray-900">
             조정 내역
             {branchName && (
-              <span className="ml-2 text-sm text-gray-500">({branchName})</span>
+              <span className="ml-2 text-sm text-gray-900">({branchName})</span>
             )}
           </h2>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-900">
             총 <span className="font-semibold text-blue-600">{filteredData.length}</span>건
           </div>
         </div>
@@ -203,7 +203,7 @@ export default function AdjustmentHistoryTable({
       {/* 모바일 카드뷰 (767px 이하) */}
       <div className="md:hidden flex-1 overflow-y-auto bg-white">
         {paginatedData.length === 0 ? (
-          <div className="px-4 py-12 text-center text-gray-500">
+          <div className="px-4 py-12 text-center text-gray-900">
             {searchTerm ? '검색 결과가 없습니다.' : '조정 내역이 없습니다.'}
           </div>
         ) : (
@@ -214,7 +214,7 @@ export default function AdjustmentHistoryTable({
             >
               {/* 날짜 & 유형 */}
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">{item.adjustment_date}</span>
+                <span className="text-sm text-gray-900">{item.adjustment_date}</span>
                 <Badge variant={item.adjustment_type === 'INCREASE' ? 'success' : 'danger'}>
                   {typeLabels[item.adjustment_type]}
                 </Badge>
@@ -226,7 +226,7 @@ export default function AdjustmentHistoryTable({
               </div>
 
               {/* 사유 */}
-              <div className="text-sm text-gray-600 mb-2">
+              <div className="text-sm text-gray-900 mb-2">
                 {reasonLabels[item.adjustment_reason]}
               </div>
 
@@ -243,7 +243,7 @@ export default function AdjustmentHistoryTable({
               </div>
 
               {/* 작성자 */}
-              <div className="text-xs text-gray-500 mb-2">
+              <div className="text-xs text-gray-900 mb-2">
                 작성: {item.created_by_username}
               </div>
 
@@ -252,7 +252,7 @@ export default function AdjustmentHistoryTable({
                 <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2 mb-2">
                   <div className="font-semibold">✕ 취소됨</div>
                   <div>{item.cancel_reason}</div>
-                  <div className="text-gray-500">취소자: {item.cancelled_by_username}</div>
+                  <div className="text-gray-900">취소자: {item.cancelled_by_username}</div>
                 </div>
               )}
 
@@ -278,25 +278,25 @@ export default function AdjustmentHistoryTable({
         <table className="w-full">
           <thead className="bg-gray-50 sticky top-0 z-10">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">날짜</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">품목코드</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">품목명</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">유형</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">사유</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">수량</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">단위원가</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">합계</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">작성자</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">상태</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">날짜</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">품목코드</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">품목명</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase">유형</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase">사유</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase">수량</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase">단위원가</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase">합계</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">작성자</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase">상태</th>
               {canCancel && (
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">작업</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase">작업</th>
               )}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={canCancel ? 11 : 10} className="px-4 py-12 text-center text-gray-500">
+                <td colSpan={canCancel ? 11 : 10} className="px-4 py-12 text-center text-gray-900">
                   {searchTerm ? '검색 결과가 없습니다.' : '조정 내역이 없습니다.'}
                 </td>
               </tr>
@@ -320,7 +320,7 @@ export default function AdjustmentHistoryTable({
                       {typeLabels[item.adjustment_type]}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600 text-center">
+                  <td className="px-4 py-3 text-sm text-gray-900 text-center">
                     {reasonLabels[item.adjustment_reason]}
                   </td>
                   <td className="px-4 py-3 text-sm text-right font-medium">
@@ -332,14 +332,14 @@ export default function AdjustmentHistoryTable({
                   <td className="px-4 py-3 text-sm text-right font-semibold text-blue-600">
                     {item.total_cost > 0 ? `₩${item.total_cost.toLocaleString()}` : '-'}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
+                  <td className="px-4 py-3 text-sm text-gray-900">
                     {item.created_by_username}
                   </td>
                   <td className="px-4 py-3 text-center">
                     {item.is_cancelled ? (
                       <div className="text-xs">
                         <div className="text-red-600 font-semibold">✕ 취소</div>
-                        <div className="text-gray-500" title={item.cancel_reason || ''}>
+                        <div className="text-gray-900" title={item.cancel_reason || ''}>
                           {item.cancelled_by_username}
                         </div>
                       </div>
@@ -372,7 +372,7 @@ export default function AdjustmentHistoryTable({
       {/* 페이지네이션 */}
       {totalPages > 1 && (
         <div className="p-4 bg-white border-t flex items-center justify-between flex-shrink-0">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-900">
             {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredData.length)} / {filteredData.length}
           </div>
           

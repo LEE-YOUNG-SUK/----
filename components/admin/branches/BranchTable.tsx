@@ -68,7 +68,7 @@ export default function BranchTable({
       <div className="mb-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           <div>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-900">
               총 {branches.length}개의 지점이 등록되어 있습니다
             </p>
           </div>
@@ -85,28 +85,28 @@ export default function BranchTable({
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                 코드
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                 지점명
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                 대표자
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                 이메일
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                 사업자번호
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                 등록일
               </th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider">
                 상태
               </th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider">
                 관리
               </th>
             </tr>
@@ -114,7 +114,7 @@ export default function BranchTable({
           <tbody className="bg-white divide-y divide-gray-200">
             {branches.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={8} className="px-6 py-8 text-center text-gray-900">
                   등록된 지점이 없습니다
                 </td>
               </tr>
@@ -127,16 +127,16 @@ export default function BranchTable({
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {branch.name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {branch.contact_person || '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {branch.email || '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {formatBusinessNumber(branch.business_number)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {formatDate(branch.created_at)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center text-sm">

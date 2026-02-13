@@ -195,7 +195,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       width: 60,
       minWidth: 60,
       pinned: 'left',
-      cellClass: 'text-center font-medium text-gray-600'
+      cellClass: 'text-center font-medium text-gray-900'
     },
     {
       headerName: '품목코드',
@@ -521,14 +521,14 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       <div className="flex items-center justify-between p-4 bg-white border-b">
         <div className="flex items-center gap-6 ml-auto">
           <div className="text-sm">
-            <span className="text-gray-600">입력 품목:</span>
+            <span className="text-gray-900">입력 품목:</span>
             <span className="ml-2 font-bold text-lg text-blue-600">
               {validRowCount}
             </span>
-            <span className="text-gray-500 ml-1">개</span>
+            <span className="text-gray-900 ml-1">개</span>
           </div>
           <div className="text-sm">
-            <span className="text-gray-600">합계 금액:</span>
+            <span className="text-gray-900">합계 금액:</span>
             <span className="ml-2 font-bold text-lg text-red-600">
               ₩{totalAmount.toLocaleString()}
             </span>

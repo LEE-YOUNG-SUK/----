@@ -141,16 +141,16 @@ export function InventoryLayerModal({ item, startDate, endDate, onClose }: Props
               <h2 className="text-xl font-bold text-gray-900">
                 재고 입출고 내역
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-gray-900 mt-1">
                 {item.product_code} - {item.product_name}
                 {startDate && endDate && (
-                  <span className="ml-2 text-gray-400">({startDate} ~ {endDate})</span>
+                  <span className="ml-2 text-gray-800">({startDate} ~ {endDate})</span>
                 )}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition"
+              className="text-gray-800 hover:text-gray-900 transition"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -205,7 +205,7 @@ export function InventoryLayerModal({ item, startDate, endDate, onClose }: Props
           {loading && (
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="mt-4 text-gray-600">데이터 로딩 중...</p>
+              <p className="mt-4 text-gray-900">데이터 로딩 중...</p>
             </div>
           )}
 
@@ -217,13 +217,13 @@ export function InventoryLayerModal({ item, startDate, endDate, onClose }: Props
 
           {!loading && !error && movements.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500">입출고 내역이 없습니다.</p>
+              <p className="text-gray-900">입출고 내역이 없습니다.</p>
             </div>
           )}
 
           {!loading && !error && movements.length > 0 && filteredMovements.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-gray-500">검색 결과가 없습니다.</p>
+              <p className="text-gray-900">검색 결과가 없습니다.</p>
             </div>
           )}
 
@@ -232,12 +232,12 @@ export function InventoryLayerModal({ item, startDate, endDate, onClose }: Props
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">일자</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">거래처명</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">비고</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">입고수량</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">출고수량</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">재고수량</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">일자</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">거래처명</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">비고</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase">입고수량</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase">출고수량</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase">재고수량</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -269,7 +269,7 @@ export function InventoryLayerModal({ item, startDate, endDate, onClose }: Props
                         <td className="px-4 py-3 text-sm text-gray-900">
                           {m.party_name || '-'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 max-w-[200px] truncate">
+                        <td className="px-4 py-3 text-sm text-gray-900 max-w-[200px] truncate">
                           {m.remarks || '-'}
                         </td>
                         <td className="px-4 py-3 text-sm text-right">

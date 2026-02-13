@@ -25,7 +25,7 @@ const SaleGrid = dynamic(() => import('./salegrid'), {
     <div className="flex items-center justify-center h-full">
       <div className="text-center">
         <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-        <p className="text-gray-600">그리드 로딩 중...</p>
+        <p className="text-gray-900">그리드 로딩 중...</p>
       </div>
     </div>
   )
@@ -245,7 +245,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
                       type="text"
                       value="내부사용"
                       disabled
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-900 cursor-not-allowed"
                     />
                   ) : (
                     /* 판매: 고객 선택 */

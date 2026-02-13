@@ -91,7 +91,7 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
           <h2 className="text-xl font-bold text-gray-900">판매 데이터 수정</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            className="text-gray-800 hover:text-gray-900 text-2xl leading-none"
             disabled={isSaving}
           >
             ×
@@ -104,26 +104,26 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
           <div className="p-4 bg-gray-50 rounded-lg">
             <FormGrid columns={2}>
             <div>
-              <p className="text-xs text-gray-600 mb-1">품목코드</p>
+              <p className="text-xs text-gray-900 mb-1">품목코드</p>
               <p className="text-sm font-medium text-gray-900">{sale.product_code}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-600 mb-1">품목명</p>
+              <p className="text-xs text-gray-900 mb-1">품목명</p>
               <p className="text-sm font-medium text-gray-900">{sale.product_name}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-600 mb-1">고객</p>
+              <p className="text-xs text-gray-900 mb-1">고객</p>
               <p className="text-sm font-medium text-gray-900">{sale.customer_name}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-600 mb-1">판매일</p>
+              <p className="text-xs text-gray-900 mb-1">판매일</p>
               <p className="text-sm font-medium text-gray-900">
                 {new Date(sale.sale_date).toLocaleDateString('ko-KR')}
               </p>
             </div>
             {sale.reference_number && (
               <div className="md:col-span-2">
-                <p className="text-xs text-gray-600 mb-1">참조번호</p>
+                <p className="text-xs text-gray-900 mb-1">참조번호</p>
                 <p className="text-sm font-medium text-gray-900">{sale.reference_number}</p>
               </div>
             )}
@@ -135,7 +135,7 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
             <FormGrid columns={2}>
               {/* 수량 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   수량 <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center">
@@ -147,13 +147,13 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
                     min="0.01"
                     step="0.01"
                   />
-                  <span className="ml-2 text-sm text-gray-600">{sale.unit}</span>
+                  <span className="ml-2 text-sm text-gray-900">{sale.unit}</span>
                 </div>
               </div>
 
               {/* 단가 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   단가 <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -169,7 +169,7 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
 
             {/* 부가세 포함/미포함 토글 */}
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">부가세 구분</span>
+              <span className="text-sm font-medium text-gray-900">부가세 구분</span>
               <div className="flex bg-gray-200 rounded-lg p-0.5">
                 <button
                   type="button"
@@ -177,7 +177,7 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
                   className={`px-3 py-1.5 text-sm font-medium rounded-md transition ${
                     taxIncluded
                       ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
+                      : 'text-gray-900 hover:text-gray-800'
                   }`}
                 >
                   포함
@@ -188,13 +188,13 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
                   className={`px-3 py-1.5 text-sm font-medium rounded-md transition ${
                     !taxIncluded
                       ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
+                      : 'text-gray-900 hover:text-gray-800'
                   }`}
                 >
                   미포함
                 </button>
               </div>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-900">
                 {taxIncluded ? '단가 × 수량 = 합계' : '단가 × 수량 = 공급가'}
               </span>
             </div>
@@ -203,19 +203,19 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
             <div className="p-4 bg-blue-50 rounded-lg">
               <FormGrid columns={3}>
               <div>
-                <p className="text-xs text-gray-600 mb-1">공급가</p>
+                <p className="text-xs text-gray-900 mb-1">공급가</p>
                 <p className="text-sm font-semibold text-blue-700">
                   ₩{supplyPrice.toLocaleString()}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-600 mb-1">부가세 (10%)</p>
+                <p className="text-xs text-gray-900 mb-1">부가세 (10%)</p>
                 <p className="text-sm font-semibold text-blue-700">
                   ₩{taxAmount.toLocaleString()}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-600 mb-1">합계</p>
+                <p className="text-xs text-gray-900 mb-1">합계</p>
                 <p className="text-base font-bold text-blue-900">
                   ₩{totalPrice.toLocaleString()}
                 </p>
@@ -225,7 +225,7 @@ export default function EditSaleModal({ sale, onClose, onSave }: EditSaleModalPr
 
             {/* 비고 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-2">
                 비고
               </label>
               <textarea

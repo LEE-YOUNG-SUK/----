@@ -126,10 +126,10 @@ export const ProductAutoComplete = forwardRef<ProductAutoCompleteRef, ProductAut
                     <div className="font-semibold text-sm text-gray-900">
                       {product.code}
                     </div>
-                    <div className="text-xs text-gray-600">{product.name}</div>
+                    <div className="text-xs text-gray-900">{product.name}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-gray-500">{product.unit}</div>
+                    <div className="text-xs text-gray-900">{product.unit}</div>
                     <div className="text-xs font-medium text-blue-600">
                       ₩{product.standard_purchase_price?.toLocaleString() || 0}
                     </div>

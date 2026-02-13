@@ -18,7 +18,7 @@ export default async function DashboardPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               {'환영합니다, '}{session.display_name}{'님! 👋'}
             </h2>
-            <p className="text-gray-600">
+            <p className="text-gray-900">
               DR.Evers ERP 시스템에 성공적으로 로그인하셨습니다.
             </p>
           </ContentCard>

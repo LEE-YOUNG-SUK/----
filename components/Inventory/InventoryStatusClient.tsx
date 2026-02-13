@@ -168,12 +168,12 @@ export default function InventoryStatusClient({ userSession, products, branches 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">재고 현황</h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-900 mt-1">
               {startDate} ~ {endDate} 기간 재고 현황
             </p>
           </div>
           <div className="text-left sm:text-right">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-900">
               {userSession.role === '0000'
                 ? (selectedBranch
                   ? branchOptions.find(([id]) => id === selectedBranch)?.[1] || '전체 지점'
@@ -189,16 +189,16 @@ export default function InventoryStatusClient({ userSession, products, branches 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <ContentCard>
             <div className="text-center">
-              <p className="text-sm text-gray-500 mb-1">재고보유 품목수</p>
+              <p className="text-sm text-gray-900 mb-1">재고보유 품목수</p>
               <p className="text-2xl font-bold text-gray-900">
                 {totals.stockProductCount.toLocaleString()}
-                <span className="text-sm font-normal text-gray-500 ml-1">건</span>
+                <span className="text-sm font-normal text-gray-900 ml-1">건</span>
               </p>
             </div>
           </ContentCard>
           <ContentCard>
             <div className="text-center">
-              <p className="text-sm text-gray-500 mb-1">총 재고 수량</p>
+              <p className="text-sm text-gray-900 mb-1">총 재고 수량</p>
               <p className="text-2xl font-bold text-blue-600">
                 {totals.totalQuantity.toLocaleString()}
               </p>
@@ -206,11 +206,11 @@ export default function InventoryStatusClient({ userSession, products, branches 
           </ContentCard>
           <ContentCard>
             <div className="text-center">
-              <p className="text-sm text-gray-500 mb-1">총 재고금액</p>
+              <p className="text-sm text-gray-900 mb-1">총 재고금액</p>
               <p className="text-2xl font-bold text-green-600">
                 {`\u20A9${totals.totalValue.toLocaleString()}`}
               </p>
-              <p className="text-xs text-gray-400 mt-0.5">부가세포함</p>
+              <p className="text-xs text-gray-800 mt-0.5">부가세포함</p>
             </div>
           </ContentCard>
         </div>
@@ -223,7 +223,7 @@ export default function InventoryStatusClient({ userSession, products, branches 
             {/* 지점 선택 (관리자만) */}
             {userSession.role === '0000' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">지점</label>
+                <label className="block text-sm font-medium text-gray-900 mb-1">지점</label>
                 <select
                   value={selectedBranch}
                   onChange={(e) => setSelectedBranch(e.target.value)}
@@ -239,7 +239,7 @@ export default function InventoryStatusClient({ userSession, products, branches 
 
             {/* 시작일 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">시작일</label>
+              <label className="block text-sm font-medium text-gray-900 mb-1">시작일</label>
               <input
                 type="date"
                 value={startDate}
@@ -250,7 +250,7 @@ export default function InventoryStatusClient({ userSession, products, branches 
 
             {/* 종료일 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">종료일(재고 기준일)</label>
+              <label className="block text-sm font-medium text-gray-900 mb-1">종료일(재고 기준일)</label>
               <input
                 type="date"
                 value={endDate}
@@ -261,7 +261,7 @@ export default function InventoryStatusClient({ userSession, products, branches 
 
             {/* 품목 자동완성 */}
             <div className="flex-1 min-w-[250px]" ref={dropdownRef}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">품목</label>
+              <label className="block text-sm font-medium text-gray-900 mb-1">품목</label>
               <div className="relative">
                 <div className="flex gap-2">
                   <input
@@ -281,7 +281,7 @@ export default function InventoryStatusClient({ userSession, products, branches 
                   {selectedProduct && (
                     <button
                       onClick={handleProductClear}
-                      className="px-3 py-2 text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                      className="px-3 py-2 text-gray-900 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
                     >
                       X
                     </button>
@@ -301,7 +301,7 @@ export default function InventoryStatusClient({ userSession, products, branches 
                           <span className="font-mono font-bold text-blue-600 text-sm">{product.code}</span>
                           <span className="text-sm text-gray-900">{product.name}</span>
                         </div>
-                        <div className="text-xs text-gray-500 mt-0.5">
+                        <div className="text-xs text-gray-900 mt-0.5">
                           {product.category_name || '미분류'} | {product.unit}
                           {product.specification ? ` | ${product.specification}` : ''}
                         </div>
@@ -331,27 +331,27 @@ export default function InventoryStatusClient({ userSession, products, branches 
           <table className="w-full min-w-[900px]">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-12">No</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">품목코드</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">품목명</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">단위</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">재고수량</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">입고단가</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">재고금액</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider w-12">No</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">품목코드</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">품목명</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider">단위</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider">재고수량</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider">입고단가</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider">재고금액</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider">상태</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={8} className="px-4 py-12 text-center text-gray-900">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
                     <p>데이터 로딩 중...</p>
                   </td>
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-900">
                     {searched ? '조회 결과가 없습니다.' : '조회 버튼을 눌러 검색하세요.'}
                   </td>
                 </tr>
@@ -362,7 +362,7 @@ export default function InventoryStatusClient({ userSession, products, branches 
 
                   return (
                     <tr key={`${item.branch_id}-${item.product_id}`} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-3 text-center text-sm text-gray-500">{index + 1}</td>
+                      <td className="px-4 py-3 text-center text-sm text-gray-900">{index + 1}</td>
                       <td className="px-4 py-3">
                         <button
                           onClick={() => setSelectedItem({
@@ -387,16 +387,16 @@ export default function InventoryStatusClient({ userSession, products, branches 
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-sm font-medium text-gray-900">{item.product_name}</div>
-                        {item.category && <div className="text-xs text-gray-500">{item.category}</div>}
+                        {item.category && <div className="text-xs text-gray-900">{item.category}</div>}
                       </td>
-                      <td className="px-4 py-3 text-center text-sm text-gray-700">{item.unit}</td>
+                      <td className="px-4 py-3 text-center text-sm text-gray-900">{item.unit}</td>
                       <td className="px-4 py-3 text-right">
                         <span className="text-sm font-semibold text-gray-900">
                           {item.current_quantity.toLocaleString()}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-gray-900">
                           {`\u20A9${item.weighted_avg_cost.toLocaleString()}`}
                         </span>
                       </td>
@@ -422,7 +422,7 @@ export default function InventoryStatusClient({ userSession, products, branches 
                   <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
                     {totals.totalQuantity.toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-right text-sm text-gray-500">-</td>
+                  <td className="px-4 py-3 text-right text-sm text-gray-900">-</td>
                   <td className="px-4 py-3 text-right text-sm font-bold text-blue-700">
                     {`\u20A9${totals.totalValue.toLocaleString()}`}
                   </td>

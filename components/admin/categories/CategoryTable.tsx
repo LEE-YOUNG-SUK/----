@@ -55,7 +55,7 @@ export default function CategoryTable({
       <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-lg font-semibold">카테고리 목록</h2>
-          <p className="text-sm text-gray-500 mt-1">총 {categories.length}개</p>
+          <p className="text-sm text-gray-900 mt-1">총 {categories.length}개</p>
         </div>
         <Button onClick={onAddNew} size="lg">
           ➕ 새 카테고리 추가
@@ -67,19 +67,19 @@ export default function CategoryTable({
         <table className="w-full min-w-[800px]">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">코드</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">카테고리명</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">설명</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">표시순서</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">품목수</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">관리</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">코드</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">카테고리명</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">설명</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider">표시순서</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider">품목수</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider">상태</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider">관리</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {categories.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-900">
                   등록된 카테고리가 없습니다
                 </td>
               </tr>
@@ -93,10 +93,10 @@ export default function CategoryTable({
                     <span className="text-sm font-medium text-gray-900">{category.name}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-sm text-gray-700">{category.description || '-'}</span>
+                    <span className="text-sm text-gray-900">{category.description || '-'}</span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className="text-sm text-gray-700">{category.display_order}</span>
+                    <span className="text-sm text-gray-900">{category.display_order}</span>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">

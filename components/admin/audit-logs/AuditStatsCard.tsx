@@ -44,7 +44,7 @@ export function AuditStatsCard({ stats, loading }: Props) {
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">전체 로그</p>
+              <p className="text-sm font-medium text-gray-900">전체 로그</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">
                 {totalLogs.toLocaleString()}
               </p>
@@ -59,7 +59,7 @@ export function AuditStatsCard({ stats, loading }: Props) {
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">데이터 등록</p>
+              <p className="text-sm font-medium text-gray-900">데이터 등록</p>
               <p className="text-2xl font-bold text-green-600 mt-1">
                 {totalInserts.toLocaleString()}
               </p>
@@ -74,7 +74,7 @@ export function AuditStatsCard({ stats, loading }: Props) {
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">데이터 수정</p>
+              <p className="text-sm font-medium text-gray-900">데이터 수정</p>
               <p className="text-2xl font-bold text-blue-600 mt-1">
                 {totalUpdates.toLocaleString()}
               </p>
@@ -89,7 +89,7 @@ export function AuditStatsCard({ stats, loading }: Props) {
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">데이터 삭제</p>
+              <p className="text-sm font-medium text-gray-900">데이터 삭제</p>
               <p className="text-2xl font-bold text-red-600 mt-1">
                 {totalDeletes.toLocaleString()}
               </p>
@@ -104,7 +104,7 @@ export function AuditStatsCard({ stats, loading }: Props) {
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">활동 사용자</p>
+              <p className="text-sm font-medium text-gray-900">활동 사용자</p>
               <p className="text-2xl font-bold text-teal-600 mt-1">
                 {uniqueUsers}
               </p>

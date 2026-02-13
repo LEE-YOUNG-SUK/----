@@ -21,7 +21,7 @@ const PurchaseGrid = dynamic(() => import('./PurchaseGrid'), {
     <div className="flex items-center justify-center h-full">
       <div className="text-center">
         <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-        <p className="text-gray-600">그리드 로딩 중...</p>
+        <p className="text-gray-900">그리드 로딩 중...</p>
       </div>
     </div>
   )
@@ -134,19 +134,18 @@ export function PurchaseForm({ products, suppliers, history, session, defaultTab
 
       if (result.success) {
         alert(result.message || '입고 처리가 완료되었습니다.')
-        setIsSaving(false)
         setSupplierId('')
         setReferenceNumber('')
         setGridResetKey(prev => prev + 1)
         router.refresh()
       } else {
-        setIsSaving(false)
         alert(result.message || '입고 처리 중 오류가 발생했습니다.')
       }
     } catch (error) {
       console.error('Save error:', error)
-      setIsSaving(false)
       alert('입고 처리 중 오류가 발생했습니다.')
+    } finally {
+      setIsSaving(false)
     }
   }
 

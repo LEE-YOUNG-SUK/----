@@ -90,21 +90,21 @@ export default function ProductTable({
       header: '규격',
       size: 200,
       cell: (info) => (
-        <span className="text-sm text-gray-700 truncate block">{info.getValue() || '-'}</span>
+        <span className="text-sm text-gray-900 truncate block">{info.getValue() || '-'}</span>
       ),
     }),
     columnHelper.accessor('unit', {
       header: '단위',
       size: 70,
       cell: (info) => (
-        <span className="text-sm text-gray-700">{info.getValue() || '-'}</span>
+        <span className="text-sm text-gray-900">{info.getValue() || '-'}</span>
       ),
     }),
     columnHelper.accessor('standard_purchase_price', {
       header: '표준구매가',
       size: 130,
       cell: (info) => (
-        <span className="text-sm text-gray-700">{formatPrice(info.getValue())}</span>
+        <span className="text-sm text-gray-900">{formatPrice(info.getValue())}</span>
       ),
     }),
     columnHelper.accessor('category_name', {
@@ -117,7 +117,7 @@ export default function ProductTable({
             {value}
           </span>
         ) : (
-          <span className="text-sm text-gray-500">-</span>
+          <span className="text-sm text-gray-900">-</span>
         )
       },
     }),
@@ -205,7 +205,7 @@ export default function ProductTable({
             {generatePageNumbers(table.getState().pagination.pageIndex, table.getPageCount()).map(
               (page, i) =>
                 page === -1 ? (
-                  <span key={`ellipsis-${i}`} className="px-2 text-sm text-gray-400">
+                  <span key={`ellipsis-${i}`} className="px-2 text-sm text-gray-800">
                     …
                   </span>
                 ) : (
@@ -237,7 +237,7 @@ export default function ProductTable({
               »
             </button>
           </div>
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-gray-900">
             총 {filteredProducts.length}개 중 {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-
             {Math.min(
               (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
@@ -266,14 +266,14 @@ export default function ProductTable({
                     <th
                       key={header.id}
                       onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                      className={`px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center ${
+                      className={`px-4 py-3 text-xs font-medium text-gray-900 uppercase tracking-wider text-center ${
                         canSort ? 'cursor-pointer select-none hover:bg-gray-100 transition' : ''
                       }`}
                     >
                       <span className="inline-flex items-center justify-center gap-1">
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         {canSort && (
-                          <span className="text-gray-400">
+                          <span className="text-gray-800">
                             {sorted === 'asc' ? ' ▲' : sorted === 'desc' ? ' ▼' : ' ↕'}
                           </span>
                         )}
@@ -287,7 +287,7 @@ export default function ProductTable({
           <tbody className="bg-white divide-y divide-gray-200">
             {table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-900">
                   검색 결과가 없습니다
                 </td>
               </tr>

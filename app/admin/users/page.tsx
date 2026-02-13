@@ -23,7 +23,7 @@ export default async function UsersPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">👥 사용자 관리</h1>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-gray-900 mt-1">
                     {userData.role === '0001' 
                       ? '본인 지점의 직원을 관리합니다 (매니저, 직원만 생성 가능)'
                       : '시스템 사용자를 등록하고 관리합니다'
@@ -31,7 +31,7 @@ export default async function UsersPage() {
                   </p>
                 </div>
                 <div className="text-left sm:text-right">
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-gray-900">
                     {userData.role === '0000' ? '시스템 관리자' : userData.branch_name}
                   </div>
                   {userData.role === '0001' && (

@@ -269,7 +269,7 @@ export default function MovementDetailClient({ userSession, products, branches }
       cellClass: (params: any) => {
         if (params.data?.movement_type === '전일재고') return 'text-center text-sm font-bold text-blue-700'
         if (params.data?.movement_type === '_subtotal') return 'text-center text-sm font-bold text-amber-800'
-        return 'text-center text-sm text-gray-600'
+        return 'text-center text-sm text-gray-900'
       },
       valueFormatter: (params: ValueFormatterParams) => {
         if (params.data?.movement_type === '전일재고') return '전일재고'
@@ -375,16 +375,16 @@ export default function MovementDetailClient({ userSession, products, branches }
           <div>
             <h1 className="text-2xl font-bold text-gray-900">재고수불부</h1>
             {selectedProduct && searched && (
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-gray-900 mt-1">
                 품목: {selectedProduct.name} [{selectedProduct.unit}] ({selectedProduct.code})
-                <span className="ml-3 text-gray-400">
+                <span className="ml-3 text-gray-800">
                   {startDate} ~ {endDate}
                 </span>
               </p>
             )}
           </div>
           <div className="text-left sm:text-right">
-            <div className="text-sm text-gray-600">{branchName}</div>
+            <div className="text-sm text-gray-900">{branchName}</div>
             {data.length > 0 && (
               <div className="text-sm mt-1">
                 입고 <span className="font-semibold text-blue-600">{totals.totalIn.toLocaleString()}</span> |
@@ -402,7 +402,7 @@ export default function MovementDetailClient({ userSession, products, branches }
           {/* 지점 선택 (관리자만) */}
           {isAdmin && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">지점</label>
+              <label className="block text-sm font-medium text-gray-900 mb-1">지점</label>
               <select
                 value={selectedBranchId}
                 onChange={(e) => setSelectedBranchId(e.target.value)}
@@ -418,7 +418,7 @@ export default function MovementDetailClient({ userSession, products, branches }
 
           {/* 시작일 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">시작일</label>
+            <label className="block text-sm font-medium text-gray-900 mb-1">시작일</label>
             <input
               type="date"
               value={startDate}
@@ -429,7 +429,7 @@ export default function MovementDetailClient({ userSession, products, branches }
 
           {/* 종료일 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">종료일</label>
+            <label className="block text-sm font-medium text-gray-900 mb-1">종료일</label>
             <input
               type="date"
               value={endDate}
@@ -440,7 +440,7 @@ export default function MovementDetailClient({ userSession, products, branches }
 
           {/* 품목 선택 */}
           <div className="flex-1 min-w-[250px]" ref={dropdownRef}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-900 mb-1">
               품목 <span className="text-red-500">*</span>
             </label>
             <div className="relative">
@@ -464,7 +464,7 @@ export default function MovementDetailClient({ userSession, products, branches }
                 {selectedProduct && (
                   <button
                     onClick={handleProductClear}
-                    className="px-3 py-2 text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                    className="px-3 py-2 text-gray-900 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
                   >
                     X
                   </button>
@@ -484,7 +484,7 @@ export default function MovementDetailClient({ userSession, products, branches }
                         <span className="font-mono font-bold text-blue-600 text-sm">{product.code}</span>
                         <span className="text-sm text-gray-900">{product.name}</span>
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5">
+                      <div className="text-xs text-gray-900 mt-0.5">
                         {product.category_name || '미분류'} | {product.unit}
                         {product.specification ? ` | ${product.specification}` : ''}
                       </div>
@@ -511,16 +511,16 @@ export default function MovementDetailClient({ userSession, products, branches }
         {/* 모바일 카드뷰 */}
         <div className="md:hidden">
           {loading ? (
-            <div className="px-4 py-12 text-center text-gray-500">
+            <div className="px-4 py-12 text-center text-gray-900">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
               <p>데이터 로딩 중...</p>
             </div>
           ) : !searched ? (
-            <div className="px-4 py-8 text-center text-gray-500">
+            <div className="px-4 py-8 text-center text-gray-900">
               품목을 선택하고 조회 버튼을 눌러주세요.
             </div>
           ) : data.length === 0 ? (
-            <div className="px-4 py-8 text-center text-gray-500">
+            <div className="px-4 py-8 text-center text-gray-900">
               조회 결과가 없습니다.
             </div>
           ) : (
@@ -556,7 +556,7 @@ export default function MovementDetailClient({ userSession, products, branches }
                     ) : (
                       <>
                         <div className="flex justify-between items-start mb-2">
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-900">
                             {new Date(item.movement_date).toLocaleDateString('ko-KR')}
                           </span>
                           <span className="text-sm font-bold text-gray-900">
@@ -565,16 +565,16 @@ export default function MovementDetailClient({ userSession, products, branches }
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-sm">
                           <div>
-                            <p className="text-gray-600">거래처</p>
+                            <p className="text-gray-900">거래처</p>
                             <p className="font-medium text-gray-900">{item.party_name || '-'}</p>
                           </div>
                           <div>
-                            <p className="text-gray-600">적요</p>
+                            <p className="text-gray-900">적요</p>
                             <p className="font-medium text-gray-900">{item.remarks || '-'}</p>
                           </div>
                           {Number(item.incoming_qty) > 0 && (
                             <div>
-                              <p className="text-gray-600">입고</p>
+                              <p className="text-gray-900">입고</p>
                               <p className="font-semibold text-blue-600">
                                 {Number(item.incoming_qty).toLocaleString()}
                               </p>
@@ -582,7 +582,7 @@ export default function MovementDetailClient({ userSession, products, branches }
                           )}
                           {Number(item.outgoing_qty) > 0 && (
                             <div>
-                              <p className="text-gray-600">출고</p>
+                              <p className="text-gray-900">출고</p>
                               <p className="font-semibold text-red-600">
                                 {Number(item.outgoing_qty).toLocaleString()}
                               </p>
@@ -612,16 +612,16 @@ export default function MovementDetailClient({ userSession, products, branches }
         {/* 데스크톱 AG Grid */}
         <div className="hidden md:block">
           {loading ? (
-            <div className="px-4 py-12 text-center text-gray-500">
+            <div className="px-4 py-12 text-center text-gray-900">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
               <p>데이터 로딩 중...</p>
             </div>
           ) : !searched ? (
-            <div className="px-4 py-8 text-center text-gray-500">
+            <div className="px-4 py-8 text-center text-gray-900">
               품목을 선택하고 조회 버튼을 눌러주세요.
             </div>
           ) : rowDataWithSubtotals.length === 0 ? (
-            <div className="px-4 py-8 text-center text-gray-500">
+            <div className="px-4 py-8 text-center text-gray-900">
               조회 결과가 없습니다.
             </div>
           ) : (
@@ -643,7 +643,7 @@ export default function MovementDetailClient({ userSession, products, branches }
                 suppressMovableColumns={true}
                 suppressCellFocus={true}
                 animateRows={true}
-                overlayNoRowsTemplate="<span class='text-gray-500'>조회 결과가 없습니다.</span>"
+                overlayNoRowsTemplate="<span class='text-gray-900'>조회 결과가 없습니다.</span>"
               />
             </div>
           )}

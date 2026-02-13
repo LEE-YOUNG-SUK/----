@@ -59,7 +59,7 @@ export default function ReportGrid<T>({
       <div className="flex items-center justify-center h-64 bg-gray-50 border rounded">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mb-2" />
-          <p className="text-gray-600">데이터 조회 중...</p>
+          <p className="text-gray-900">데이터 조회 중...</p>
         </div>
       </div>
     )
@@ -68,7 +68,7 @@ export default function ReportGrid<T>({
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 bg-gray-50 border rounded">
-        <div className="text-center text-gray-500">
+        <div className="text-center text-gray-900">
           <p className="text-lg mb-1">📊</p>
           <p>{emptyMessage}</p>
         </div>
