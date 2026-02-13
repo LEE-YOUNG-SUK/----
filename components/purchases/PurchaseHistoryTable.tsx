@@ -453,6 +453,8 @@ export default function PurchaseHistoryTable({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    enableColumnResizing: true,
+    columnResizeMode: 'onChange',
     initialState: {
       pagination: { pageSize: 30 },
     },
@@ -466,6 +468,8 @@ export default function PurchaseHistoryTable({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    enableColumnResizing: true,
+    columnResizeMode: 'onChange',
     initialState: {
       pagination: { pageSize: 30 },
     },
@@ -778,12 +782,7 @@ export default function PurchaseHistoryTable({
         {viewMode === 'transaction' && (
           <div className="hidden md:block flex-1 overflow-y-auto">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[860px] table-fixed">
-                <colgroup>
-                  {table.getAllColumns().map((col) => (
-                    <col key={col.id} style={{ width: col.getSize() }} />
-                  ))}
-                </colgroup>
+              <table style={{ width: table.getCenterTotalSize() }} className="min-w-[860px]">
                 <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
                   {table.getHeaderGroups().map((headerGroup) => (
                     <tr key={headerGroup.id}>
@@ -793,12 +792,13 @@ export default function PurchaseHistoryTable({
                         return (
                           <th
                             key={header.id}
-                            onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                            className={`px-4 py-3 text-xs font-medium text-gray-900 uppercase tracking-wider text-center ${
-                              canSort ? 'cursor-pointer select-none hover:bg-gray-100 transition' : ''
-                            }`}
+                            style={{ width: header.getSize(), position: 'relative' }}
+                            className="px-4 py-3 text-xs font-medium text-gray-900 uppercase tracking-wider text-center"
                           >
-                            <span className="inline-flex items-center justify-center gap-1">
+                            <span
+                              className={`inline-flex items-center justify-center gap-1 ${canSort ? 'cursor-pointer select-none' : ''}`}
+                              onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                            >
                               {flexRender(header.column.columnDef.header, header.getContext())}
                               {canSort && (
                                 <span className="text-gray-800">
@@ -806,6 +806,11 @@ export default function PurchaseHistoryTable({
                                 </span>
                               )}
                             </span>
+                            <div
+                              onMouseDown={header.getResizeHandler()}
+                              onTouchStart={header.getResizeHandler()}
+                              className={`absolute right-0 top-0 h-full w-1.5 cursor-col-resize select-none touch-none hover:bg-blue-400 ${header.column.getIsResizing() ? 'bg-blue-500' : ''}`}
+                            />
                           </th>
                         )
                       })}
@@ -823,7 +828,7 @@ export default function PurchaseHistoryTable({
                     table.getRowModel().rows.map((row) => (
                       <tr key={row.id} className="hover:bg-gray-50 transition">
                         {row.getVisibleCells().map((cell) => (
-                          <td key={cell.id} className="px-4 py-3 text-center">
+                          <td key={cell.id} style={{ width: cell.column.getSize() }} className="px-4 py-3 text-center">
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </td>
                         ))}
@@ -840,12 +845,7 @@ export default function PurchaseHistoryTable({
         {viewMode === 'product' && (
           <div className="hidden md:block flex-1 overflow-y-auto">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1300px] table-fixed">
-                <colgroup>
-                  {itemTable.getAllColumns().map((col) => (
-                    <col key={col.id} style={{ width: col.getSize() }} />
-                  ))}
-                </colgroup>
+              <table style={{ width: itemTable.getCenterTotalSize() }} className="min-w-[1300px]">
                 <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
                   {itemTable.getHeaderGroups().map((headerGroup) => (
                     <tr key={headerGroup.id}>
@@ -855,12 +855,13 @@ export default function PurchaseHistoryTable({
                         return (
                           <th
                             key={header.id}
-                            onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                            className={`px-4 py-3 text-xs font-medium text-gray-900 uppercase tracking-wider text-center ${
-                              canSort ? 'cursor-pointer select-none hover:bg-gray-100 transition' : ''
-                            }`}
+                            style={{ width: header.getSize(), position: 'relative' }}
+                            className="px-4 py-3 text-xs font-medium text-gray-900 uppercase tracking-wider text-center"
                           >
-                            <span className="inline-flex items-center justify-center gap-1">
+                            <span
+                              className={`inline-flex items-center justify-center gap-1 ${canSort ? 'cursor-pointer select-none' : ''}`}
+                              onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                            >
                               {flexRender(header.column.columnDef.header, header.getContext())}
                               {canSort && (
                                 <span className="text-gray-800">
@@ -868,6 +869,11 @@ export default function PurchaseHistoryTable({
                                 </span>
                               )}
                             </span>
+                            <div
+                              onMouseDown={header.getResizeHandler()}
+                              onTouchStart={header.getResizeHandler()}
+                              className={`absolute right-0 top-0 h-full w-1.5 cursor-col-resize select-none touch-none hover:bg-blue-400 ${header.column.getIsResizing() ? 'bg-blue-500' : ''}`}
+                            />
                           </th>
                         )
                       })}
@@ -885,7 +891,7 @@ export default function PurchaseHistoryTable({
                     itemTable.getRowModel().rows.map((row) => (
                       <tr key={row.id} className="hover:bg-gray-50 transition">
                         {row.getVisibleCells().map((cell) => (
-                          <td key={cell.id} className="px-4 py-3 text-center">
+                          <td key={cell.id} style={{ width: cell.column.getSize() }} className="px-4 py-3 text-center">
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </td>
                         ))}
