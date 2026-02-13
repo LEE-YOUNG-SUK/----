@@ -7,7 +7,7 @@ import UserTable from './UserTable'
 import UserForm from './UserForm'
 import { Button } from '../../ui/Button'
 import { Input } from '../../ui/Input'
-import { Card, CardContent, CardHeader, CardTitle } from '../../ui/Card'
+import { Card, CardContent } from '../../ui/Card'
 
 interface UserWithBranch {
   id: string
@@ -46,25 +46,20 @@ export default function UserManagement({
   permissions
 }: UserManagementProps) {
   const router = useRouter()
-  const [users, setUsers] = useState<UserWithBranch[]>(initialUsers)
-  const [filteredUsers, setFilteredUsers] = useState<UserWithBranch[]>(initialUsers)
+  const [users] = useState<UserWithBranch[]>(initialUsers)
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedBranch, setSelectedBranch] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserWithBranch | null>(null)
 
-  // 검색 필터링
-  const handleSearch = (term: string) => {
-    setSearchTerm(term)
-    if (!term) {
-      setFilteredUsers(users)
-    } else {
-      const filtered = users.filter(user =>
-        (user.username || '').toLowerCase().includes(term.toLowerCase()) ||
-        (user.display_name || '').toLowerCase().includes(term.toLowerCase())
-      )
-      setFilteredUsers(filtered)
-    }
-  }
+  // 검색 + 지점 필터링
+  const filteredUsers = users.filter(user => {
+    const matchSearch = !searchTerm ||
+      (user.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.display_name || '').toLowerCase().includes(searchTerm.toLowerCase())
+    const matchBranch = !selectedBranch || user.branch_id === selectedBranch
+    return matchSearch && matchBranch
+  })
 
   const handleAddNew = () => {
     setSelectedUser(null)
@@ -91,18 +86,25 @@ export default function UserManagement({
     <div className="space-y-6">
       {/* 검색 및 버튼 */}
       <div className="flex items-center gap-4">
+        <select
+          value={selectedBranch}
+          onChange={(e) => setSelectedBranch(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+        >
+          <option value="">전체 지점</option>
+          {branches.map((b) => (
+            <option key={b.id} value={b.id}>{b.name}</option>
+          ))}
+        </select>
         <Input
-          placeholder="🔍 검색 (아이디, 이름)"
+          placeholder="검색 (아이디, 이름)"
           value={searchTerm}
-          onChange={(e) => handleSearch(e.target.value)}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-1"
         />
-        <Button variant="outline" onClick={() => handleSearch('')}>
-          🔄 초기화
-        </Button>
         {permissions.canCreate && (
           <Button onClick={handleAddNew} size="lg" className="whitespace-nowrap">
-            ➕ 새 사용자 추가
+            + 새 사용자 추가
           </Button>
         )}
       </div>
