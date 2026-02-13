@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { InventoryLayerModal } from './InventoryLayerModal'
 import { ContentCard } from '@/components/ui/Card'
 import { getInventoryStatus } from '@/app/inventory/actions'
@@ -42,8 +42,9 @@ export default function InventoryStatusClient({ userSession, products, branches 
   const [productSearch, setProductSearch] = useState('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
+  const [selectedIndex, setSelectedIndex] = useState(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const dropdownListRef = useRef<HTMLDivElement>(null)
 
   // 데이터 상태
   const [data, setData] = useState<InventoryStatusItem[]>([])
@@ -54,21 +55,26 @@ export default function InventoryStatusClient({ userSession, products, branches 
   const [selectedItem, setSelectedItem] = useState<any>(null)
 
   // 품목 검색 필터링
-  useEffect(() => {
-    if (productSearch.length >= 1 && !selectedProduct) {
-      const search = productSearch.toLowerCase()
-      const filtered = products.filter(
-        (p) =>
-          p.code.toLowerCase().includes(search) ||
-          p.name.toLowerCase().includes(search)
-      )
-      setFilteredProducts(filtered.slice(0, 10))
-      setShowDropdown(filtered.length > 0)
-    } else {
-      setFilteredProducts([])
-      setShowDropdown(false)
-    }
+  const filteredProducts = useMemo(() => {
+    if (productSearch.length < 1 || selectedProduct) return []
+    const search = productSearch.toLowerCase()
+    return products
+      .filter(p => p.code.toLowerCase().includes(search) || p.name.toLowerCase().includes(search))
+      .slice(0, 10)
   }, [productSearch, products, selectedProduct])
+
+  useEffect(() => {
+    setShowDropdown(filteredProducts.length > 0 && productSearch.length >= 1 && !selectedProduct)
+    setSelectedIndex(0)
+  }, [filteredProducts, productSearch, selectedProduct])
+
+  // 선택 항목 스크롤
+  useEffect(() => {
+    if (showDropdown && dropdownListRef.current) {
+      const el = dropdownListRef.current.children[selectedIndex] as HTMLElement
+      if (el) el.scrollIntoView({ block: 'nearest' })
+    }
+  }, [selectedIndex, showDropdown])
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -80,6 +86,43 @@ export default function InventoryStatusClient({ userSession, products, branches 
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  // 품목 선택 핸들러
+  const handleProductSelect = useCallback((product: Product) => {
+    setSelectedProduct(product)
+    setProductSearch(`${product.code} - ${product.name}`)
+    setShowDropdown(false)
+  }, [])
+
+  // 품목 선택 해제
+  const handleProductClear = useCallback(() => {
+    setSelectedProduct(null)
+    setProductSearch('')
+  }, [])
+
+  // 키보드 네비게이션
+  const handleProductKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (!showDropdown) return
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        setSelectedIndex(prev => prev < filteredProducts.length - 1 ? prev + 1 : prev)
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        setSelectedIndex(prev => prev > 0 ? prev - 1 : 0)
+        break
+      case 'Enter':
+        e.preventDefault()
+        if (filteredProducts[selectedIndex]) {
+          handleProductSelect(filteredProducts[selectedIndex])
+        }
+        break
+      case 'Escape':
+        setShowDropdown(false)
+        break
+    }
+  }, [showDropdown, filteredProducts, selectedIndex, handleProductSelect])
 
   // 지점 목록 (서버에서 전달받은 데이터 사용)
   const branchOptions = useMemo(() =>
@@ -110,19 +153,6 @@ export default function InventoryStatusClient({ userSession, products, branches 
   useEffect(() => {
     handleSearch()
   }, [])
-
-  // 품목 선택 핸들러
-  const handleProductSelect = (product: Product) => {
-    setSelectedProduct(product)
-    setProductSearch(`${product.code} - ${product.name}`)
-    setShowDropdown(false)
-  }
-
-  // 품목 선택 해제
-  const handleProductClear = () => {
-    setSelectedProduct(null)
-    setProductSearch('')
-  }
 
   // 합계 계산
   const totals = useMemo(() => ({
@@ -241,6 +271,7 @@ export default function InventoryStatusClient({ userSession, products, branches 
                       setProductSearch(e.target.value)
                       if (selectedProduct) setSelectedProduct(null)
                     }}
+                    onKeyDown={handleProductKeyDown}
                     onFocus={() => {
                       if (productSearch && !selectedProduct) setShowDropdown(true)
                     }}
@@ -257,12 +288,14 @@ export default function InventoryStatusClient({ userSession, products, branches 
                   )}
                 </div>
                 {showDropdown && filteredProducts.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
-                    {filteredProducts.map((product) => (
+                  <div ref={dropdownListRef} className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                    {filteredProducts.map((product, index) => (
                       <button
                         key={product.id}
                         onClick={() => handleProductSelect(product)}
-                        className="w-full px-4 py-2 text-left hover:bg-blue-50 border-b border-gray-100 last:border-b-0"
+                        className={`w-full px-4 py-2 text-left border-b border-gray-100 last:border-b-0 ${
+                          index === selectedIndex ? 'bg-blue-100' : 'hover:bg-blue-50'
+                        }`}
                       >
                         <div className="flex items-center gap-2">
                           <span className="font-mono font-bold text-blue-600 text-sm">{product.code}</span>
