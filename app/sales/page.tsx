@@ -5,7 +5,7 @@
 
 import { requireSession } from '@/lib/session'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
-import { SaleForm } from '@/components/sales/saleform'
+import { SaleForm } from '@/components/sales/SaleForm'
 import { getProductsWithStock, getCustomersList, getSalesHistory } from './actions'
 import { PageLayout } from '@/components/shared/PageLayout'
 import { ContentCard } from '@/components/ui/Card'

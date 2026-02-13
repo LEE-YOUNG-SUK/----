@@ -228,7 +228,7 @@ export function PurchaseForm({ products, suppliers, history, session, defaultTab
             </div>
           </div>
         ) : (
-          <div className="h-full">
+          <div>
             <PurchaseHistoryTable
               data={history}
               products={products}

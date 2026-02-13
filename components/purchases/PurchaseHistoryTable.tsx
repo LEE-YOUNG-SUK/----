@@ -494,10 +494,10 @@ export default function PurchaseHistoryTable({
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <ContentCard className="flex flex-col h-full !p-0">
+    <div>
+      <ContentCard className="!p-0">
         {/* 헤더 + 필터 */}
-        <div className="p-3 sm:p-4 border-b flex-shrink-0">
+        <div className="p-3 sm:p-4 border-b">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900">
               입고 내역
@@ -655,7 +655,7 @@ export default function PurchaseHistoryTable({
 
         {/* 페이지네이션 */}
         {activePageCount > 1 && (
-          <div className="flex items-center gap-3 px-4 py-2 border-b flex-shrink-0">
+          <div className="flex items-center gap-3 px-4 py-2 border-b">
             <div className="flex items-center gap-1">
               <button onClick={() => goToPage(0)} disabled={!canPrevPage} className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">«</button>
               <button onClick={goPrevPage} disabled={!canPrevPage} className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">‹</button>
@@ -687,7 +687,7 @@ export default function PurchaseHistoryTable({
         )}
 
         {/* 모바일 카드뷰 */}
-        <div className="md:hidden flex-1 overflow-y-auto">
+        <div className="md:hidden">
           {viewMode === 'transaction' ? (
             table.getRowModel().rows.length === 0 ? (
               <div className="px-4 py-12 text-center text-gray-900">
@@ -780,10 +780,9 @@ export default function PurchaseHistoryTable({
 
         {/* 데스크톱 테이블 - 거래건 기준 */}
         {viewMode === 'transaction' && (
-          <div className="hidden md:block flex-1 overflow-y-auto">
-            <div className="overflow-x-auto">
-              <table style={{ width: table.getCenterTotalSize() }} className="min-w-[860px]">
-                <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
+          <div className="hidden md:block">
+              <table className="w-full" style={{ minWidth: table.getCenterTotalSize() }}>
+                <thead className="border-b border-gray-200">
                   {table.getHeaderGroups().map((headerGroup) => (
                     <tr key={headerGroup.id}>
                       {headerGroup.headers.map((header) => {
@@ -792,8 +791,8 @@ export default function PurchaseHistoryTable({
                         return (
                           <th
                             key={header.id}
-                            style={{ width: header.getSize(), position: 'relative' }}
-                            className="px-4 py-3 text-xs font-medium text-gray-900 uppercase tracking-wider text-center"
+                            style={{ width: header.getSize() }}
+                            className="px-4 py-3 text-xs font-medium text-gray-900 uppercase tracking-wider text-center sticky top-0 z-10 bg-gray-50 relative"
                           >
                             <span
                               className={`inline-flex items-center justify-center gap-1 ${canSort ? 'cursor-pointer select-none' : ''}`}
@@ -837,16 +836,14 @@ export default function PurchaseHistoryTable({
                   )}
                 </tbody>
               </table>
-            </div>
           </div>
         )}
 
         {/* 데스크톱 테이블 - 품목별 기준 */}
         {viewMode === 'product' && (
-          <div className="hidden md:block flex-1 overflow-y-auto">
-            <div className="overflow-x-auto">
-              <table style={{ width: itemTable.getCenterTotalSize() }} className="min-w-[1300px]">
-                <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
+          <div className="hidden md:block">
+              <table className="w-full" style={{ minWidth: itemTable.getCenterTotalSize() }}>
+                <thead className="border-b border-gray-200">
                   {itemTable.getHeaderGroups().map((headerGroup) => (
                     <tr key={headerGroup.id}>
                       {headerGroup.headers.map((header) => {
@@ -855,8 +852,8 @@ export default function PurchaseHistoryTable({
                         return (
                           <th
                             key={header.id}
-                            style={{ width: header.getSize(), position: 'relative' }}
-                            className="px-4 py-3 text-xs font-medium text-gray-900 uppercase tracking-wider text-center"
+                            style={{ width: header.getSize() }}
+                            className="px-4 py-3 text-xs font-medium text-gray-900 uppercase tracking-wider text-center sticky top-0 z-10 bg-gray-50 relative"
                           >
                             <span
                               className={`inline-flex items-center justify-center gap-1 ${canSort ? 'cursor-pointer select-none' : ''}`}
@@ -900,7 +897,6 @@ export default function PurchaseHistoryTable({
                   )}
                 </tbody>
               </table>
-            </div>
           </div>
         )}
       </ContentCard>

@@ -327,18 +327,18 @@ export default function InventoryStatusClient({ userSession, products, branches 
       {/* 결과 테이블 */}
       <ContentCard>
         {/* 테이블 */}
-        <div className="overflow-x-auto -mx-4 sm:-mx-6">
+        <div className="-mx-4 sm:-mx-6">
           <table className="w-full min-w-[900px]">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider w-12">No</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">품목코드</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">품목명</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider">단위</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider">재고수량</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider">입고단가</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider">재고금액</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider">상태</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider w-12 sticky top-16 z-10 bg-gray-50">No</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider sticky top-16 z-10 bg-gray-50">품목코드</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider sticky top-16 z-10 bg-gray-50">품목명</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider sticky top-16 z-10 bg-gray-50">단위</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider sticky top-16 z-10 bg-gray-50">재고수량</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider sticky top-16 z-10 bg-gray-50">입고단가</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase tracking-wider sticky top-16 z-10 bg-gray-50">재고금액</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-900 uppercase tracking-wider sticky top-16 z-10 bg-gray-50">상태</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">

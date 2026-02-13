@@ -302,7 +302,7 @@ export function SaleForm({ products: initialProducts, customers, history, sessio
             </div>
           </div>
         ) : (
-          <div className="h-full">
+          <div>
             <SaleHistoryTable
               data={history}
               products={products}
