@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { getMovementHistory } from '@/app/inventory/movements/actions'
 import { getPurchasesByReferenceNumber, getSalesByReferenceNumber } from '@/app/inventory/actions'
 import type { InventoryMovement } from '@/types/inventory'
@@ -47,6 +47,40 @@ export function InventoryLayerModal({ item, startDate, endDate, onClose, userSes
   const [purchaseModal, setPurchaseModal] = useState<{ referenceNumber: string; items: PurchaseHistory[] } | null>(null)
   const [saleModal, setSaleModal] = useState<{ referenceNumber: string; items: SaleHistory[] } | null>(null)
   const [modalLoading, setModalLoading] = useState(false)
+
+  // 드래그 상태
+  const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const dragging = useRef(false)
+  const dragStart = useRef({ x: 0, y: 0 })
+  const offsetSnap = useRef({ x: 0, y: 0 })
+  const offsetRef = useRef({ x: 0, y: 0 })
+
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    const target = e.target as HTMLElement
+    if (target.closest('button, input, select, textarea, a')) return
+    dragging.current = true
+    dragStart.current = { x: e.clientX, y: e.clientY }
+    offsetSnap.current = { ...offsetRef.current }
+  }, [])
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!dragging.current) return
+      const newOffset = {
+        x: offsetSnap.current.x + (e.clientX - dragStart.current.x),
+        y: offsetSnap.current.y + (e.clientY - dragStart.current.y),
+      }
+      offsetRef.current = newOffset
+      setOffset(newOffset)
+    }
+    const onUp = () => { dragging.current = false }
+    document.addEventListener('pointermove', onMove)
+    document.addEventListener('pointerup', onUp)
+    return () => {
+      document.removeEventListener('pointermove', onMove)
+      document.removeEventListener('pointerup', onUp)
+    }
+  }, [])
 
   useEffect(() => {
     loadMovements()
@@ -182,11 +216,11 @@ export function InventoryLayerModal({ item, startDate, endDate, onClose, userSes
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}>
+        <div className="bg-white rounded-lg shadow-2xl border-2 border-gray-900 max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" style={{ resize: 'both', minWidth: 320, minHeight: 200 }}>
 
-          {/* 헤더 */}
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          {/* 헤더 (드래그 핸들) */}
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 cursor-grab active:cursor-grabbing select-none" onPointerDown={onPointerDown}>
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">

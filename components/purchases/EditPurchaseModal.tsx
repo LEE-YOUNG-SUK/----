@@ -84,8 +84,8 @@ export default function EditPurchaseModal({ purchase, onClose, onSave }: EditPur
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl border-2 border-gray-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto" style={{ resize: 'both', minWidth: 320, minHeight: 200 }}>
         {/* 헤더 */}
         <div className="sticky top-0 bg-white px-6 py-4 border-b flex justify-between items-center">
           <h2 className="text-xl font-bold text-gray-900">입고 데이터 수정</h2>

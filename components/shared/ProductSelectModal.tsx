@@ -143,8 +143,8 @@ export default function ProductSelectModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end md:items-center md:justify-center">
-      <div className="bg-white w-full md:max-w-lg md:rounded-lg rounded-t-xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-end md:items-center md:justify-center">
+      <div className="bg-white border-2 border-gray-900 w-full md:max-w-lg md:rounded-lg rounded-t-xl flex flex-col max-h-[90vh]" style={{ resize: 'both', overflow: 'auto', minWidth: 320, minHeight: 200 }}>
         {/* 헤더 */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-bold text-gray-900">
