@@ -26,7 +26,11 @@ export async function getSession(): Promise<UserData | null> {
       p_token: token
     })
 
-    if (error || !data || data.length === 0 || !data[0].valid) return null
+    if (error || !data || data.length === 0 || !data[0].valid) {
+      // 세션이 무효하면 쿠키 삭제 (무한 리다이렉트 방지)
+      cookieStore.delete('erp_session_token')
+      return null
+    }
 
     const session = data[0]
 

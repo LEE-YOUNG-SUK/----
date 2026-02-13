@@ -25,7 +25,18 @@
       "Bash(git push:*)",
       "Bash(git log:*)",
       "Bash(dir:*)",
-      "WebSearch"
+      "WebSearch",
+      "mcp__ide__getDiagnostics",
+      "Bash(find:*)",
+      "Bash(findstr:*)",
+      "Bash(python3:*)",
+      "Bash(where:*)",
+      "Bash(powershell:*)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\k1her\\\\Desktop\\\\호스팅\\\\drevers-erp-next\\\\fix-gray-text.ps1\")",
+      "Bash(node:*)",
+      "Bash(npx vercel --prod)",
+      "Bash(gh api:*)",
+      "mcp__supabase__get_logs"
     ]
   },
   "enableAllProjectMcpServers": true,
