@@ -57,12 +57,17 @@ export default function ReportFilters({
   /**
    * 빠른 날짜 선택 핸들러
    */
-  const handleQuickDateRange = (range: 'today' | 'week' | 'month' | 'year') => {
+  const formatDate = (d: Date) => {
+    const y = d.getFullYear()
+    const m = (d.getMonth() + 1).toString().padStart(2, '0')
+    const day = d.getDate().toString().padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+
+  const handleQuickDateRange = (range: 'today' | 'week' | 'lastMonth' | 'thisMonth' | 'recent1month' | 'lastYear' | 'thisYear') => {
     const today = new Date()
+    const todayStr = formatDate(today)
     const year = today.getFullYear()
-    const month = (today.getMonth() + 1).toString().padStart(2, '0')
-    const day = today.getDate().toString().padStart(2, '0')
-    const todayStr = `${year}-${month}-${day}`
 
     switch (range) {
       case 'today':
@@ -72,26 +77,39 @@ export default function ReportFilters({
       case 'week': {
         const weekAgo = new Date(today)
         weekAgo.setDate(weekAgo.getDate() - 7)
-        const weekYear = weekAgo.getFullYear()
-        const weekMonth = (weekAgo.getMonth() + 1).toString().padStart(2, '0')
-        const weekDay = weekAgo.getDate().toString().padStart(2, '0')
-        setStartDate(`${weekYear}-${weekMonth}-${weekDay}`)
+        setStartDate(formatDate(weekAgo))
         setEndDate(todayStr)
         break
       }
-      case 'month': {
+      case 'lastMonth': {
+        const lastMonthStart = new Date(year, today.getMonth() - 1, 1)
+        const lastMonthEnd = new Date(year, today.getMonth(), 0)
+        setStartDate(formatDate(lastMonthStart))
+        setEndDate(formatDate(lastMonthEnd))
+        break
+      }
+      case 'thisMonth': {
+        const thisMonthStart = new Date(year, today.getMonth(), 1)
+        const thisMonthEnd = new Date(year, today.getMonth() + 1, 0)
+        setStartDate(formatDate(thisMonthStart))
+        setEndDate(formatDate(thisMonthEnd))
+        break
+      }
+      case 'recent1month': {
         const monthAgo = new Date(today)
-        monthAgo.setMonth(monthAgo.getMonth() - 1)
-        const monthYear = monthAgo.getFullYear()
-        const monthMonth = (monthAgo.getMonth() + 1).toString().padStart(2, '0')
-        const monthDay = monthAgo.getDate().toString().padStart(2, '0')
-        setStartDate(`${monthYear}-${monthMonth}-${monthDay}`)
+        monthAgo.setDate(monthAgo.getDate() - 30)
+        setStartDate(formatDate(monthAgo))
         setEndDate(todayStr)
         break
       }
-      case 'year': {
+      case 'lastYear': {
+        setStartDate(`${year - 1}-01-01`)
+        setEndDate(`${year - 1}-12-31`)
+        break
+      }
+      case 'thisYear': {
         setStartDate(`${year}-01-01`)
-        setEndDate(todayStr)
+        setEndDate(`${year}-12-31`)
         break
       }
     }
@@ -127,35 +145,25 @@ export default function ReportFilters({
         </div>
 
         {/* 빠른 날짜 선택 버튼 */}
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => handleQuickDateRange('today')}
-            className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            오늘
-          </button>
-          <button
-            type="button"
-            onClick={() => handleQuickDateRange('week')}
-            className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            최근 7일
-          </button>
-          <button
-            type="button"
-            onClick={() => handleQuickDateRange('month')}
-            className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            최근 1개월
-          </button>
-          <button
-            type="button"
-            onClick={() => handleQuickDateRange('year')}
-            className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            올해
-          </button>
+        <div className="flex flex-wrap gap-1.5">
+          {([
+            ['today', '오늘'],
+            ['week', '최근 7일'],
+            ['lastMonth', '저번달'],
+            ['thisMonth', '이번달'],
+            ['recent1month', '최근 1개월'],
+            ['lastYear', '작년'],
+            ['thisYear', '올해'],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => handleQuickDateRange(key)}
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 

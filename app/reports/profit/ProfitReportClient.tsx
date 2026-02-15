@@ -113,14 +113,6 @@ export default function ProfitReportClient({ userSession, branches: initialBranc
       valueFormatter: numberFormatter,
     },
     {
-      headerName: '사용금액',
-      field: 'usage_amount',
-      width: 130,
-      type: 'numericColumn',
-      valueFormatter: currencyFormatter,
-      cellStyle: () => ({ color: '#F59E0B' }),
-    },
-    {
       headerName: '판매금액',
       field: 'sale_amount',
       width: 140,
@@ -183,7 +175,7 @@ export default function ProfitReportClient({ userSession, branches: initialBranc
 
       {/* 요약 카드 */}
       {reportData.length > 0 && !loading && (
-        <FormGrid columns={4}>
+        <FormGrid columns={5}>
           <StatCard
             label="총 구매수량"
             value={reportData.reduce((sum, row) => sum + row.purchase_quantity, 0)}
@@ -207,12 +199,6 @@ export default function ProfitReportClient({ userSession, branches: initialBranc
             unit="원"
             subtitle="부가세포함"
             variant="success"
-          />
-          <StatCard
-            label="총 사용금액"
-            value={reportData.reduce((sum, row) => sum + row.usage_amount, 0)}
-            unit="원"
-            variant="warning"
           />
           <StatCard
             label="총 판매이익"
