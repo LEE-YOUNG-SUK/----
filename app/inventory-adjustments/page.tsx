@@ -8,6 +8,8 @@ import AdjustmentHistoryTable from '@/components/inventory-adjustments/Adjustmen
 import AdjustmentStats from '@/components/inventory-adjustments/AdjustmentStats'
 import { getAdjustmentHistory, getProductsList } from './actions'
 
+export const dynamic = 'force-dynamic'
+
 export default async function InventoryAdjustmentsPage() {
   // 세션 검증 + 품목 목록 동시 조회
   const productsPromise = getProductsList()

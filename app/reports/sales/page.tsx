@@ -12,6 +12,8 @@ import { createServerClient } from '@/lib/supabase/server'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import SalesReportClient from './SalesReportClient'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: '판매 레포트 - DR.Evers ERP',
   description: '판매 현황 레포트 (일별/월별/품목별/고객별)',

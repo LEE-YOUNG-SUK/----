@@ -5,6 +5,8 @@ import MovementDetailClient from '@/components/Inventory/MovementDetailClient'
 import { getProductsList } from '@/app/inventory-adjustments/actions'
 import { getBranches } from './actions'
 
+export const dynamic = 'force-dynamic'
+
 export default async function MovementDetailPage() {
   const session = await requireSession()
 

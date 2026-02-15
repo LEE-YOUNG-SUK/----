@@ -10,6 +10,8 @@ import { getProductsWithStock, getCustomersList, getSalesHistory } from './actio
 import { PageLayout } from '@/components/shared/PageLayout'
 import { ContentCard } from '@/components/ui/Card'
 
+export const dynamic = 'force-dynamic'
+
 export default async function SalesPage({
   searchParams,
 }: {

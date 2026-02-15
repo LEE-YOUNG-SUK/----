@@ -4,6 +4,8 @@ import InventoryStatusClient from '@/components/Inventory/InventoryStatusClient'
 import { getProductsList } from '@/app/inventory-adjustments/actions'
 import { getBranchesList } from '@/app/inventory/actions'
 
+export const dynamic = 'force-dynamic'
+
 export default async function InventoryPage() {
   const session = await requireSession()
 

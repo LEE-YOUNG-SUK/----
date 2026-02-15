@@ -5,6 +5,8 @@ import { getProductsList, getSuppliersList, getPurchasesHistory } from './action
 import { PageLayout } from '@/components/shared/PageLayout'
 import { ContentCard } from '@/components/ui/Card'
 
+export const dynamic = 'force-dynamic'
+
 export default async function PurchasesPage({
   searchParams,
 }: {

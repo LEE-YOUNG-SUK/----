@@ -298,7 +298,6 @@ export function CsvImport({ session, branches, products, clients }: Props) {
             branch_id: branchId,
             client_id: group.clientId,
             purchase_date: group.date,
-            created_by: session.user_id,
             items: group.items.map(item => ({
               product_id: item.productId!,
               quantity: item.quantity,
@@ -314,7 +313,6 @@ export function CsvImport({ session, branches, products, clients }: Props) {
             branch_id: branchId,
             client_id: group.clientId,
             sale_date: group.date,
-            created_by: session.user_id,
             items: group.items.map(item => ({
               product_id: item.productId!,
               quantity: item.quantity,

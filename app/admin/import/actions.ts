@@ -1,14 +1,13 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/session'
 import { revalidatePath } from 'next/cache'
-import { cookies } from 'next/headers'
 
 interface ImportPurchaseData {
   branch_id: string
   client_id: string | null
   purchase_date: string
-  created_by: string
   items: {
     product_id: string
     quantity: number
@@ -24,7 +23,6 @@ interface ImportSaleData {
   branch_id: string
   client_id: string | null
   sale_date: string
-  created_by: string
   items: {
     product_id: string
     quantity: number
@@ -38,17 +36,26 @@ interface ImportSaleData {
 
 export async function importPurchases(data: ImportPurchaseData) {
   try {
-    const supabase = await createServerClient()
-
-    const cookieStore = await cookies()
-    const sessionCookie = cookieStore.get('erp_session_token')
-    if (!sessionCookie) {
+    const session = await getSession()
+    if (!session) {
       return { success: false, message: '인증되지 않은 사용자입니다.' }
+    }
+
+    // 권한 체크: 시스템 관리자 또는 원장만 허용
+    if (!['0000', '0001'].includes(session.role)) {
+      return { success: false, message: '데이터 가져오기 권한이 없습니다.' }
+    }
+
+    // 지점 격리: 비관리자는 본인 지점만
+    if (session.role !== '0000' && data.branch_id !== session.branch_id) {
+      return { success: false, message: '다른 지점의 데이터는 등록할 수 없습니다.' }
     }
 
     if (!data.branch_id || !data.purchase_date || data.items.length === 0) {
       return { success: false, message: '필수 데이터가 누락되었습니다.' }
     }
+
+    const supabase = await createServerClient()
 
     const itemsJson = data.items.map(item => ({
       product_id: item.product_id,
@@ -60,18 +67,13 @@ export async function importPurchases(data: ImportPurchaseData) {
       notes: item.notes || ''
     }))
 
-    // Audit context
-    await supabase.rpc('set_current_user_context', {
-      p_user_id: data.created_by
-    })
-
     const { data: rpcData, error } = await supabase.rpc('process_batch_purchase', {
       p_branch_id: data.branch_id,
       p_client_id: data.client_id,
       p_purchase_date: data.purchase_date,
       p_reference_number: null,
       p_notes: '',
-      p_created_by: data.created_by,
+      p_created_by: session.user_id,
       p_items: itemsJson as any
     })
 
@@ -102,17 +104,26 @@ export async function importPurchases(data: ImportPurchaseData) {
 
 export async function importSales(data: ImportSaleData) {
   try {
-    const supabase = await createServerClient()
-
-    const cookieStore = await cookies()
-    const sessionCookie = cookieStore.get('erp_session_token')
-    if (!sessionCookie) {
+    const session = await getSession()
+    if (!session) {
       return { success: false, message: '인증되지 않은 사용자입니다.' }
+    }
+
+    // 권한 체크: 시스템 관리자 또는 원장만 허용
+    if (!['0000', '0001'].includes(session.role)) {
+      return { success: false, message: '데이터 가져오기 권한이 없습니다.' }
+    }
+
+    // 지점 격리: 비관리자는 본인 지점만
+    if (session.role !== '0000' && data.branch_id !== session.branch_id) {
+      return { success: false, message: '다른 지점의 데이터는 등록할 수 없습니다.' }
     }
 
     if (!data.branch_id || !data.sale_date || data.items.length === 0) {
       return { success: false, message: '필수 데이터가 누락되었습니다.' }
     }
+
+    const supabase = await createServerClient()
 
     const itemsJson = data.items.map(item => ({
       product_id: item.product_id,
@@ -124,24 +135,18 @@ export async function importSales(data: ImportSaleData) {
       notes: item.notes || ''
     }))
 
-    // Audit context
-    await supabase.rpc('set_current_user_context', {
-      p_user_id: data.created_by
-    })
-
     const { data: rpcData, error } = await supabase.rpc('process_batch_sale', {
       p_branch_id: data.branch_id,
       p_client_id: data.client_id,
       p_sale_date: data.sale_date,
       p_reference_number: null,
       p_notes: '',
-      p_created_by: data.created_by,
+      p_created_by: session.user_id,
       p_items: itemsJson as any,
       p_transaction_type: 'SALE'
     })
 
     if (error) {
-      console.error('Import sale RPC error:', error)
       return { success: false, message: `판매 등록 실패: ${error.message}` }
     }
 
@@ -159,7 +164,6 @@ export async function importSales(data: ImportSaleData) {
       data: result
     }
   } catch (error) {
-    console.error('Import sales error:', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '판매 등록 중 오류 발생'
@@ -190,8 +194,7 @@ export async function getImportData() {
       products: productsRes.data || [],
       clients: clientsRes.data || []
     }
-  } catch (error) {
-    console.error('Get import data error:', error)
+  } catch {
     return { branches: [], products: [], clients: [] }
   }
 }

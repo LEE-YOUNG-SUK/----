@@ -94,7 +94,7 @@ export function PurchaseForm({ products, suppliers, history, session, defaultTab
         }
       })
     }
-  }, [isSystemAdmin, selectedBranchId])
+  }, [isSystemAdmin])
 
   const handleSave = async (items: PurchaseGridRow[]) => {
     // PurchaseGrid에서 이미 계산 완료된 데이터 사용

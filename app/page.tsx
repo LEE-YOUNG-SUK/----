@@ -4,6 +4,8 @@ import { ROLE_LABELS, ROLE_ICONS } from '@/types/permissions'
 import { PageLayout } from '@/components/shared/PageLayout'
 import { ContentCard } from '@/components/ui/Card'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
   const session = await requireSession()
   

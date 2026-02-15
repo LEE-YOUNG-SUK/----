@@ -5,6 +5,8 @@ import { PageLayout } from '@/components/shared/PageLayout'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { AuditLogManagement } from '@/components/admin/audit-logs/AuditLogManagement'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * 감사 로그 페이지 (Phase 3-5)
  * 권한: 원장(0001) 이상
