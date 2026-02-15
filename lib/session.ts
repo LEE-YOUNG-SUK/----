@@ -42,8 +42,7 @@ export async function getSession(): Promise<UserData | null> {
       branch_id: session.branch_id || null,
       branch_name: session.branch_name || null
     }
-  } catch (error) {
-    console.error('Session verification error:', error)
+  } catch {
     return null
   }
 }

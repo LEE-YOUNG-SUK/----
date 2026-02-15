@@ -16,17 +16,15 @@ export async function getUsers() {
     const sessionToken = cookieStore.get('erp_session_token')?.value
     
     if (!sessionToken) {
-      console.error('❌ [Users Actions] 세션 토큰 없음')
       return []
     }
 
     // 세션 확인 및 사용자 정보 가져오기
-    const { data: sessionData } = await supabase.rpc('verify_session', { 
-      p_token: sessionToken 
+    const { data: sessionData } = await supabase.rpc('verify_session', {
+      p_token: sessionToken
     })
-    
+
     if (!sessionData?.[0]?.valid) {
-      console.error('❌ [Users Actions] 세션 만료')
       return []
     }
 
@@ -40,13 +38,11 @@ export async function getUsers() {
     })
     
     if (rpcError) {
-      console.error('⚠️ [Users Actions] RPC 에러:', rpcError)
       return []
     }
-    
+
     return usersData || []
-  } catch (error) {
-    console.error('❌ [Users Actions] 사용자 조회 실패:', error)
+  } catch {
     return []
   }
 }

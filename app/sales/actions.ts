@@ -79,7 +79,7 @@ export async function saveSales(data: SaleSaveRequest) {
     })
 
     if (configError) {
-      console.error('❌ Config Error:', configError)
+      console.error('Config Error:', configError.message)
     }
 
     // ✅ 단일 RPC 호출 (트랜잭션 보장)
@@ -95,7 +95,6 @@ export async function saveSales(data: SaleSaveRequest) {
     })
 
     if (error) {
-      console.error('❌ RPC Error:', error)
       return {
         success: false,
         message: `판매 실패: ${error.message}`
@@ -105,7 +104,6 @@ export async function saveSales(data: SaleSaveRequest) {
     const result = rpcData?.[0] as BatchSaleResponse
 
     if (!result || !result.success) {
-      console.error('❌ 판매 실패:', result?.message)
       return {
         success: false,
         message: result?.message || '판매 저장 실패'
@@ -122,7 +120,6 @@ export async function saveSales(data: SaleSaveRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Save sales error:', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '판매 저장 중 오류가 발생했습니다.'
@@ -360,8 +357,7 @@ export async function updateSale(data: SaleUpdateRequest) {
     })
 
     if (error) {
-      console.error('❌ RPC Error:', error)
-      return {
+            return {
         success: false,
         message: `판매 수정 실패: ${error.message}`
       }
@@ -370,8 +366,7 @@ export async function updateSale(data: SaleUpdateRequest) {
     const result = rpcData?.[0]
 
     if (!result || !result.success) {
-      console.error('❌ 판매 수정 실패:', result?.message)
-      return {
+            return {
         success: false,
         message: result?.message || '판매 수정 실패'
       }
@@ -386,7 +381,6 @@ export async function updateSale(data: SaleUpdateRequest) {
     }
 
   } catch (error) {
-    console.error('Update sale error:', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '판매 수정 중 오류가 발생했습니다.'
@@ -423,8 +417,7 @@ export async function deleteSale(data: SaleDeleteRequest) {
     })
 
     if (error) {
-      console.error('❌ RPC Error:', error)
-      return {
+            return {
         success: false,
         message: `판매 삭제 실패: ${error.message}`
       }
@@ -433,8 +426,7 @@ export async function deleteSale(data: SaleDeleteRequest) {
     const result = rpcData?.[0]
 
     if (!result || !result.success) {
-      console.error('❌ 판매 삭제 실패:', result?.message)
-      return {
+            return {
         success: false,
         message: result?.message || '판매 삭제 실패'
       }
@@ -449,7 +441,6 @@ export async function deleteSale(data: SaleDeleteRequest) {
     }
 
   } catch (error) {
-    console.error('Delete sale error:', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '판매 삭제 중 오류가 발생했습니다.'
@@ -524,7 +515,6 @@ export async function addSaleItem(data: {
 
     return { success: true, message: result.message, sale_id: result.sale_id }
   } catch (error) {
-    console.error('Add sale item error:', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '품목 추가 중 오류가 발생했습니다.'

@@ -73,8 +73,7 @@ export async function saveInventoryAdjustment(data: AdjustmentSaveRequest) {
     })
 
     if (error) {
-      console.error('❌ RPC Error:', error)
-      return {
+            return {
         success: false,
         message: `데이터베이스 오류: ${error.message}`,
         adjustment_id: null
@@ -84,7 +83,6 @@ export async function saveInventoryAdjustment(data: AdjustmentSaveRequest) {
     const result = rpcResult?.[0] as AdjustmentProcessResponse | undefined
 
     if (!result || !result.success) {
-      console.error('❌ 재고 조정 실패:', result?.message)
       return { success: false, message: result?.message || '재고 조정 처리 결과를 받지 못했습니다.', adjustment_id: null }
     }
 
@@ -95,7 +93,6 @@ export async function saveInventoryAdjustment(data: AdjustmentSaveRequest) {
     return result
 
   } catch (error) {
-    console.error('❌ 재고 조정 저장 중 오류:', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
@@ -134,23 +131,14 @@ export async function getAdjustmentHistory(
     })
 
     if (error) {
-      console.error('❌ 재고 조정 내역 조회 오류:', {
-        error,
-        errorType: typeof error,
-        errorMessage: error?.message,
-        errorDetails: JSON.stringify(error)
-      })
+      console.error('재고 조정 내역 조회 오류:', error?.message)
       return []
     }
 
     return (data || []) as InventoryAdjustment[]
 
   } catch (error) {
-    console.error('❌ getAdjustmentHistory 예외:', {
-      error,
-      errorType: typeof error,
-      message: error instanceof Error ? error.message : String(error)
-    })
+    console.error('getAdjustmentHistory:', error instanceof Error ? error.message : 'Unknown error')
     return []
   }
 }
@@ -184,14 +172,12 @@ export async function getAdjustmentSummary(
     })
 
     if (error) {
-      console.error('❌ 재고 조정 통계 조회 오류:', error)
       throw new Error(`통계 조회 실패: ${error.message}`)
     }
 
     return data?.[0] as AdjustmentSummary || null
 
   } catch (error) {
-    console.error('❌ getAdjustmentSummary 오류:', error)
     return null
   }
 }
@@ -235,8 +221,7 @@ export async function cancelAdjustment(data: AdjustmentCancelRequest) {
     })
 
     if (error) {
-      console.error('❌ RPC Error:', error)
-      return {
+            return {
         success: false,
         message: `데이터베이스 오류: ${error.message}`
       }
@@ -245,7 +230,6 @@ export async function cancelAdjustment(data: AdjustmentCancelRequest) {
     const result = rpcResult?.[0] as AdjustmentCancelResponse | undefined
 
     if (!result || !result.success) {
-      console.error('❌ 재고 조정 취소 실패:', result?.message)
       return { success: false, message: result?.message || '재고 조정 취소 결과를 받지 못했습니다.' }
     }
 
@@ -256,7 +240,6 @@ export async function cancelAdjustment(data: AdjustmentCancelRequest) {
     return result
 
   } catch (error) {
-    console.error('❌ 재고 조정 취소 중 오류:', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
@@ -283,7 +266,6 @@ export async function getCurrentStock(
       .gt('remaining_quantity', 0)
 
     if (error) {
-      console.error('❌ 현재 재고 조회 오류:', error)
       return 0
     }
 
@@ -291,7 +273,6 @@ export async function getCurrentStock(
     return total
 
   } catch (error) {
-    console.error('❌ getCurrentStock 오류:', error)
     return 0
   }
 }
@@ -308,7 +289,6 @@ export async function getProductsList() {
       .order('code', { ascending: true })
 
     if (error) {
-      console.error('❌ 품목 목록 조회 오류:', error)
       return { success: false, data: [] }
     }
 
@@ -317,7 +297,6 @@ export async function getProductsList() {
       data: data || [] 
     }
   } catch (error) {
-    console.error('❌ getProductsList 오류:', error)
     return { success: false, data: [] }
   }
 }

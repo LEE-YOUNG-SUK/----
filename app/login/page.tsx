@@ -82,40 +82,23 @@ export default function LoginPage() {
     setError('')
 
     try {
-      // 로그인 검증 (지점 포함)
-      const { data: loginResult, error: loginError } = await supabase.rpc('verify_login', {
-        p_username: formData.username.trim(),
-        p_password: formData.password,
-        p_branch_id: formData.branch_id
+      // 서버 API를 통한 로그인 (httpOnly 쿠키 설정)
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: formData.username.trim(),
+          password: formData.password,
+          branch_id: formData.branch_id
+        })
       })
 
-      if (loginError) {
-        setError('로그인 중 오류가 발생했습니다.')
-        console.error('로그인 에러:', loginError)
+      const data = await res.json()
+
+      if (!data.success) {
+        setError(data.message || '로그인에 실패했습니다.')
         return
       }
-
-      const result = loginResult?.[0]
-      if (!result?.success) {
-        setError(result?.message || '로그인에 실패했습니다.')
-        return
-      }
-
-      // 세션 생성 (서버 측에서 토큰 생성 + 만료시간 설정)
-      const { data: sessionData, error: sessionError } = await supabase.rpc('create_session', {
-        p_user_id: result.user_id
-      })
-
-      if (sessionError || !sessionData || sessionData.length === 0) {
-        setError('세션 생성 중 오류가 발생했습니다.')
-        console.error('세션 에러:', sessionError)
-        return
-      }
-
-      const token = sessionData[0].token
-
-      // 쿠키에 세션 토큰 저장
-      document.cookie = `erp_session_token=${token}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`
 
       // 지점 정보 기억하기
       if (rememberBranch) {
@@ -129,8 +112,7 @@ export default function LoginPage() {
       // 로그인 성공 - 대시보드로 이동
       router.push('/')
       router.refresh()
-    } catch (err) {
-      console.error('로그인 처리 에러:', err)
+    } catch {
       setError('로그인 중 오류가 발생했습니다.')
     } finally {
       setLoading(false)

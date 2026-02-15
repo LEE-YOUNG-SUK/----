@@ -76,7 +76,6 @@ export async function importPurchases(data: ImportPurchaseData) {
     })
 
     if (error) {
-      console.error('Import purchase RPC error:', error)
       return { success: false, message: `입고 등록 실패: ${error.message}` }
     }
 
@@ -94,7 +93,6 @@ export async function importPurchases(data: ImportPurchaseData) {
       data: result
     }
   } catch (error) {
-    console.error('Import purchases error:', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '입고 등록 중 오류 발생'

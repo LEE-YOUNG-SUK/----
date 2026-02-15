@@ -75,7 +75,7 @@ export async function savePurchases(data: PurchaseSaveRequest) {
     })
 
     if (configError) {
-      console.error('❌ Config Error:', configError)
+      console.error('Config Error:', configError.message)
     }
 
     // ✅ 단일 RPC 호출 (트랜잭션 보장)
@@ -90,7 +90,6 @@ export async function savePurchases(data: PurchaseSaveRequest) {
     })
 
     if (error) {
-      console.error('❌ RPC Error:', error)
       return {
         success: false,
         message: `입고 실패: ${error.message}`
@@ -100,7 +99,6 @@ export async function savePurchases(data: PurchaseSaveRequest) {
     const result = rpcData?.[0] as BatchPurchaseResponse
 
     if (!result || !result.success) {
-      console.error('❌ 입고 실패:', result?.message)
       return {
         success: false,
         message: result?.message || '입고 저장 실패'
@@ -117,7 +115,6 @@ export async function savePurchases(data: PurchaseSaveRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Save purchases error:', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '입고 저장 중 오류가 발생했습니다.'
@@ -288,8 +285,7 @@ export async function updatePurchase(data: PurchaseUpdateRequest) {
     })
 
     if (error) {
-      console.error('❌ RPC Error:', error)
-      return {
+            return {
         success: false,
         message: `입고 수정 실패: ${error.message}`
       }
@@ -298,8 +294,7 @@ export async function updatePurchase(data: PurchaseUpdateRequest) {
     const result = rpcData?.[0]
 
     if (!result || !result.success) {
-      console.error('❌ 입고 수정 실패:', result?.message)
-      return {
+            return {
         success: false,
         message: result?.message || '입고 수정 실패'
       }
@@ -314,7 +309,6 @@ export async function updatePurchase(data: PurchaseUpdateRequest) {
     }
 
   } catch (error) {
-    console.error('Update purchase error:', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '입고 수정 중 오류가 발생했습니다.'
@@ -351,8 +345,7 @@ export async function deletePurchase(data: PurchaseDeleteRequest) {
     })
 
     if (error) {
-      console.error('❌ RPC Error:', error)
-      return {
+            return {
         success: false,
         message: `입고 삭제 실패: ${error.message}`
       }
@@ -361,8 +354,7 @@ export async function deletePurchase(data: PurchaseDeleteRequest) {
     const result = rpcData?.[0]
 
     if (!result || !result.success) {
-      console.error('❌ 입고 삭제 실패:', result?.message)
-      return {
+            return {
         success: false,
         message: result?.message || '입고 삭제 실패'
       }
@@ -377,7 +369,6 @@ export async function deletePurchase(data: PurchaseDeleteRequest) {
     }
 
   } catch (error) {
-    console.error('Delete purchase error:', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '입고 삭제 중 오류가 발생했습니다.'
@@ -450,7 +441,6 @@ export async function addPurchaseItem(data: {
 
     return { success: true, message: result.message, purchase_id: result.purchase_id }
   } catch (error) {
-    console.error('Add purchase item error:', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '품목 추가 중 오류가 발생했습니다.'

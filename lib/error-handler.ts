@@ -50,14 +50,18 @@ export function getSafeErrorMessage(error: unknown, defaultMessage: string): str
 }
 
 /**
- * 서버 로깅용 - 전체 에러 정보 기록
+ * 서버 로깅용 - 안전한 에러 정보 기록
  */
 export function logServerError(context: string, error: unknown): void {
-  console.error(`[${context}]`, error instanceof Error ? {
-    message: error.message,
-    stack: error.stack,
-    name: error.name
-  } : error)
+  if (process.env.NODE_ENV === 'development') {
+    console.error(`[${context}]`, error instanceof Error ? {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    } : error)
+  } else {
+    console.error(`[${context}]`, error instanceof Error ? error.message : 'Unknown error')
+  }
 }
 
 /**
