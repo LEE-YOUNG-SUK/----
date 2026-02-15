@@ -67,6 +67,7 @@ export default function SaleDetailModal({
   const { can } = usePermissions(userRole)
   const canEdit = can('sales_management', 'update')
   const [isSaving, setIsSaving] = useState(false)
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
   const { confirm, ConfirmDialogComponent } = useConfirm()
 
   // 빈 행 생성
@@ -276,7 +277,7 @@ export default function SaleDetailModal({
     }
   }, [findNextEditableColumn, createEmptyRow])
 
-  // 행 삭제 핸들러
+  // 행 삭제 핸들러 (일괄 저장 시 함께 처리)
   const handleDeleteRow = useCallback(async (rowIndex: number) => {
     const row = rowData[rowIndex]
     if (!row) return
@@ -287,17 +288,11 @@ export default function SaleDetailModal({
       return
     }
 
-    // 기존 DB 행이면 확인 후 삭제
+    // 기존 DB 행이면 확인 후 삭제 예정에 추가
     if (!row._isNew) {
-      const ok = await confirm({ title: '삭제 확인', message: `판매 데이터를 삭제하시겠습니까?\n\n품목: ${row.product_name}\n수량: ${row.quantity} ${row.unit}\n\n삭제하면 재고가 복원됩니다.`, variant: 'danger' })
+      const ok = await confirm({ title: '삭제 확인', message: `판매 데이터를 삭제하시겠습니까?\n\n품목: ${row.product_name}\n수량: ${row.quantity} ${row.unit}\n\n일괄 저장 시 삭제가 적용되며 재고가 복원됩니다.`, variant: 'danger' })
       if (!ok) return
-      const result = await deleteSale({
-        sale_id: row.id
-      })
-      if (!result.success) {
-        alert(result.message)
-        return
-      }
+      setDeletedIds(prev => new Set(prev).add(row.id))
     }
 
     setRowData(prev => prev.filter((_, i) => i !== rowIndex))
@@ -307,6 +302,7 @@ export default function SaleDetailModal({
   const handleBulkSave = useCallback(async () => {
     const toUpdate: DetailRow[] = []
     const toAdd: DetailRow[] = []
+    const toDelete = Array.from(deletedIds)
 
     rowData.forEach(row => {
       if (!row.product_id) return
@@ -326,7 +322,7 @@ export default function SaleDetailModal({
       }
     })
 
-    if (toUpdate.length === 0 && toAdd.length === 0) {
+    if (toUpdate.length === 0 && toAdd.length === 0 && toDelete.length === 0) {
       alert('변경된 내용이 없습니다.')
       return
     }
@@ -343,6 +339,16 @@ export default function SaleDetailModal({
     setIsSaving(true)
     const results: string[] = []
     let hasError = false
+
+    // 삭제 처리
+    for (const id of toDelete) {
+      const result = await deleteSale({ sale_id: id })
+      if (!result.success) {
+        const item = items.find(i => i.id === id)
+        results.push(`삭제 실패: ${item?.product_name || id} - ${result.message}`)
+        hasError = true
+      }
+    }
 
     for (const row of toUpdate) {
       const result = await updateSale({
@@ -392,11 +398,15 @@ export default function SaleDetailModal({
     if (hasError) {
       alert(results.join('\n'))
     } else {
-      alert(`저장 완료 (수정: ${toUpdate.length}건, 추가: ${toAdd.length}건)`)
+      const parts: string[] = []
+      if (toDelete.length > 0) parts.push(`삭제: ${toDelete.length}건`)
+      if (toUpdate.length > 0) parts.push(`수정: ${toUpdate.length}건`)
+      if (toAdd.length > 0) parts.push(`추가: ${toAdd.length}건`)
+      alert(`저장 완료 (${parts.join(', ')})`)
       onClose()
       router.refresh()
     }
-  }, [rowData, items, referenceNumber, onClose, router])
+  }, [rowData, items, deletedIds, referenceNumber, onClose, router])
 
   // 삭제 버튼 렌더러
   const DeleteButtonRenderer = useCallback((props: any) => {
