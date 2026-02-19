@@ -170,7 +170,16 @@ export function Navigation({ user, onLogout }: Props) {
       },
     ],
   }
-  
+
+  // 고객만족도 독립 메뉴
+  const surveyMenuItem: MenuItem = {
+    href: '/reports/surveys',
+    label: '고객만족도',
+    icon: '⭐',
+    resource: 'reports_view',
+    action: 'read',
+  }
+
   // 관리 드롭다운 메뉴
   const adminMenu: DropdownMenu = {
     label: '관리',
@@ -242,6 +251,7 @@ export function Navigation({ user, onLogout }: Props) {
   const visibleSalesItems = filterByPermission(salesMenu.items)
   const visibleReportsItems = filterByPermission(reportsMenu.items)
   const visibleAdminItems = filterByPermission(adminMenu.items)
+  const showSurvey = ['0000', '0001', '0002'].includes(user.role)
   
   // 드롭다운 내 활성 경로 체크
   const isDropdownActive = (items: MenuItem[]) => {
@@ -508,8 +518,25 @@ export function Navigation({ user, onLogout }: Props) {
                 )}
               </div>
             )}
+
+            {/* 고객만족도 독립 버튼 */}
+            {showSurvey && (
+              <Link
+                href={surveyMenuItem.href}
+                className={`
+                  px-3 py-2 rounded-lg text-sm font-medium transition border
+                  ${pathname === surveyMenuItem.href
+                    ? 'bg-amber-500 text-white border-amber-500'
+                    : 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100'
+                  }
+                `}
+              >
+                <span>{surveyMenuItem.icon}</span>
+                <span className="ml-1 hidden lg:inline">{surveyMenuItem.label}</span>
+              </Link>
+            )}
           </div>
-          
+
           {/* 데스크탑 사용자 정보 */}
           <div className="hidden md:flex items-center space-x-4">
             <div className="text-right">
@@ -725,8 +752,26 @@ export function Navigation({ user, onLogout }: Props) {
                 })}
               </>
             )}
+
+            {/* 고객만족도 */}
+            {showSurvey && (
+              <Link
+                href={surveyMenuItem.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`
+                  block px-3 py-2 rounded-lg text-base font-medium transition-all mt-4 border
+                  ${pathname === surveyMenuItem.href
+                    ? 'bg-amber-500 text-white border-amber-500'
+                    : 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100'
+                  }
+                `}
+              >
+                <span className="mr-2">{surveyMenuItem.icon}</span>
+                {surveyMenuItem.label}
+              </Link>
+            )}
           </div>
-          
+
           {/* 모바일 사용자 정보 */}
           <div className="mt-4 pt-4 border-t border-gray-200">
             <div className="px-3 mb-3">

@@ -8,11 +8,11 @@
 // 참고: 구매/판매/이익 레포트 모두 공통 사용
 // ============================================================
 
-import { useMemo } from 'react'
+import { useMemo, useRef, useEffect, useCallback } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
-import type { ColDef } from 'ag-grid-community'
+import type { ColDef, GridReadyEvent } from 'ag-grid-community'
 
 interface Props<T> {
   /** 레포트 데이터 */
@@ -23,6 +23,12 @@ interface Props<T> {
   loading?: boolean
   /** 빈 데이터 메시지 */
   emptyMessage?: string
+  /** 페이징 활성화 시 페이지당 행 수 */
+  paginationPageSize?: number
+  /** 행 클릭 이벤트 */
+  onRowClicked?: (event: any) => void
+  /** 고정 높이 (가로 스크롤 필요 시). 미지정이면 autoHeight */
+  height?: string | number
 }
 
 export default function ReportGrid<T>({
@@ -30,7 +36,57 @@ export default function ReportGrid<T>({
   columnDefs,
   loading = false,
   emptyMessage = '조회된 데이터가 없습니다.',
+  paginationPageSize,
+  onRowClicked,
+  height,
 }: Props<T>) {
+  // ─── 상단 스크롤바 동기화 (height 지정 시) ─────────────────
+  const topScrollRef = useRef<HTMLDivElement>(null)
+  const gridWrapperRef = useRef<HTMLDivElement>(null)
+  const syncingRef = useRef(false)
+
+  const syncTopScroll = useCallback(() => {
+    if (syncingRef.current) return
+    const topEl = topScrollRef.current
+    const viewport = gridWrapperRef.current?.querySelector('.ag-body-horizontal-scroll-viewport') as HTMLElement | null
+    if (!topEl || !viewport) return
+    syncingRef.current = true
+    viewport.scrollLeft = topEl.scrollLeft
+    syncingRef.current = false
+  }, [])
+
+  const syncBottomScroll = useCallback(() => {
+    if (syncingRef.current) return
+    const topEl = topScrollRef.current
+    const viewport = gridWrapperRef.current?.querySelector('.ag-body-horizontal-scroll-viewport') as HTMLElement | null
+    if (!topEl || !viewport) return
+    syncingRef.current = true
+    topEl.scrollLeft = viewport.scrollLeft
+    syncingRef.current = false
+  }, [])
+
+  const onGridReady = useCallback((params: GridReadyEvent) => {
+    if (!height) return
+    // 그리드 렌더링 후 상단 스크롤바 폭 동기화
+    setTimeout(() => {
+      const viewport = gridWrapperRef.current?.querySelector('.ag-body-horizontal-scroll-viewport') as HTMLElement | null
+      const container = gridWrapperRef.current?.querySelector('.ag-body-horizontal-scroll-container') as HTMLElement | null
+      const innerEl = topScrollRef.current?.firstElementChild as HTMLElement | null
+      if (viewport && container && innerEl) {
+        innerEl.style.width = container.scrollWidth + 'px'
+        viewport.addEventListener('scroll', syncBottomScroll)
+      }
+    }, 100)
+  }, [height, syncBottomScroll])
+
+  // cleanup
+  useEffect(() => {
+    return () => {
+      const viewport = gridWrapperRef.current?.querySelector('.ag-body-horizontal-scroll-viewport') as HTMLElement | null
+      viewport?.removeEventListener('scroll', syncBottomScroll)
+    }
+  }, [syncBottomScroll])
+
   // 기본 컬럼 설정
   const defaultColDef = useMemo<ColDef>(
     () => ({
@@ -43,15 +99,18 @@ export default function ReportGrid<T>({
   )
 
   // 그리드 옵션
+  const usePagination = !!paginationPageSize
   const gridOptions = useMemo(
     () => ({
-      pagination: false,
-      domLayout: 'autoHeight' as const,
+      pagination: usePagination,
+      paginationPageSize: paginationPageSize || undefined,
+      paginationPageSizeSelector: false,
+      domLayout: height ? (undefined as any) : ('autoHeight' as const),
       animateRows: true,
       headerHeight: 48,
       rowHeight: 40,
     }),
-    []
+    [usePagination, paginationPageSize]
   )
 
   if (loading) {
@@ -77,12 +136,25 @@ export default function ReportGrid<T>({
   }
 
   return (
-    <div className="ag-theme-alpine" style={{ width: '100%' }}>
+    <div>
+      {/* 상단 스크롤바 (height 지정 시만 표시) */}
+      {height && (
+        <div
+          ref={topScrollRef}
+          onScroll={syncTopScroll}
+          style={{ overflowX: 'auto', overflowY: 'hidden', height: 16 }}
+        >
+          <div style={{ height: 1 }} />
+        </div>
+      )}
+      <div ref={gridWrapperRef} className="ag-theme-alpine" style={{ width: '100%', height: height || undefined }}>
       <AgGridReact
         rowData={data}
         columnDefs={columnDefs}
         defaultColDef={defaultColDef}
         gridOptions={gridOptions}
+        onRowClicked={onRowClicked}
+        onGridReady={onGridReady}
         localeText={{
           // AG Grid 한글 번역
           noRowsToShow: emptyMessage,
@@ -97,8 +169,13 @@ export default function ReportGrid<T>({
           lessThanOrEqual: '작거나 같음',
           greaterThan: '큼',
           greaterThanOrEqual: '크거나 같음',
+          page: '페이지',
+          of: '/',
+          to: '~',
+          pageSizeSelectorLabel: '페이지당 행 수',
         }}
       />
+      </div>
     </div>
   )
 }
