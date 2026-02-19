@@ -59,6 +59,7 @@ export default function ProductManagement({
         permissions={permissions}
         onEdit={handleEdit}
         onAddNew={handleAddNew}
+        userData={userData}
       />
 
       {/* 폼 모달 */}
@@ -68,6 +69,7 @@ export default function ProductManagement({
           onClose={handleFormClose}
           onSuccess={handleSuccess}
           userId={userData.user_id}
+          userData={userData}
         />
       )}
     </>

@@ -168,7 +168,7 @@ export default function ProfitReportClient({ userSession, branches: initialBranc
         initialFilter={filter}
         groupByOptions={PROFIT_GROUP_BY_OPTIONS}
         onFilterChange={handleFilterChange}
-        showBranchFilter={userSession.role === '0000'}
+        showBranchFilter={userSession.is_headquarters && ['0000', '0001'].includes(userSession.role)}
         branches={branches}
         categories={categories}
       />

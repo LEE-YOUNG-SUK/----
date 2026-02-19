@@ -12,7 +12,7 @@ import {
   createColumnHelper,
   type SortingState,
 } from '@tanstack/react-table'
-import type { Product } from '@/types'
+import type { Product, UserData } from '@/types'
 import { ContentCard } from '@/components/ui/Card'
 import { Button } from '../ui/Button'
 import { deleteProduct } from '@/app/products/actions'
@@ -29,6 +29,7 @@ interface ProductTableProps {
   }
   onEdit: (product: Product) => void
   onAddNew: () => void
+  userData: UserData
 }
 
 const columnHelper = createColumnHelper<Product>()
@@ -44,7 +45,8 @@ export default function ProductTable({
   onFilterChange,
   permissions,
   onEdit,
-  onAddNew
+  onAddNew,
+  userData
 }: ProductTableProps) {
   const router = useRouter()
   const { confirm, ConfirmDialogComponent } = useConfirm()
@@ -72,6 +74,27 @@ export default function ProductTable({
   }
 
   const columns = [
+    columnHelper.display({
+      id: 'product_type',
+      header: '구분',
+      size: 90,
+      enableSorting: false,
+      cell: (info) => {
+        const product = info.row.original
+        if (!product.branch_id) {
+          return (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              공통
+            </span>
+          )
+        }
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            {product.branch_name || '지점'}
+          </span>
+        )
+      },
+    }),
     columnHelper.accessor('code', {
       header: '품목코드',
       size: 120,
@@ -128,9 +151,13 @@ export default function ProductTable({
       enableSorting: false,
       cell: (info) => {
         const product = info.row.original
+        const isCommon = !product.branch_id
+        const canManageCommon = userData.is_headquarters && ['0000', '0001'].includes(userData.role)
+        const isOwnBranch = product.branch_id === userData.branch_id
+        const canEditThis = isCommon ? canManageCommon : (isOwnBranch || userData.role === '0000')
         return (
           <div className="flex justify-end gap-2">
-            {permissions.canUpdate && (
+            {permissions.canUpdate && canEditThis && (
               <button
                 onClick={() => onEdit(product)}
                 className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
@@ -138,7 +165,7 @@ export default function ProductTable({
                 ✏️ 수정
               </button>
             )}
-            {permissions.canDelete && (
+            {permissions.canDelete && canEditThis && (
               <button
                 onClick={() => handleDelete(product)}
                 disabled={deletingId === product.id}
@@ -250,7 +277,7 @@ export default function ProductTable({
 
       {/* 테이블 */}
       <div className="overflow-x-auto -mx-4 sm:-mx-6">
-        <table className="w-full min-w-[1050px] table-fixed">
+        <table className="w-full min-w-[1140px] table-fixed">
           <colgroup>
             {table.getAllColumns().map((col) => (
               <col key={col.id} style={{ width: col.getSize() }} />

@@ -6,6 +6,7 @@
  */
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   useReactTable,
   getCoreRowModel,
@@ -16,9 +17,11 @@ import {
   type SortingState,
 } from '@tanstack/react-table'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useConfirm } from '@/hooks/useConfirm'
+import { toast } from 'sonner'
 import { ContentCard } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import PurchaseDetailModal from './PurchaseDetailModal'
+import { deletePurchase } from '@/app/purchases/actions'
 import type { PurchaseHistory, PurchaseGroup } from '@/types/purchases'
 import type { Product } from '@/types'
 import { validateDateRange } from '@/lib/date-utils'
@@ -30,6 +33,7 @@ interface PurchaseHistoryTableProps {
   userRole: string
   userId: string
   userBranchId: string
+  isHeadquarters?: boolean
 }
 
 type ViewMode = 'transaction' | 'product'
@@ -43,7 +47,8 @@ export default function PurchaseHistoryTable({
   branchName,
   userRole,
   userId,
-  userBranchId
+  userBranchId,
+  isHeadquarters = false
 }: PurchaseHistoryTableProps) {
   // 초기 날짜: 오늘 - 30일 ~ 오늘
   const initialDates = useMemo(() => {
@@ -76,16 +81,21 @@ export default function PurchaseHistoryTable({
   const [sorting, setSorting] = useState<SortingState>([])
   const [viewMode, setViewMode] = useState<ViewMode>('transaction')
   const [itemSorting, setItemSorting] = useState<SortingState>([])
+  const [isDeleting, setIsDeleting] = useState<string | null>(null)
 
-  // 지점 목록 추출 (관리자용)
+  const router = useRouter()
+  const { confirm, ConfirmDialogComponent } = useConfirm()
+
+  // 지점 목록 추출 (본사 관리자/원장용)
+  const canViewAllBranches = isHeadquarters && ['0000', '0001'].includes(userRole)
   const branchOptions = useMemo(() => {
-    if (userRole !== '0000') return []
+    if (!canViewAllBranches) return []
     const map = new Map<string, string>()
     data.forEach(item => {
       if (item.branch_id && item.branch_name) map.set(item.branch_id, item.branch_name)
     })
     return Array.from(map.entries()).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name))
-  }, [data, userRole])
+  }, [data, canViewAllBranches])
 
   // 품목 자동완성 상태
   const [showProductDropdown, setShowProductDropdown] = useState(false)
@@ -428,22 +438,53 @@ export default function PurchaseHistoryTable({
         <span className="text-sm text-gray-900 truncate block">{info.getValue() || '-'}</span>
       ),
     }),
-    columnHelper.display({
-      id: 'actions',
-      header: '상세',
-      size: 160,
+    ...(can('purchases_management', 'delete') ? [columnHelper.display({
+      id: 'delete',
+      header: '🗑️',
+      size: 60,
       enableSorting: false,
-      cell: (info) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSelectedGroup(info.row.original)}
-        >
-          상세보기
-        </Button>
-      ),
-    }),
+      cell: (info) => {
+        const deleting = isDeleting === info.row.original.reference_number
+        return (
+          <button
+            onClick={(e) => { e.stopPropagation(); handleDeleteGroup(info.row.original) }}
+            disabled={isDeleting !== null}
+            className={`transition text-lg ${deleting ? 'animate-spin' : 'text-red-400 hover:text-red-600 disabled:opacity-30'}`}
+            title="거래 삭제"
+          >
+            {deleting ? '⏳' : '🗑️'}
+          </button>
+        )
+      },
+    })] : []),
   ]
+
+  // 거래건 전체 삭제
+  const handleDeleteGroup = async (group: PurchaseGroup) => {
+    const refDisplay = group.reference_number?.startsWith('NO_REF_') ? '(없음)' : group.reference_number
+    const ok = await confirm({
+      title: '거래 삭제',
+      message: `이 거래건을 삭제하시겠습니까?\n\n거래번호: ${refDisplay}\n품목: ${group.total_items}개\n총액: ₩${group.total_amount.toLocaleString()}\n\n해당 거래의 모든 품목이 삭제됩니다.`,
+      variant: 'danger'
+    })
+    if (!ok) return
+
+    setIsDeleting(group.reference_number)
+    const toastId = toast.loading(`입고 삭제 중... (${group.total_items}개 품목)`)
+
+    for (const item of group.items) {
+      const result = await deletePurchase({ purchase_id: item.id })
+      if (!result.success) {
+        toast.error(`삭제 실패: ${result.message}`, { id: toastId })
+        setIsDeleting(null)
+        return
+      }
+    }
+
+    toast.success(`입고 ${group.total_items}개 품목 삭제 완료 (₩${group.total_amount.toLocaleString()})`, { id: toastId })
+    setIsDeleting(null)
+    router.refresh()
+  }
 
   const table = useReactTable({
     data: filteredGroups,
@@ -540,8 +581,8 @@ export default function PurchaseHistoryTable({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* 지점 선택 (관리자만) */}
-            {userRole === '0000' && branchOptions.length > 0 && (
+            {/* 지점 선택 (본사 관리자/원장) */}
+            {canViewAllBranches && branchOptions.length > 0 && (
               <select
                 value={selectedBranch}
                 onChange={(e) => setSelectedBranch(e.target.value)}
@@ -729,9 +770,19 @@ export default function PurchaseHistoryTable({
                         <p className="font-bold text-blue-700">₩{group.total_amount.toLocaleString()}</p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => setSelectedGroup(group)} className="w-full">
-                      상세보기
-                    </Button>
+                    {can('purchases_management', 'delete') && (
+                      <button
+                        onClick={() => handleDeleteGroup(group)}
+                        disabled={isDeleting !== null}
+                        className={`w-full px-3 py-1.5 text-sm border rounded-lg transition font-medium ${
+                          isDeleting === group.reference_number
+                            ? 'text-orange-600 border-orange-300 bg-orange-50'
+                            : 'text-red-600 border-red-300 hover:bg-red-50 disabled:opacity-30'
+                        }`}
+                      >
+                        {isDeleting === group.reference_number ? '⏳ 삭제 중...' : '🗑️ 삭제'}
+                      </button>
+                    )}
                   </div>
                 )
               })
@@ -825,7 +876,7 @@ export default function PurchaseHistoryTable({
                     </tr>
                   ) : (
                     table.getRowModel().rows.map((row) => (
-                      <tr key={row.id} className="hover:bg-gray-50 transition">
+                      <tr key={row.id} className={`hover:bg-gray-50 transition ${isDeleting === row.original.reference_number ? 'opacity-40 bg-red-50' : ''}`}>
                         {row.getVisibleCells().map((cell) => (
                           <td key={cell.id} style={{ width: cell.column.getSize() }} className="px-4 py-3 text-center">
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -913,6 +964,8 @@ export default function PurchaseHistoryTable({
           userBranchId={userBranchId}
         />
       )}
+
+      {ConfirmDialogComponent}
     </div>
   )
 }

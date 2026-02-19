@@ -38,13 +38,14 @@ export default function InventoryStatusClient({ userSession, products, branches 
   const [startDate, setStartDate] = useState(defaultStart)
   const [endDate, setEndDate] = useState(today)
 
-  // 품목 자동완성 상태
+  // 품목 복수 선택 상태
   const [productSearch, setProductSearch] = useState('')
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const dropdownListRef = useRef<HTMLDivElement>(null)
+  const productInputRef = useRef<HTMLInputElement>(null)
 
   // 데이터 상태
   const [data, setData] = useState<InventoryStatusItem[]>([])
@@ -54,19 +55,28 @@ export default function InventoryStatusClient({ userSession, products, branches 
   // 모달
   const [selectedItem, setSelectedItem] = useState<any>(null)
 
-  // 품목 검색 필터링
+  // 이미 선택된 품목 ID Set
+  const selectedProductIds = useMemo(
+    () => new Set(selectedProducts.map(p => p.id)),
+    [selectedProducts]
+  )
+
+  // 품목 검색 필터링 (이미 선택된 품목 제외)
   const filteredProducts = useMemo(() => {
-    if (productSearch.length < 1 || selectedProduct) return []
+    if (productSearch.length < 1) return []
     const search = productSearch.toLowerCase()
     return products
-      .filter(p => p.code.toLowerCase().includes(search) || p.name.toLowerCase().includes(search))
+      .filter(p =>
+        !selectedProductIds.has(p.id) &&
+        (p.code.toLowerCase().includes(search) || p.name.toLowerCase().includes(search))
+      )
       .slice(0, 10)
-  }, [productSearch, products, selectedProduct])
+  }, [productSearch, products, selectedProductIds])
 
   useEffect(() => {
-    setShowDropdown(filteredProducts.length > 0 && productSearch.length >= 1 && !selectedProduct)
+    setShowDropdown(filteredProducts.length > 0 && productSearch.length >= 1)
     setSelectedIndex(0)
-  }, [filteredProducts, productSearch, selectedProduct])
+  }, [filteredProducts, productSearch])
 
   // 선택 항목 스크롤
   useEffect(() => {
@@ -87,21 +97,32 @@ export default function InventoryStatusClient({ userSession, products, branches 
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // 품목 선택 핸들러
+  // 품목 선택 핸들러 (추가)
   const handleProductSelect = useCallback((product: Product) => {
-    setSelectedProduct(product)
-    setProductSearch(`${product.code} - ${product.name}`)
+    setSelectedProducts(prev => [...prev, product])
+    setProductSearch('')
     setShowDropdown(false)
+    productInputRef.current?.focus()
   }, [])
 
-  // 품목 선택 해제
-  const handleProductClear = useCallback(() => {
-    setSelectedProduct(null)
+  // 품목 개별 제거
+  const handleProductRemove = useCallback((productId: string) => {
+    setSelectedProducts(prev => prev.filter(p => p.id !== productId))
+  }, [])
+
+  // 품목 전체 초기화
+  const handleProductClearAll = useCallback(() => {
+    setSelectedProducts([])
     setProductSearch('')
   }, [])
 
   // 키보드 네비게이션
   const handleProductKeyDown = useCallback((e: React.KeyboardEvent) => {
+    // Backspace로 마지막 태그 삭제
+    if (e.key === 'Backspace' && productSearch === '' && selectedProducts.length > 0) {
+      setSelectedProducts(prev => prev.slice(0, -1))
+      return
+    }
     if (!showDropdown) return
     switch (e.key) {
       case 'ArrowDown':
@@ -122,7 +143,7 @@ export default function InventoryStatusClient({ userSession, products, branches 
         setShowDropdown(false)
         break
     }
-  }, [showDropdown, filteredProducts, selectedIndex, handleProductSelect])
+  }, [showDropdown, filteredProducts, selectedIndex, handleProductSelect, productSearch, selectedProducts.length])
 
   // 지점 목록 (서버에서 전달받은 데이터 사용)
   const branchOptions = useMemo(() =>
@@ -136,7 +157,7 @@ export default function InventoryStatusClient({ userSession, products, branches 
     setSearched(true)
     const result = await getInventoryStatus({
       branchId: selectedBranch || null,
-      productId: selectedProduct?.id || null,
+      productIds: selectedProducts.length > 0 ? selectedProducts.map(p => p.id) : null,
       startDate,
       endDate,
     })
@@ -174,7 +195,7 @@ export default function InventoryStatusClient({ userSession, products, branches 
           </div>
           <div className="text-left sm:text-right">
             <div className="text-sm text-gray-900">
-              {userSession.role === '0000'
+              {userSession.is_headquarters && ['0000', '0001'].includes(userSession.role)
                 ? (selectedBranch
                   ? branchOptions.find(([id]) => id === selectedBranch)?.[1] || '전체 지점'
                   : '전체 지점')
@@ -220,8 +241,8 @@ export default function InventoryStatusClient({ userSession, products, branches 
       <ContentCard>
         <div className="space-y-4">
           <div className="flex flex-wrap items-end gap-4">
-            {/* 지점 선택 (관리자만) */}
-            {userSession.role === '0000' && (
+            {/* 지점 선택 (본사 관리자/원장) */}
+            {userSession.is_headquarters && ['0000', '0001'].includes(userSession.role) && (
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">지점</label>
                 <select
@@ -259,29 +280,51 @@ export default function InventoryStatusClient({ userSession, products, branches 
               />
             </div>
 
-            {/* 품목 자동완성 */}
+            {/* 품목 복수 선택 */}
             <div className="flex-1 min-w-[250px]" ref={dropdownRef}>
-              <label className="block text-sm font-medium text-gray-900 mb-1">품목</label>
+              <label className="block text-sm font-medium text-gray-900 mb-1">
+                품목
+                {selectedProducts.length > 0 && (
+                  <span className="ml-1 text-blue-600">({selectedProducts.length}개 선택)</span>
+                )}
+              </label>
               <div className="relative">
-                <div className="flex gap-2">
+                <div
+                  className="flex flex-wrap items-center gap-1.5 px-2 py-1.5 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent bg-white min-h-[42px] cursor-text"
+                  onClick={() => productInputRef.current?.focus()}
+                >
+                  {selectedProducts.map(p => (
+                    <span
+                      key={p.id}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-md text-sm font-medium whitespace-nowrap"
+                    >
+                      <span className="font-mono text-xs">{p.code}</span>
+                      <span className="text-blue-600">{p.name}</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleProductRemove(p.id) }}
+                        className="ml-0.5 text-blue-400 hover:text-red-500 transition font-bold"
+                      >
+                        x
+                      </button>
+                    </span>
+                  ))}
                   <input
+                    ref={productInputRef}
                     type="text"
                     value={productSearch}
-                    onChange={(e) => {
-                      setProductSearch(e.target.value)
-                      if (selectedProduct) setSelectedProduct(null)
-                    }}
+                    onChange={(e) => setProductSearch(e.target.value)}
                     onKeyDown={handleProductKeyDown}
                     onFocus={() => {
-                      if (productSearch && !selectedProduct) setShowDropdown(true)
+                      if (productSearch.length >= 1) setShowDropdown(true)
                     }}
-                    placeholder="품목코드 또는 품명 입력..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder={selectedProducts.length === 0 ? '품목코드 또는 품명 입력...' : '추가 검색...'}
+                    className="flex-1 min-w-[120px] px-1 py-1 outline-none text-sm bg-transparent"
                   />
-                  {selectedProduct && (
+                  {selectedProducts.length > 0 && (
                     <button
-                      onClick={handleProductClear}
-                      className="px-3 py-2 text-gray-900 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                      onClick={(e) => { e.stopPropagation(); handleProductClearAll() }}
+                      className="px-1.5 py-0.5 text-gray-400 hover:text-red-500 transition text-sm font-bold"
+                      title="전체 해제"
                     >
                       X
                     </button>

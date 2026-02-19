@@ -20,7 +20,7 @@ export default async function SurveyReportPage() {
 
   const supabase = await createServerClient()
 
-  const branchesRes = userSession.role === '0000'
+  const branchesRes = userSession.is_headquarters && ['0000', '0001'].includes(userSession.role)
     ? await supabase.from('branches').select('id, name').eq('is_active', true).order('name')
     : { data: [], error: null }
 

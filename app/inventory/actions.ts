@@ -8,7 +8,7 @@ import type { SaleHistory } from '@/types/sales'
 
 export interface InventoryStatusFilter {
   branchId: string | null
-  productId: string | null
+  productIds: string[] | null
   startDate: string
   endDate: string
 }
@@ -27,9 +27,13 @@ export async function getInventoryStatus(filter: InventoryStatusFilter) {
 
     const supabase = await createServerClient()
 
+    const productIds = filter.productIds && filter.productIds.length > 0
+      ? filter.productIds
+      : null
+
     const { data, error } = await supabase.rpc('get_inventory_status', {
       p_branch_id: effectiveBranchId,
-      p_product_id: filter.productId || null,
+      p_product_ids: productIds,
       p_end_date: filter.endDate,
     })
 

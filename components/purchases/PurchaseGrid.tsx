@@ -535,7 +535,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
           </div>
           <button
             onClick={handleSave}
-            disabled={isSaving || validRowCount === 0}
+            disabled={isSaving}
             className="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold shadow-lg"
           >
             {isSaving ? '💾 저장 중...' : '💾 일괄 저장'}

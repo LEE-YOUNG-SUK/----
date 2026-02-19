@@ -127,10 +127,13 @@ export async function savePurchases(data: PurchaseSaveRequest) {
  */
 export async function getProductsList() {
   try {
+    const session = await getSession()
+    const branchId = !session || (session.is_headquarters && ['0000', '0001'].includes(session.role)) ? null : session.branch_id
+
     const supabase = await createServerClient()
-    
+
     const { data, error } = await supabase
-      .rpc('get_products_list')
+      .rpc('get_products_list', { p_branch_id: branchId })
       .order('code', { ascending: true })
 
     if (error) throw error

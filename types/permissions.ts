@@ -90,12 +90,15 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     { resource: 'users_management', action: 'create' },
     { resource: 'users_management', action: 'update' },
     { resource: 'users_management', action: 'delete' },
-    
+
     // 거래처 (읽기만)
     { resource: 'clients_management', action: 'read' },
-    
-    // 품목 (읽기만)
+
+    // 품목 (지점 품목 CRUD)
     { resource: 'products_management', action: 'read' },
+    { resource: 'products_management', action: 'create' },
+    { resource: 'products_management', action: 'update' },
+    { resource: 'products_management', action: 'delete' },
     
     // 입고 (전체)
     { resource: 'purchases_management', action: 'read' },
@@ -127,7 +130,11 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   // 0002: 매니저 - 원장과 동일
   '0002': [
     { resource: 'clients_management', action: 'read' },
+    // 품목 (지점 품목 CRUD)
     { resource: 'products_management', action: 'read' },
+    { resource: 'products_management', action: 'create' },
+    { resource: 'products_management', action: 'update' },
+    { resource: 'products_management', action: 'delete' },
     { resource: 'purchases_management', action: 'read' },
     { resource: 'purchases_management', action: 'create' },
     { resource: 'purchases_management', action: 'update' },
@@ -137,11 +144,11 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     { resource: 'sales_management', action: 'update' },
     { resource: 'sales_management', action: 'delete' },
     { resource: 'inventory_view', action: 'read' },
-    
+
     // 재고 조정 (Phase 5) - 매니저는 생성만 가능 (취소 불가)
     { resource: 'inventory_adjustments', action: 'read' },
     { resource: 'inventory_adjustments', action: 'create' },
-    
+
     // 레포트 조회 (Phase 6)
     { resource: 'reports_view', action: 'read' },
   ],

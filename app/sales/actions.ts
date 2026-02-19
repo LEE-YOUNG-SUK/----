@@ -131,9 +131,12 @@ export async function saveSales(data: SaleSaveRequest) {
  * 전체 품목 목록 조회 (재고 포함)
  * 입고 관리처럼 전체 품목 표시
  */
-export async function getProductsWithStock(branchId: string | null) {
+export async function getProductsWithStock(branchId: string | null, productBranchId?: string | null) {
   try {
     const supabase = await createServerClient()
+
+    // 품목 필터용 branch_id (별도 지정 가능)
+    const pBranchId = productBranchId !== undefined ? productBranchId : branchId
 
     // 1+2. 품목 + 재고 병렬 조회
     let inventoryQuery = supabase
@@ -146,7 +149,7 @@ export async function getProductsWithStock(branchId: string | null) {
     }
 
     const [{ data: allProducts, error: productsError }, { data: inventoryData, error: inventoryError }] = await Promise.all([
-      supabase.rpc('get_products_list').order('code', { ascending: true }),
+      supabase.rpc('get_products_list', { p_branch_id: pBranchId }).order('code', { ascending: true }),
       inventoryQuery
     ])
 

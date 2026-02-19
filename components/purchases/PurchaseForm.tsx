@@ -32,6 +32,7 @@ interface SessionData {
   branch_id: string
   branch_name: string
   role: string
+  is_headquarters: boolean
 }
 
 interface Branch {
@@ -236,6 +237,7 @@ export function PurchaseForm({ products, suppliers, history, session, defaultTab
               userRole={session.role}
               userId={session.user_id}
               userBranchId={session.branch_id}
+              isHeadquarters={session.is_headquarters}
             />
           </div>
         )}

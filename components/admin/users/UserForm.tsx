@@ -140,8 +140,8 @@ export default function UserForm({ user, branches, currentUser, onClose, onSucce
     }
   }
 
-  // 역할에 따라 지점 필수 여부 결정
-  const isBranchRequired = ['0001', '0002', '0003'].includes(formData.role)
+  // 모든 역할에 지점 필수
+  const isBranchRequired = true
 
   return (
     <Dialog open onOpenChange={onClose}>

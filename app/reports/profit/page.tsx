@@ -29,7 +29,7 @@ export default async function ProfitReportPage() {
   const supabase = await createServerClient()
 
   const [branchesRes, categoriesRes] = await Promise.all([
-    userSession.role === '0000'
+    userSession.is_headquarters && ['0000', '0001'].includes(userSession.role)
       ? supabase.from('branches').select('id, name').eq('is_active', true).order('name')
       : Promise.resolve({ data: [], error: null }),
     supabase.from('product_categories').select('id, name').eq('is_active', true).order('display_order', { ascending: true })

@@ -157,7 +157,7 @@ export default function SurveyReportClient({ userSession, branches }: Props) {
     const filter: SurveyFilter = {
       startDate: sd,
       endDate: ed,
-      branchId: userSession.role === '0000' ? bid : null,
+      branchId: userSession.is_headquarters && ['0000', '0001'].includes(userSession.role) ? bid : null,
     }
 
     try {
@@ -180,7 +180,7 @@ export default function SurveyReportClient({ userSession, branches }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [userSession.role])
+  }, [userSession.role, userSession.is_headquarters])
 
   const handleSearch = () => doSearch(startDate, endDate, branchId)
 
@@ -377,7 +377,7 @@ export default function SurveyReportClient({ userSession, branches }: Props) {
         </div>
 
         <div className="flex flex-wrap gap-3 items-end">
-          {userSession.role === '0000' && branches.length > 0 && (
+          {userSession.is_headquarters && ['0000', '0001'].includes(userSession.role) && branches.length > 0 && (
             <div>
               <label htmlFor="branchId" className="block text-xs font-medium text-gray-500 mb-1">지점</label>
               <select

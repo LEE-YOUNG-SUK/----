@@ -13,10 +13,13 @@ export async function getProducts() {
     const session = await getSession()
     if (!session) return []
 
+    // 본사 관리자/원장 → 전체 조회; 나머지 → 공통 + 본인 지점
+    const branchId = session.is_headquarters && ['0000', '0001'].includes(session.role) ? null : session.branch_id
+
     const supabase = await createServerClient()
-    
+
     const { data, error } = await supabase
-      .rpc('get_products_list')
+      .rpc('get_products_list', { p_branch_id: branchId })
       .order('code', { ascending: true })
     
     if (error) {
@@ -70,16 +73,37 @@ export async function saveProduct(formData: {
   standard_sale_price: number | null
   is_active: boolean
   created_by?: string | null
+  branch_id?: string | null
 }) {
   const session = await getSession()
   if (!session) return { success: false, message: '로그인이 필요합니다.' }
-  if (!['0000', '0001'].includes(session.role)) return { success: false, message: '품목 관리 권한이 없습니다.' }
+
+  const canManageCommon = session.is_headquarters && ['0000', '0001'].includes(session.role)
+  const canManageBranch = ['0001', '0002'].includes(session.role)
+  if (!canManageCommon && !canManageBranch) {
+    return { success: false, message: '품목 관리 권한이 없습니다.' }
+  }
 
   const supabase = await createServerClient()
-  
+
   try {
     if (formData.id) {
-      // 수정 (RPC 함수 사용)
+      // 수정 시 소유권 검증
+      const { data: existing } = await supabase
+        .from('products')
+        .select('branch_id')
+        .eq('id', formData.id)
+        .single()
+
+      if (!existing) return { success: false, message: '품목을 찾을 수 없습니다.' }
+
+      if (existing.branch_id === null && !canManageCommon) {
+        return { success: false, message: '공통 품목은 관리자만 수정할 수 있습니다.' }
+      }
+      if (existing.branch_id && existing.branch_id !== session.branch_id && !(session.is_headquarters && ['0000', '0001'].includes(session.role))) {
+        return { success: false, message: '다른 지점의 품목은 수정할 수 없습니다.' }
+      }
+
       const { data, error } = await supabase.rpc('update_product', {
         p_id: formData.id,
         p_name: formData.name,
@@ -93,17 +117,19 @@ export async function saveProduct(formData: {
         p_standard_sale_price: formData.standard_sale_price,
         p_is_active: formData.is_active
       })
-      
+
       if (error) throw error
-      
+
       const result = Array.isArray(data) ? data[0] : data
       revalidatePath('/products')
-      return { 
-        success: result?.success ?? true, 
-        message: result?.message ?? '품목이 수정되었습니다' 
+      return {
+        success: result?.success ?? true,
+        message: result?.message ?? '품목이 수정되었습니다'
       }
     } else {
-      // 생성 (RPC 함수 사용)
+      // 생성: 역할에 따라 branch_id 결정
+      const branchIdForCreate = canManageCommon ? null : session.branch_id
+
       const { data, error } = await supabase.rpc('create_product', {
         p_code: formData.code,
         p_name: formData.name,
@@ -115,15 +141,16 @@ export async function saveProduct(formData: {
         p_min_stock_level: formData.min_stock_level,
         p_standard_purchase_price: formData.standard_purchase_price,
         p_standard_sale_price: formData.standard_sale_price,
-        p_created_by: session.user_id
+        p_created_by: session.user_id,
+        p_branch_id: branchIdForCreate
       })
-      
+
       if (error) throw error
-      
+
       const result = Array.isArray(data) ? data[0] : data
       revalidatePath('/products')
-      return { 
-        success: result?.success ?? true, 
+      return {
+        success: result?.success ?? true,
         message: result?.message ?? '품목이 생성되었습니다',
         product_id: result?.product_id
       }
@@ -140,11 +167,32 @@ export async function saveProduct(formData: {
 export async function deleteProduct(productId: string) {
   const session = await getSession()
   if (!session) return { success: false, message: '로그인이 필요합니다.' }
-  if (!['0000', '0001'].includes(session.role)) return { success: false, message: '품목 삭제 권한이 없습니다.' }
+
+  const canManageCommon = session.is_headquarters && ['0000', '0001'].includes(session.role)
+  const canManageBranch = ['0001', '0002'].includes(session.role)
+  if (!canManageCommon && !canManageBranch) {
+    return { success: false, message: '품목 삭제 권한이 없습니다.' }
+  }
 
   const supabase = await createServerClient()
-  
+
   try {
+    // 소유권 검증
+    const { data: existing } = await supabase
+      .from('products')
+      .select('branch_id')
+      .eq('id', productId)
+      .single()
+
+    if (!existing) return { success: false, message: '품목을 찾을 수 없습니다.' }
+
+    if (existing.branch_id === null && !canManageCommon) {
+      return { success: false, message: '공통 품목은 관리자만 삭제할 수 있습니다.' }
+    }
+    if (existing.branch_id && existing.branch_id !== session.branch_id && !(session.is_headquarters && ['0000', '0001'].includes(session.role))) {
+      return { success: false, message: '다른 지점의 품목은 삭제할 수 없습니다.' }
+    }
+
     const { error } = await supabase
       .from('products')
       .delete()

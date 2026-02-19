@@ -170,7 +170,7 @@ export default function SalesReportClient({ userSession, branches: initialBranch
         initialFilter={filter}
         groupByOptions={SALES_GROUP_BY_OPTIONS}
         onFilterChange={handleFilterChange}
-        showBranchFilter={userSession.role === '0000'}
+        showBranchFilter={userSession.is_headquarters && ['0000', '0001'].includes(userSession.role)}
         branches={branches}
         categories={categories}
       />

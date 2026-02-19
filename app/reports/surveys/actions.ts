@@ -36,7 +36,7 @@ export async function getSurveyResponses(
     const dateError = validateDateRange(filter.startDate, filter.endDate)
     if (dateError) return { success: false, data: [], message: dateError }
 
-    const branchId = session.role === '0000' ? (filter.branchId || null) : session.branch_id
+    const branchId = session.is_headquarters && ['0000', '0001'].includes(session.role) ? (filter.branchId || null) : session.branch_id
 
     const supabase = await createServerClient()
 
@@ -104,96 +104,41 @@ export async function getSurveyStats(
       return { success: false, data: null, message: '조회 권한이 없습니다.' }
     }
 
-    const branchId = session.role === '0000' ? (filter.branchId || null) : session.branch_id
+    const branchId = session.is_headquarters && ['0000', '0001'].includes(session.role) ? (filter.branchId || null) : session.branch_id
 
     const supabase = await createServerClient()
 
-    // 브랜치 조건
-    const branchCondition = branchId
-      ? `AND branch_id = '${branchId}'`
-      : ''
+    const { data: allData } = await supabase
+      .from('survey_responses')
+      .select('submitted_at, score_consultation, score_staff, score_wait_time, score_procedure, score_result, score_overall, gender, age_group, visit_type, discovery_channel, selection_reason, skin_concern')
+      .gte('submitted_at', `${filter.startDate}T00:00:00`)
+      .lte('submitted_at', `${filter.endDate}T23:59:59`)
+      .match(branchId ? { branch_id: branchId } : {})
 
-    // 평균 점수 + 총 건수
-    const { data: avgData, error: avgError } = await supabase.rpc('exec_sql_readonly', {
-      sql_query: `
-        SELECT
-          COUNT(*)::int AS total_count,
-          ROUND(AVG(score_consultation)::numeric, 2) AS avg_consultation,
-          ROUND(AVG(score_staff)::numeric, 2) AS avg_staff,
-          ROUND(AVG(score_wait_time)::numeric, 2) AS avg_wait_time,
-          ROUND(AVG(score_procedure)::numeric, 2) AS avg_procedure,
-          ROUND(AVG(score_result)::numeric, 2) AS avg_result,
-          ROUND(AVG(score_overall)::numeric, 2) AS avg_overall
-        FROM survey_responses
-        WHERE submitted_at >= '${filter.startDate}T00:00:00'
-          AND submitted_at <= '${filter.endDate}T23:59:59'
-          ${branchCondition}
-      `
-    })
+    const rows = allData || []
+    const count = rows.length
 
-    // RPC가 없으면 직접 쿼리
-    let stats: any
-    if (avgError) {
-      // RPC 없을 경우 JS에서 계산 (fallback)
-      const { data: allData } = await supabase
-        .from('survey_responses')
-        .select('submitted_at, score_consultation, score_staff, score_wait_time, score_procedure, score_result, score_overall, gender, age_group, visit_type, discovery_channel, selection_reason, skin_concern')
-        .gte('submitted_at', `${filter.startDate}T00:00:00`)
-        .lte('submitted_at', `${filter.endDate}T23:59:59`)
-        .match(branchId ? { branch_id: branchId } : {})
+    const avg = (field: string) => {
+      const vals = rows.map((r: any) => r[field]).filter((v: any) => v != null)
+      return vals.length > 0 ? Math.round((vals.reduce((s: number, v: number) => s + v, 0) / vals.length) * 100) / 100 : 0
+    }
 
-      const rows = allData || []
-      const count = rows.length
-
-      const avg = (field: string) => {
-        const vals = rows.map((r: any) => r[field]).filter((v: any) => v != null)
-        return vals.length > 0 ? Math.round((vals.reduce((s: number, v: number) => s + v, 0) / vals.length) * 100) / 100 : 0
-      }
-
-      stats = {
-        total_count: count,
-        avg_consultation: avg('score_consultation'),
-        avg_staff: avg('score_staff'),
-        avg_wait_time: avg('score_wait_time'),
-        avg_procedure: avg('score_procedure'),
-        avg_result: avg('score_result'),
-        avg_overall: avg('score_overall'),
-        gender_distribution: computeDistribution(rows, 'gender'),
-        age_distribution: computeDistribution(rows, 'age_group'),
-        visit_type_distribution: computeDistribution(rows, 'visit_type'),
-        discovery_channel_distribution: computeMultiSelectDistribution(rows, 'discovery_channel', CHANNEL_LABELS),
-        selection_reason_distribution: computeMultiSelectDistribution(rows, 'selection_reason', REASON_LABELS),
-        skin_concern_distribution: computeMultiSelectDistribution(rows, 'skin_concern', CONCERN_LABELS),
-        monthly_trend: computeMonthlyTrend(rows),
-        score_distribution: computeScoreDistribution(rows),
-      }
-    } else {
-      const row = Array.isArray(avgData) ? avgData[0] : avgData
-      // 분포 데이터도 가져오기
-      const { data: allData } = await supabase
-        .from('survey_responses')
-        .select('submitted_at, score_consultation, score_staff, score_wait_time, score_procedure, score_result, score_overall, gender, age_group, visit_type, discovery_channel, selection_reason, skin_concern')
-        .gte('submitted_at', `${filter.startDate}T00:00:00`)
-        .lte('submitted_at', `${filter.endDate}T23:59:59`)
-        .match(branchId ? { branch_id: branchId } : {})
-
-      stats = {
-        total_count: row?.total_count || 0,
-        avg_consultation: parseFloat(row?.avg_consultation) || 0,
-        avg_staff: parseFloat(row?.avg_staff) || 0,
-        avg_wait_time: parseFloat(row?.avg_wait_time) || 0,
-        avg_procedure: parseFloat(row?.avg_procedure) || 0,
-        avg_result: parseFloat(row?.avg_result) || 0,
-        avg_overall: parseFloat(row?.avg_overall) || 0,
-        gender_distribution: computeDistribution(allData || [], 'gender'),
-        age_distribution: computeDistribution(allData || [], 'age_group'),
-        visit_type_distribution: computeDistribution(allData || [], 'visit_type'),
-        discovery_channel_distribution: computeMultiSelectDistribution(allData || [], 'discovery_channel', CHANNEL_LABELS),
-        selection_reason_distribution: computeMultiSelectDistribution(allData || [], 'selection_reason', REASON_LABELS),
-        skin_concern_distribution: computeMultiSelectDistribution(allData || [], 'skin_concern', CONCERN_LABELS),
-        monthly_trend: computeMonthlyTrend(allData || []),
-        score_distribution: computeScoreDistribution(allData || []),
-      }
+    const stats = {
+      total_count: count,
+      avg_consultation: avg('score_consultation'),
+      avg_staff: avg('score_staff'),
+      avg_wait_time: avg('score_wait_time'),
+      avg_procedure: avg('score_procedure'),
+      avg_result: avg('score_result'),
+      avg_overall: avg('score_overall'),
+      gender_distribution: computeDistribution(rows, 'gender'),
+      age_distribution: computeDistribution(rows, 'age_group'),
+      visit_type_distribution: computeDistribution(rows, 'visit_type'),
+      discovery_channel_distribution: computeMultiSelectDistribution(rows, 'discovery_channel', CHANNEL_LABELS),
+      selection_reason_distribution: computeMultiSelectDistribution(rows, 'selection_reason', REASON_LABELS),
+      skin_concern_distribution: computeMultiSelectDistribution(rows, 'skin_concern', CONCERN_LABELS),
+      monthly_trend: computeMonthlyTrend(rows),
+      score_distribution: computeScoreDistribution(rows),
     }
 
     return { success: true, data: stats }

@@ -15,6 +15,7 @@ export default function ProductFilters({ products, onFilterChange }: ProductFilt
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [typeFilter, setTypeFilter] = useState<string>('all')
 
   // 필터링된 결과
   const filtered = useMemo(() => {
@@ -38,13 +39,20 @@ export default function ProductFilters({ products, onFilterChange }: ProductFilt
 
     // 상태 필터
     if (statusFilter !== 'all') {
-      result = result.filter(product => 
+      result = result.filter(product =>
         statusFilter === 'active' ? product.is_active : !product.is_active
       )
     }
 
+    // 구분 필터
+    if (typeFilter !== 'all') {
+      result = result.filter(product =>
+        typeFilter === 'common' ? !product.branch_id : !!product.branch_id
+      )
+    }
+
     return result
-  }, [products, searchTerm, categoryFilter, statusFilter])
+  }, [products, searchTerm, categoryFilter, statusFilter, typeFilter])
 
   // 필터 변경 시 부모에게 전달
   useEffect(() => {
@@ -55,6 +63,7 @@ export default function ProductFilters({ products, onFilterChange }: ProductFilt
     setSearchTerm('')
     setCategoryFilter('all')
     setStatusFilter('all')
+    setTypeFilter('all')
   }
 
   // 유니크한 카테고리 목록
@@ -62,6 +71,16 @@ export default function ProductFilters({ products, onFilterChange }: ProductFilt
 
   return (
     <>
+      <select
+        value={typeFilter}
+        onChange={(e) => setTypeFilter(e.target.value)}
+        className="w-[140px] px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      >
+        <option value="all">전체 구분</option>
+        <option value="common">공통 품목</option>
+        <option value="branch">지점 품목</option>
+      </select>
+
       <select
         value={categoryFilter}
         onChange={(e) => setCategoryFilter(e.target.value)}

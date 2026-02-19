@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { Product, ProductCategory } from '@/types'
+import type { Product, ProductCategory, UserData } from '@/types'
 import { saveProduct, getProductCategories } from '@/app/products/actions'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/Dialog'
 import { Button } from '../ui/Button'
@@ -15,9 +15,10 @@ interface ProductFormProps {
   onClose: () => void
   onSuccess: () => void
   userId?: string
+  userData: UserData
 }
 
-export default function ProductForm({ product, onClose, onSuccess, userId }: ProductFormProps) {
+export default function ProductForm({ product, onClose, onSuccess, userId, userData }: ProductFormProps) {
   const isEdit = !!product
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [categories, setCategories] = useState<ProductCategory[]>([])
@@ -88,7 +89,8 @@ export default function ProductForm({ product, onClose, onSuccess, userId }: Pro
         standard_purchase_price: Number(formData.standard_purchase_price) || 0,
         standard_sale_price: Number(formData.standard_sale_price) || 0,
         is_active: formData.is_active,
-        created_by: userId || null
+        created_by: userId || null,
+        branch_id: product?.branch_id ?? null
       })
 
       if (result.success) {
@@ -112,6 +114,29 @@ export default function ProductForm({ product, onClose, onSuccess, userId }: Pro
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* 품목 구분 안내 */}
+          {!isEdit && (
+            <div className={`p-3 rounded-lg text-sm font-medium ${
+              userData.is_headquarters && ['0000', '0001'].includes(userData.role)
+                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                : 'bg-green-50 text-green-700 border border-green-200'
+            }`}>
+              {userData.is_headquarters && ['0000', '0001'].includes(userData.role)
+                ? '공통 품목으로 등록됩니다 (전 지점 공유)'
+                : `${userData.branch_name} 지점 품목으로 등록됩니다`
+              }
+            </div>
+          )}
+          {isEdit && product && (
+            <div className={`p-3 rounded-lg text-sm font-medium ${
+              !product.branch_id
+                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                : 'bg-green-50 text-green-700 border border-green-200'
+            }`}>
+              {!product.branch_id ? '공통 품목' : `${product.branch_name || '지점'} 품목`}
+            </div>
+          )}
+
           {/* 기본 정보 */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold">📋 기본 정보</h3>

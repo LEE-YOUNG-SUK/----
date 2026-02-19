@@ -29,8 +29,10 @@ export default async function PurchasesPage({
   const initialStartDate = thirtyDaysAgo.toLocaleDateString('sv-SE')
   const initialEndDate = today.toLocaleDateString('sv-SE')
 
-  // 세션 필요한 쿼리는 이후 실행
-  const historyResult = await getPurchasesHistory(userSession.branch_id, initialStartDate, initialEndDate)
+  // 본사 관리자/원장 → 전체 지점, 나머지 → 본인 지점
+  const isHqViewer = userSession.is_headquarters && ['0000', '0001'].includes(userSession.role)
+  const historyBranchId = isHqViewer ? null : userSession.branch_id
+  const historyResult = await getPurchasesHistory(historyBranchId, initialStartDate, initialEndDate)
 
   if (!productsResult.success || !suppliersResult.success) {
     return (
@@ -69,7 +71,8 @@ export default async function PurchasesPage({
     user_id: userSession.user_id,
     branch_id: userSession.branch_id || '',
     branch_name: userSession.branch_name || '',
-    role: userSession.role
+    role: userSession.role,
+    is_headquarters: userSession.is_headquarters
   }
 
   return (
@@ -85,7 +88,7 @@ export default async function PurchasesPage({
                 </div>
                 <div className="text-left sm:text-right">
                   <div className="text-sm text-gray-900">
-                    {userSession.role === '0000' ? '전체 지점' : userSession.branch_name}
+                    {isHqViewer ? '전체 지점' : userSession.branch_name}
                   </div>
                   <div className="text-xs text-gray-900 mt-1">
                     품목: {products.length}개 | 공급업체: {suppliers.length}개

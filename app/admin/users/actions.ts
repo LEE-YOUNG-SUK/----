@@ -80,9 +80,9 @@ export async function saveUser(formData: {
 
     const supabase = await createServerClient()
 
-    // 역할 0001, 0002, 0003은 지점 필수
-    if (['0001', '0002', '0003'].includes(formData.role) && !formData.branch_id) {
-      return { success: false, message: '원장, 매니저, 직원은 소속 지점을 선택해야 합니다' }
+    // 모든 역할에 지점 필수
+    if (!formData.branch_id) {
+      return { success: false, message: '소속 지점을 선택해야 합니다' }
     }
 
     if (formData.id) {

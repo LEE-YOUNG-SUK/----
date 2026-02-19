@@ -30,7 +30,7 @@ export default async function ClientsPage() {
                 </div>
                 <div className="text-left sm:text-right">
                   <div className="text-sm text-gray-900">
-                    {userData.role === '0000' ? '전체 지점' : userData.branch_name}
+                    {userData.is_headquarters && ['0000', '0001'].includes(userData.role) ? '전체 지점' : userData.branch_name}
                   </div>
                 </div>
               </div>

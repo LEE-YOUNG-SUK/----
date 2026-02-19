@@ -46,7 +46,7 @@ export async function importPurchases(data: ImportPurchaseData) {
       return { success: false, message: '데이터 가져오기 권한이 없습니다.' }
     }
 
-    // 지점 격리: 비관리자는 본인 지점만
+    // 지점 격리: 관리자만 타 지점 import 가능
     if (session.role !== '0000' && data.branch_id !== session.branch_id) {
       return { success: false, message: '다른 지점의 데이터는 등록할 수 없습니다.' }
     }
@@ -114,7 +114,7 @@ export async function importSales(data: ImportSaleData) {
       return { success: false, message: '데이터 가져오기 권한이 없습니다.' }
     }
 
-    // 지점 격리: 비관리자는 본인 지점만
+    // 지점 격리: 관리자만 타 지점 import 가능
     if (session.role !== '0000' && data.branch_id !== session.branch_id) {
       return { success: false, message: '다른 지점의 데이터는 등록할 수 없습니다.' }
     }
@@ -182,7 +182,7 @@ export async function getImportData() {
         .eq('is_active', true)
         .order('code'),
       supabase
-        .rpc('get_products_list')
+        .rpc('get_products_list', { p_branch_id: null })
         .order('code'),
       supabase
         .rpc('get_clients_list')

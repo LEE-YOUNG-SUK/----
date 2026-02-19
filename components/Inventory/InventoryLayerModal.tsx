@@ -93,14 +93,16 @@ export function InventoryLayerModal({ item, startDate, endDate, onClose, userSes
     try {
       const result = await getMovementHistory({
         branchId: item.branch_id,
-        productId: item.product_id,
+        productIds: [item.product_id],
         startDate: startDate || new Date(new Date().getFullYear(), 0, 1).toLocaleDateString('sv-SE'),
         endDate: endDate || new Date().toLocaleDateString('sv-SE'),
       })
 
       if (!result.success) throw new Error(result.message || '조회 실패')
 
-      setMovements(result.data || [])
+      // 단일 품목 조회이므로 첫 번째 그룹의 movements 사용
+      const firstGroup = result.data[0]
+      setMovements(firstGroup?.movements || [])
     } catch (err: any) {
       console.error('입출고 내역 조회 실패:', err)
       setError(err.message || '입출고 내역을 불러올 수 없습니다.')

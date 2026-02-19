@@ -34,7 +34,7 @@ export async function getSalesReport(
     if (dateError) return { success: false, data: [], error: dateError, filter }
 
     // 비관리자는 본인 지점만 조회 가능
-    const branchId = session.role === '0000' ? (filter.branchId || null) : session.branch_id
+    const branchId = session.is_headquarters && ['0000', '0001'].includes(session.role) ? (filter.branchId || null) : session.branch_id
 
     const supabase = await createServerClient()
 

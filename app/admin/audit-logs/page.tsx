@@ -15,7 +15,7 @@ export default async function AuditLogsPage() {
   const userSession = await requireSession()
 
   // 권한 검증: 원장(0001) 이상만 접근 가능
-  if (!['0000', '0001'].includes(userSession.role)) {
+  if (!(userSession.role === '0000' || (userSession.is_headquarters && userSession.role === '0001'))) {
     redirect('/')
   }
 

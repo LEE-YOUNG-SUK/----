@@ -39,8 +39,9 @@ export async function getSession(): Promise<UserData | null> {
       username: session.username,
       display_name: session.display_name,
       role: session.role as '0000' | '0001' | '0002' | '0003',
-      branch_id: session.branch_id || null,
-      branch_name: session.branch_name || null
+      branch_id: session.branch_id,
+      branch_name: session.branch_name || null,
+      is_headquarters: session.is_headquarters || false
     }
   } catch {
     return null

@@ -41,7 +41,7 @@ export default function AdjustmentHistoryTable({
   const [isCancelling, setIsCancelling] = useState<string | null>(null)
   const itemsPerPage = 20
 
-  // 취소 권한: 원장 이상 (0000~0001)
+  // 취소 권한: 원장 이상 (0000, 0001)
   const canCancel = ['0000', '0001'].includes(userRole)
 
   // 오늘 날짜

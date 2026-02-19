@@ -10,7 +10,7 @@ export interface User {
   username: string
   display_name: string
   role: '0000' | '0001' | '0002' | '0003'
-  branch_id: string | null
+  branch_id: string
 }
 
 // 사용자 데이터 (전체 버전)
@@ -19,8 +19,9 @@ export interface UserData {
   username: string
   display_name: string
   role: string
-  branch_id: string | null
+  branch_id: string
   branch_name: string | null
+  is_headquarters: boolean
 }
 
 // 세션 데이터
@@ -85,6 +86,8 @@ export interface Product {
   min_stock_level: number | null
   standard_purchase_price: number | null
   standard_sale_price: number | null
+  branch_id?: string | null
+  branch_name?: string | null
   is_active: boolean
   created_at: string
   updated_at: string
