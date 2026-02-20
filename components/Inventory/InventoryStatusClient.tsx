@@ -76,6 +76,7 @@ export default function InventoryStatusClient({ userSession, products, branches 
   useEffect(() => {
     setShowDropdown(filteredProducts.length > 0 && productSearch.length >= 1)
     setSelectedIndex(0)
+    setNavigating(false)
   }, [filteredProducts, productSearch])
 
   // 선택 항목 스크롤
@@ -116,48 +117,31 @@ export default function InventoryStatusClient({ userSession, products, branches 
     setProductSearch('')
   }, [])
 
-  // 키보드 네비게이션
-  const handleProductKeyDown = useCallback((e: React.KeyboardEvent) => {
-    // Backspace로 마지막 태그 삭제
-    if (e.key === 'Backspace' && productSearch === '' && selectedProducts.length > 0) {
-      setSelectedProducts(prev => prev.slice(0, -1))
-      return
-    }
-    if (!showDropdown) return
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault()
-        setSelectedIndex(prev => prev < filteredProducts.length - 1 ? prev + 1 : prev)
-        break
-      case 'ArrowUp':
-        e.preventDefault()
-        setSelectedIndex(prev => prev > 0 ? prev - 1 : 0)
-        break
-      case 'Enter':
-        e.preventDefault()
-        if (filteredProducts[selectedIndex]) {
-          handleProductSelect(filteredProducts[selectedIndex])
-        }
-        break
-      case 'Escape':
-        setShowDropdown(false)
-        break
-    }
-  }, [showDropdown, filteredProducts, selectedIndex, handleProductSelect, productSearch, selectedProducts.length])
-
-  // 지점 목록 (서버에서 전달받은 데이터 사용)
-  const branchOptions = useMemo(() =>
-    branches.map(b => [b.id, b.name] as [string, string]),
-    [branches]
-  )
-
   // 조회 실행
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     setLoading(true)
     setSearched(true)
+
+    // 선택된 품목 ID + 검색어 텍스트 매칭 품목 ID 합산
+    let productIds: string[] | null = null
+    const selectedIds = selectedProducts.map(p => p.id)
+
+    if (productSearch.trim().length > 0) {
+      const search = productSearch.trim().toLowerCase()
+      const matchedIds = products
+        .filter(p =>
+          p.code.toLowerCase().includes(search) || p.name.toLowerCase().includes(search)
+        )
+        .map(p => p.id)
+      const merged = new Set([...selectedIds, ...matchedIds])
+      productIds = merged.size > 0 ? Array.from(merged) : null
+    } else if (selectedIds.length > 0) {
+      productIds = selectedIds
+    }
+
     const result = await getInventoryStatus({
       branchId: selectedBranch || null,
-      productIds: selectedProducts.length > 0 ? selectedProducts.map(p => p.id) : null,
+      productIds,
       startDate,
       endDate,
     })
@@ -168,7 +152,58 @@ export default function InventoryStatusClient({ userSession, products, branches 
       alert(result.message || '조회 실패')
     }
     setLoading(false)
-  }
+  }, [selectedProducts, productSearch, products, selectedBranch, startDate, endDate])
+
+  // 키보드 네비게이션
+  const [navigating, setNavigating] = useState(false)
+
+  const handleProductKeyDown = useCallback((e: React.KeyboardEvent) => {
+    // Backspace로 마지막 태그 삭제
+    if (e.key === 'Backspace' && productSearch === '' && selectedProducts.length > 0) {
+      setSelectedProducts(prev => prev.slice(0, -1))
+      return
+    }
+    switch (e.key) {
+      case 'ArrowDown':
+        if (!showDropdown) return
+        e.preventDefault()
+        if (!navigating) {
+          setNavigating(true)
+          setSelectedIndex(0)
+        } else {
+          setSelectedIndex(prev => prev < filteredProducts.length - 1 ? prev + 1 : prev)
+        }
+        break
+      case 'ArrowUp':
+        if (!showDropdown) return
+        e.preventDefault()
+        setNavigating(true)
+        setSelectedIndex(prev => prev > 0 ? prev - 1 : 0)
+        break
+      case 'Enter':
+        e.preventDefault()
+        if (navigating && showDropdown && filteredProducts[selectedIndex]) {
+          // 화살표로 드롭다운 탐색 중 → 해당 품목 선택
+          handleProductSelect(filteredProducts[selectedIndex])
+          setNavigating(false)
+        } else {
+          // 검색어 입력 후 바로 Enter → 조회 실행
+          setShowDropdown(false)
+          handleSearch()
+        }
+        break
+      case 'Escape':
+        setShowDropdown(false)
+        setNavigating(false)
+        break
+    }
+  }, [showDropdown, filteredProducts, selectedIndex, handleProductSelect, handleSearch, navigating, productSearch, selectedProducts.length])
+
+  // 지점 목록 (서버에서 전달받은 데이터 사용)
+  const branchOptions = useMemo(() =>
+    branches.map(b => [b.id, b.name] as [string, string]),
+    [branches]
+  )
 
   // 초기 로딩
   useEffect(() => {
@@ -337,7 +372,7 @@ export default function InventoryStatusClient({ userSession, products, branches 
                         key={product.id}
                         onClick={() => handleProductSelect(product)}
                         className={`w-full px-4 py-2 text-left border-b border-gray-100 last:border-b-0 ${
-                          index === selectedIndex ? 'bg-blue-100' : 'hover:bg-blue-50'
+                          navigating && index === selectedIndex ? 'bg-blue-100' : 'hover:bg-blue-50'
                         }`}
                       >
                         <div className="flex items-center gap-2">
