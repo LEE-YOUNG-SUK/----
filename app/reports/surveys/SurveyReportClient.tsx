@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import type { ColDef } from 'ag-grid-community'
-import { getSurveyResponses, getSurveyStats } from './actions'
+import { getSurveyResponses, getSurveyStats, getSurveyFeedback, getAllSurveyResponses } from './actions'
 import SurveyDetailModal from './SurveyDetailModal'
 import ReportGrid from '@/components/reports/ReportGrid'
 import { StatCard } from '@/components/ui/Card'
@@ -19,6 +19,8 @@ interface Props {
 }
 
 type FeedbackTab = 'praise' | 'improvement' | 'comment'
+
+const PAGE_SIZE = 50
 
 // ─── 점수 셀 스타일 (AG Grid) ────────────────────────────────
 function scoreCellStyle(params: any): Record<string, string | number> {
@@ -141,33 +143,48 @@ export default function SurveyReportClient({ userSession, branches }: Props) {
   // ─── State ──────────────────────────────────────────────────
   const [startDate, setStartDate] = useState(defaults.startDate)
   const [endDate, setEndDate] = useState(defaults.endDate)
-  const [branchId, setBranchId] = useState<string | null>(userSession.branch_id || null)
+  const [branchId, setBranchId] = useState<string | null>(
+    userSession.is_headquarters && ['0000', '0001'].includes(userSession.role) ? null : (userSession.branch_id || null)
+  )
   const [responses, setResponses] = useState<SurveyResponse[]>([])
+  const [feedbackResponses, setFeedbackResponses] = useState<SurveyResponse[]>([])
   const [stats, setStats] = useState<SurveyStats | null>(null)
   const [loading, setLoading] = useState(false)
+  const [pageLoading, setPageLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [feedbackTab, setFeedbackTab] = useState<FeedbackTab>('praise')
   const [selectedResponse, setSelectedResponse] = useState<SurveyResponse | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const [csvLoading, setCsvLoading] = useState(false)
 
-  // ─── 검색 (명시적 파라미터) ─────────────────────────────────
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
+
+  // ─── 필터 빌더 ──────────────────────────────────────────────
+  const buildFilter = useCallback((sd: string, ed: string, bid: string | null): SurveyFilter => ({
+    startDate: sd,
+    endDate: ed,
+    branchId: userSession.is_headquarters && ['0000', '0001'].includes(userSession.role) ? bid : null,
+  }), [userSession.is_headquarters, userSession.role])
+
+  // ─── 검색 (1페이지로 리셋) ──────────────────────────────────
   const doSearch = useCallback(async (sd: string, ed: string, bid: string | null) => {
     setLoading(true)
     setError(null)
+    setCurrentPage(1)
 
-    const filter: SurveyFilter = {
-      startDate: sd,
-      endDate: ed,
-      branchId: userSession.is_headquarters && ['0000', '0001'].includes(userSession.role) ? bid : null,
-    }
+    const filter = buildFilter(sd, ed, bid)
 
     try {
-      const [responsesRes, statsRes] = await Promise.all([
-        getSurveyResponses(filter),
+      const [responsesRes, statsRes, feedbackRes] = await Promise.all([
+        getSurveyResponses(filter, 1, PAGE_SIZE),
         getSurveyStats(filter),
+        getSurveyFeedback(filter),
       ])
 
       if (responsesRes.success) {
         setResponses(responsesRes.data)
+        setTotalCount(responsesRes.totalCount)
       } else {
         setError(responsesRes.message || '데이터 조회 실패')
       }
@@ -175,18 +192,37 @@ export default function SurveyReportClient({ userSession, branches }: Props) {
       if (statsRes.success && statsRes.data) {
         setStats(statsRes.data)
       }
+
+      if (feedbackRes.success) {
+        setFeedbackResponses(feedbackRes.data)
+      }
     } catch {
       setError('조회 중 오류가 발생했습니다.')
     } finally {
       setLoading(false)
     }
-  }, [userSession.role, userSession.is_headquarters])
+  }, [buildFilter])
 
   const handleSearch = () => doSearch(startDate, endDate, branchId)
 
+  // ─── 페이지 이동 ─────────────────────────────────────────────
+  const handlePageChange = useCallback(async (page: number) => {
+    if (page < 1 || page > totalPages) return
+    setPageLoading(true)
+    const filter = buildFilter(startDate, endDate, branchId)
+    const res = await getSurveyResponses(filter, page, PAGE_SIZE)
+    if (res.success) {
+      setResponses(res.data)
+      setTotalCount(res.totalCount)
+      setCurrentPage(page)
+    }
+    setPageLoading(false)
+  }, [totalPages, startDate, endDate, branchId, buildFilter])
+
   // ─── 초기 자동 로드 ─────────────────────────────────────────
   useEffect(() => {
-    doSearch(defaults.startDate, defaults.endDate, userSession.branch_id || null)
+    const initialBranchId = userSession.is_headquarters && ['0000', '0001'].includes(userSession.role) ? null : (userSession.branch_id || null)
+    doSearch(defaults.startDate, defaults.endDate, initialBranchId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -221,25 +257,37 @@ export default function SurveyReportClient({ userSession, branches }: Props) {
     doSearch(sd, ed, branchId)
   }
 
-  // ─── CSV 내보내기 ───────────────────────────────────────────
-  const handleExport = () => {
-    if (responses.length === 0) return
-    const headers = ['날짜', '지점', '성별', '연령대', '방문유형', '방문주기', '상담직원', '관리사/간호', '대기시간', '시술과정', '시술효과', '전반적', '정보채널', '선택이유', '시술목적', '칭찬', '개선사항', '기타']
-    const rows = responses.map(r => [
-      new Date(r.submitted_at).toLocaleDateString('ko-KR'),
-      r.branch_name, r.gender, r.age_group, r.visit_type, r.visit_frequency,
-      r.score_consultation, r.score_staff, r.score_wait_time, r.score_procedure, r.score_result, r.score_overall,
-      r.discovery_channel, r.selection_reason, r.skin_concern,
-      r.feedback_praise, r.feedback_improvement, r.feedback_comment,
-    ])
-    const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `만족도조사_${startDate}_${endDate}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+  // ─── CSV 내보내기 (전체 데이터 배치 조회) ────────────────────
+  const handleExport = async () => {
+    if (totalCount === 0) return
+    setCsvLoading(true)
+    try {
+      const filter = buildFilter(startDate, endDate, branchId)
+      const res = await getAllSurveyResponses(filter)
+      if (!res.success || res.data.length === 0) {
+        setCsvLoading(false)
+        return
+      }
+      const rows = res.data
+      const headers = ['날짜', '지점', '성별', '연령대', '방문유형', '방문주기', '상담직원', '관리사/간호', '대기시간', '시술과정', '시술효과', '전반적', '정보채널', '선택이유', '시술목적', '칭찬', '개선사항', '기타']
+      const csvRows = rows.map(r => [
+        new Date(r.submitted_at).toLocaleDateString('ko-KR'),
+        r.branch_name, r.gender, r.age_group, r.visit_type, r.visit_frequency,
+        r.score_consultation, r.score_staff, r.score_wait_time, r.score_procedure, r.score_result, r.score_overall,
+        r.discovery_channel, r.selection_reason, r.skin_concern,
+        r.feedback_praise, r.feedback_improvement, r.feedback_comment,
+      ])
+      const csv = [headers, ...csvRows].map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `만족도조사_${startDate}_${endDate}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setCsvLoading(false)
+    }
   }
 
   // ─── AG Grid 컬럼 ──────────────────────────────────────────
@@ -285,12 +333,12 @@ export default function SurveyReportClient({ userSession, branches }: Props) {
     },
   ], [])
 
-  // ─── 피드백 데이터 (점수/인구통계 포함) ──────────────────────
+  // ─── 피드백 카운트 (통계 RPC에서) ─────────────────────────────
   const feedbackCounts = useMemo(() => ({
-    praise: responses.filter(r => r.feedback_praise?.trim()).length,
-    improvement: responses.filter(r => r.feedback_improvement?.trim()).length,
-    comment: responses.filter(r => r.feedback_comment?.trim()).length,
-  }), [responses])
+    praise: stats?.feedback_praise_count ?? 0,
+    improvement: stats?.feedback_improvement_count ?? 0,
+    comment: stats?.feedback_comment_count ?? 0,
+  }), [stats])
 
   const feedbackData = useMemo(() => {
     const fieldMap: Record<FeedbackTab, keyof SurveyResponse> = {
@@ -299,7 +347,7 @@ export default function SurveyReportClient({ userSession, branches }: Props) {
       comment: 'feedback_comment',
     }
     const field = fieldMap[feedbackTab]
-    return responses
+    return feedbackResponses
       .filter((r) => r[field] && String(r[field]).trim())
       .map((r) => ({
         response: r,
@@ -312,7 +360,7 @@ export default function SurveyReportClient({ userSession, branches }: Props) {
         scoreOverall: r.score_overall,
         lowestScore: getLowestScore(r),
       }))
-  }, [responses, feedbackTab])
+  }, [feedbackResponses, feedbackTab])
 
   // 점수 색상
   const getScoreColor = (score: number) => {
@@ -397,13 +445,14 @@ export default function SurveyReportClient({ userSession, branches }: Props) {
           <Button variant="primary" onClick={handleSearch} className="px-5 text-sm">
             조회
           </Button>
-          {responses.length > 0 && (
+          {totalCount > 0 && (
             <button
               type="button"
               onClick={handleExport}
-              className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+              disabled={csvLoading}
+              className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 disabled:opacity-50"
             >
-              CSV 내보내기
+              {csvLoading ? '내보내는 중...' : `CSV 내보내기 (${totalCount.toLocaleString()}건)`}
             </button>
           )}
         </div>
@@ -421,7 +470,7 @@ export default function SurveyReportClient({ userSession, branches }: Props) {
         <>
           {/* 요약 카드 */}
           <FormGrid columns={4}>
-            <StatCard label="총 응답수" value={stats.total_count} unit="건" variant="primary" />
+            <StatCard label="총 응답수" value={stats.total_count.toLocaleString()} unit="건" variant="primary" />
             <StatCard
               label="전반적 만족도"
               value={stats.avg_overall.toFixed(1)}
@@ -539,7 +588,7 @@ export default function SurveyReportClient({ userSession, branches }: Props) {
                         : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
-                    {label} <span className="text-xs ml-0.5">({count})</span>
+                    {label} <span className="text-xs ml-0.5">({count.toLocaleString()})</span>
                   </button>
                 ))}
               </div>
@@ -595,23 +644,68 @@ export default function SurveyReportClient({ userSession, branches }: Props) {
         </>
       )}
 
-      {/* ═══ 전체 응답 목록 ═══ */}
-      {responses.length > 0 && !loading && (
-        <ContentCard title={`전체 응답 목록 (${responses.length}건)`}>
+      {/* ═══ 전체 응답 목록 (서버 페이지네이션) ═══ */}
+      {totalCount > 0 && !loading && (
+        <ContentCard title={`전체 응답 목록 (${totalCount.toLocaleString()}건)`}>
           <p className="text-xs text-gray-400 mb-2">행을 클릭하면 상세 정보를 확인할 수 있습니다.</p>
-          <ReportGrid
-            data={responses}
-            columnDefs={columnDefs}
-            emptyMessage="조회 버튼을 클릭하여 데이터를 조회하세요."
-            paginationPageSize={20}
-            onRowClicked={(e: any) => setSelectedResponse(e.data)}
-            height="700px"
-          />
+          <div className={pageLoading ? 'opacity-50 pointer-events-none' : ''}>
+            <ReportGrid
+              data={responses}
+              columnDefs={columnDefs}
+              emptyMessage="조회 버튼을 클릭하여 데이터를 조회하세요."
+              onRowClicked={(e: any) => setSelectedResponse(e.data)}
+              height="700px"
+            />
+          </div>
+
+          {/* 페이지네이션 */}
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+            <span className="text-sm text-gray-500">
+              {((currentPage - 1) * PAGE_SIZE + 1).toLocaleString()} ~ {Math.min(currentPage * PAGE_SIZE, totalCount).toLocaleString()} / {totalCount.toLocaleString()}건
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handlePageChange(1)}
+                disabled={currentPage === 1 || pageLoading}
+                className="px-2 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                처음
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1 || pageLoading}
+                className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                이전
+              </button>
+              <span className="px-3 py-1.5 text-sm font-medium text-gray-700">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages || pageLoading}
+                className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                다음
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePageChange(totalPages)}
+                disabled={currentPage >= totalPages || pageLoading}
+                className="px-2 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                마지막
+              </button>
+            </div>
+          </div>
         </ContentCard>
       )}
 
       {/* 초기 상태 */}
-      {!loading && responses.length === 0 && !error && !stats && (
+      {!loading && totalCount === 0 && !error && !stats && (
         <div className="flex items-center justify-center h-48 bg-gray-50 border border-dashed border-gray-300 rounded-lg">
           <p className="text-gray-400 text-sm">조회 버튼을 클릭하여 만족도 조사 결과를 확인하세요.</p>
         </div>

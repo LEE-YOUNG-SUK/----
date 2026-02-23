@@ -47,6 +47,9 @@ export interface SurveyStats {
   avg_procedure: number
   avg_result: number
   avg_overall: number
+  feedback_praise_count: number
+  feedback_improvement_count: number
+  feedback_comment_count: number
   gender_distribution: { label: string; count: number }[]
   age_distribution: { label: string; count: number }[]
   visit_type_distribution: { label: string; count: number }[]
