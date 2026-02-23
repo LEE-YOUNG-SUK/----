@@ -1,6 +1,7 @@
 import { requirePermission, getPermissionFlags } from '@/lib/session'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
 import { getClients } from './actions'
+import { createServerClient } from '@/lib/supabase/server'
 import ClientManagement from '@/components/clients/ClientManagement'
 import { ContentCard } from '@/components/ui/Card'
 
@@ -13,6 +14,14 @@ export default async function ClientsPage() {
     getClients()
   ])
   const permissions = getPermissionFlags(userData.role, 'clients_management')
+
+  // 본사 관리자: 지점 목록 조회 (거래처 등록 시 지점 선택용)
+  let branches: { id: string; name: string }[] = []
+  if (userData.is_headquarters && ['0000', '0001'].includes(userData.role)) {
+    const supabase = await createServerClient()
+    const { data } = await supabase.from('branches').select('id, name').eq('is_active', true).order('name')
+    branches = data || []
+  }
 
   return (
     <>
@@ -40,6 +49,7 @@ export default async function ClientsPage() {
               initialClients={clients}
               userData={userData}
               permissions={permissions}
+              branches={branches}
             />
           </div>
         </div>

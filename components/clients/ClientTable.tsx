@@ -12,7 +12,7 @@ import {
   createColumnHelper,
   type SortingState,
 } from '@tanstack/react-table'
-import type { Client } from '@/types'
+import type { Client, UserData } from '@/types'
 import { ContentCard } from '@/components/ui/Card'
 import { Button } from '../ui/Button'
 import { deleteClient } from '@/app/clients/actions'
@@ -29,6 +29,7 @@ interface ClientTableProps {
   }
   onEdit: (client: Client) => void
   onAddNew: () => void
+  userData: UserData
 }
 
 const columnHelper = createColumnHelper<Client>()
@@ -51,12 +52,15 @@ export default function ClientTable({
   onFilterChange,
   permissions,
   onEdit,
-  onAddNew
+  onAddNew,
+  userData
 }: ClientTableProps) {
   const router = useRouter()
   const { confirm, ConfirmDialogComponent } = useConfirm()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [sorting, setSorting] = useState<SortingState>([])
+
+  const canManageCommon = userData.is_headquarters && ['0000', '0001'].includes(userData.role)
 
   const handleDelete = async (client: Client) => {
     const ok = await confirm({ title: '삭제 확인', message: `'${client.name}' 거래처를 삭제하시겠습니까?\n\n연결된 입고/판매 내역이 있으면 삭제할 수 없습니다.`, variant: 'danger' })
@@ -79,6 +83,23 @@ export default function ClientTable({
   }
 
   const columns = [
+    columnHelper.accessor('branch_id', {
+      header: '구분',
+      size: 100,
+      cell: (info) => {
+        const branchId = info.getValue()
+        const branchName = info.row.original.branch_name
+        return branchId ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            {branchName || '지점'}
+          </span>
+        ) : (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            공통
+          </span>
+        )
+      },
+    }),
     columnHelper.accessor('code', {
       header: '거래처코드',
       size: 120,
@@ -271,7 +292,7 @@ export default function ClientTable({
 
       {/* 테이블 */}
       <div className="overflow-x-auto -mx-4 sm:-mx-6">
-        <table className="w-full min-w-[1260px] table-fixed">
+        <table className="w-full min-w-[1360px] table-fixed">
           <colgroup>
             {table.getAllColumns().map((col) => (
               <col key={col.id} style={{ width: col.getSize() }} />

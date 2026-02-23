@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { Client } from '@/types'
+import type { Client, UserData } from '@/types'
 import { saveClient } from '@/app/clients/actions'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/Dialog'
 import { Button } from '../ui/Button'
@@ -16,12 +16,16 @@ interface ClientFormProps {
   onClose: () => void
   onSuccess: () => void
   userId?: string
+  userData: UserData
+  branches?: { id: string; name: string }[]
 }
 
-export default function ClientForm({ client, onClose, onSuccess, userId }: ClientFormProps) {
+export default function ClientForm({ client, onClose, onSuccess, userId, userData, branches = [] }: ClientFormProps) {
   const isEdit = !!client
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
+
+  const canManageCommon = userData.is_headquarters && ['0000', '0001'].includes(userData.role)
+
   const [formData, setFormData] = useState({
     code: client?.code || '',
     name: client?.name || '',
@@ -31,12 +35,13 @@ export default function ClientForm({ client, onClose, onSuccess, userId }: Clien
     address: client?.address || '',
     tax_id: client?.tax_id || '',
     notes: client?.notes || '',
-    is_active: client?.is_active ?? true
+    is_active: client?.is_active ?? true,
+    branch_id: client?.branch_id ?? (canManageCommon ? '' : '__self__'),
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // 유효성 검사
     if (!formData.code.trim() || !formData.name.trim()) {
       alert('거래처 코드와 상호명은 필수입니다')
@@ -50,8 +55,20 @@ export default function ClientForm({ client, onClose, onSuccess, userId }: Clien
     }
 
     setIsSubmitting(true)
-    
+
     try {
+      // branch_id 결정: '' = 공통, '__self__' = 자기 지점, uuid = 특정 지점
+      let branchIdToSave: string | null = null
+      if (isEdit) {
+        branchIdToSave = client?.branch_id ?? null
+      } else if (formData.branch_id === '') {
+        branchIdToSave = null // 공통
+      } else if (formData.branch_id === '__self__') {
+        branchIdToSave = userData.branch_id || null
+      } else {
+        branchIdToSave = formData.branch_id || null
+      }
+
       const result = await saveClient({
         id: client?.id,
         code: formData.code.trim(),
@@ -63,7 +80,8 @@ export default function ClientForm({ client, onClose, onSuccess, userId }: Clien
         tax_id: formData.tax_id.replace(/[^0-9]/g, '') || null,
         notes: formData.notes.trim() || null,
         is_active: formData.is_active,
-        created_by: userId || null
+        created_by: userId || null,
+        branch_id: branchIdToSave,
       })
 
       if (result.success) {
@@ -94,10 +112,37 @@ export default function ClientForm({ client, onClose, onSuccess, userId }: Clien
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* 거래처 구분 */}
+          {!isEdit && canManageCommon && branches.length > 0 ? (
+            <div className="space-y-2">
+              <Label htmlFor="branch_id">거래처 구분 *</Label>
+              <select
+                id="branch_id"
+                value={formData.branch_id}
+                onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">공통 거래처 (전 지점 공유)</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name} 전용</option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+          {isEdit && client && (
+            <div className={`p-3 rounded-lg text-sm font-medium ${
+              !client.branch_id
+                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                : 'bg-green-50 text-green-700 border border-green-200'
+            }`}>
+              {!client.branch_id ? '공통 거래처' : `${client.branch_name || '지점'} 거래처`}
+            </div>
+          )}
+
           {/* 기본 정보 */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold">📋 기본 정보</h3>
-            
+
             <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="code">거래처 코드 *</Label>
@@ -145,7 +190,7 @@ export default function ClientForm({ client, onClose, onSuccess, userId }: Clien
           {/* 담당자 정보 */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold">👤 담당자 정보</h3>
-            
+
             <FormGrid columns={2}>
               <div className="space-y-2">
                 <Label htmlFor="contact_person">대표자/담당자명</Label>
@@ -183,7 +228,7 @@ export default function ClientForm({ client, onClose, onSuccess, userId }: Clien
           {/* 주소 및 메모 */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold">📍 주소 및 메모</h3>
-            
+
             <div className="space-y-2">
               <Label htmlFor="address">주소</Label>
               <Input
@@ -211,7 +256,7 @@ export default function ClientForm({ client, onClose, onSuccess, userId }: Clien
             <Checkbox
               id="is_active"
               checked={formData.is_active}
-              onCheckedChange={(checked) => 
+              onCheckedChange={(checked) =>
                 setFormData({ ...formData, is_active: checked as boolean })
               }
             />

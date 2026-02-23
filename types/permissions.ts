@@ -91,15 +91,18 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     { resource: 'users_management', action: 'update' },
     { resource: 'users_management', action: 'delete' },
 
-    // 거래처 (읽기만)
+    // 거래처 (지점 거래처 CRUD)
     { resource: 'clients_management', action: 'read' },
+    { resource: 'clients_management', action: 'create' },
+    { resource: 'clients_management', action: 'update' },
+    { resource: 'clients_management', action: 'delete' },
 
     // 품목 (지점 품목 CRUD)
     { resource: 'products_management', action: 'read' },
     { resource: 'products_management', action: 'create' },
     { resource: 'products_management', action: 'update' },
     { resource: 'products_management', action: 'delete' },
-    
+
     // 입고 (전체)
     { resource: 'purchases_management', action: 'read' },
     { resource: 'purchases_management', action: 'create' },
@@ -130,6 +133,9 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   // 0002: 매니저 - 원장과 동일
   '0002': [
     { resource: 'clients_management', action: 'read' },
+    { resource: 'clients_management', action: 'create' },
+    { resource: 'clients_management', action: 'update' },
+    { resource: 'clients_management', action: 'delete' },
     // 품목 (지점 품목 CRUD)
     { resource: 'products_management', action: 'read' },
     { resource: 'products_management', action: 'create' },

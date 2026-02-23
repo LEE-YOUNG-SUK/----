@@ -157,10 +157,13 @@ export async function getProductsList() {
  */
 export async function getSuppliersList() {
   try {
+    const session = await getSession()
+    const branchId = !session || (session.is_headquarters && ['0000', '0001'].includes(session.role)) ? null : session.branch_id
+
     const supabase = await createServerClient()
-    
+
     const { data, error } = await supabase
-      .rpc('get_suppliers_list')
+      .rpc('get_suppliers_list', { p_branch_id: branchId })
       .order('name', { ascending: true })
 
     if (error) throw error

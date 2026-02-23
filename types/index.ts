@@ -58,6 +58,8 @@ export interface Client {
   is_active: boolean
   created_at: string
   updated_at: string
+  branch_id?: string | null
+  branch_name?: string
 }
 
 // 품목 카테고리

@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 import type { Client, UserData } from '@/types'
 import ClientTable from './ClientTable'
 import ClientForm from './ClientForm'
-import ClientFilters from './ClientFilters'
-import { Button } from '../ui/Button'
 
 interface ClientManagementProps {
   initialClients: Client[]
@@ -16,12 +14,14 @@ interface ClientManagementProps {
     canUpdate: boolean
     canDelete: boolean
   }
+  branches?: { id: string; name: string }[]
 }
 
 export default function ClientManagement({
   initialClients,
   userData,
-  permissions
+  permissions,
+  branches = [],
 }: ClientManagementProps) {
   const router = useRouter()
   const [clients, setClients] = useState<Client[]>(initialClients)
@@ -59,6 +59,7 @@ export default function ClientManagement({
         permissions={permissions}
         onEdit={handleEdit}
         onAddNew={handleAddNew}
+        userData={userData}
       />
 
       {/* 폼 모달 */}
@@ -68,6 +69,8 @@ export default function ClientManagement({
           onClose={handleFormClose}
           onSuccess={handleSuccess}
           userId={userData.user_id}
+          userData={userData}
+          branches={branches}
         />
       )}
     </>

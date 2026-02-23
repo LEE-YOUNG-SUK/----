@@ -13,10 +13,13 @@ export async function getClients() {
     const session = await getSession()
     if (!session) return []
 
+    // 본사 관리자/원장 → 전체 조회; 나머지 → 공통 + 본인 지점
+    const branchId = session.is_headquarters && ['0000', '0001'].includes(session.role) ? null : session.branch_id
+
     const supabase = await createServerClient()
 
     const { data, error } = await supabase
-      .rpc('get_clients_list')
+      .rpc('get_clients_list', { p_branch_id: branchId })
       .order('code', { ascending: true })
 
     if (error) {
@@ -46,22 +49,42 @@ export async function saveClient(formData: {
   notes: string | null
   is_active: boolean
   created_by?: string | null
+  branch_id?: string | null
 }) {
   const session = await getSession()
   if (!session) return { success: false, message: '로그인이 필요합니다.' }
-  if (!['0000', '0001'].includes(session.role)) return { success: false, message: '거래처 관리 권한이 없습니다.' }
+
+  const canManageCommon = session.is_headquarters && ['0000', '0001'].includes(session.role)
+  const canManageBranch = ['0001', '0002'].includes(session.role)
+  if (!canManageCommon && !canManageBranch) {
+    return { success: false, message: '거래처 관리 권한이 없습니다.' }
+  }
 
   const supabase = await createServerClient()
 
   try {
     if (formData.id) {
-      // 수정
+      // 수정 시 소유권 검증
+      const { data: existing } = await supabase
+        .from('clients')
+        .select('branch_id')
+        .eq('id', formData.id)
+        .single()
+
+      if (!existing) return { success: false, message: '거래처를 찾을 수 없습니다.' }
+
+      if (existing.branch_id === null && !canManageCommon) {
+        return { success: false, message: '공통 거래처는 관리자만 수정할 수 있습니다.' }
+      }
+      if (existing.branch_id && existing.branch_id !== session.branch_id && !canManageCommon) {
+        return { success: false, message: '다른 지점의 거래처는 수정할 수 없습니다.' }
+      }
+
       const { error } = await supabase
         .from('clients')
         .update({
           code: formData.code,
           name: formData.name,
-
           contact_person: formData.contact_person,
           phone: formData.phone,
           email: formData.email,
@@ -73,19 +96,22 @@ export async function saveClient(formData: {
           updated_by: session.user_id
         })
         .eq('id', formData.id)
-      
+
       if (error) throw error
-      
+
       revalidatePath('/clients')
       return { success: true, message: '거래처가 수정되었습니다' }
     } else {
-      // 생성
+      // 생성: 본사 관리자는 폼에서 선택한 branch_id 사용, 지점 사용자는 자기 지점
+      const branchIdForCreate = canManageCommon
+        ? (formData.branch_id || null)
+        : session.branch_id
+
       const { error } = await supabase
         .from('clients')
         .insert({
           code: formData.code,
           name: formData.name,
-
           contact_person: formData.contact_person,
           phone: formData.phone,
           email: formData.email,
@@ -93,16 +119,17 @@ export async function saveClient(formData: {
           tax_id: formData.tax_id,
           notes: formData.notes,
           is_active: formData.is_active,
-          created_by: session.user_id
+          created_by: session.user_id,
+          branch_id: branchIdForCreate
         })
-      
+
       if (error) {
         if (error.code === '23505') {
           return { success: false, message: '이미 존재하는 거래처 코드입니다' }
         }
         throw error
       }
-      
+
       revalidatePath('/clients')
       return { success: true, message: '거래처가 생성되었습니다' }
     }
@@ -118,23 +145,44 @@ export async function saveClient(formData: {
 export async function deleteClient(clientId: string) {
   const session = await getSession()
   if (!session) return { success: false, message: '로그인이 필요합니다.' }
-  if (!['0000', '0001'].includes(session.role)) return { success: false, message: '거래처 삭제 권한이 없습니다.' }
+
+  const canManageCommon = session.is_headquarters && ['0000', '0001'].includes(session.role)
+  const canManageBranch = ['0001', '0002'].includes(session.role)
+  if (!canManageCommon && !canManageBranch) {
+    return { success: false, message: '거래처 삭제 권한이 없습니다.' }
+  }
 
   const supabase = await createServerClient()
-  
+
   try {
-    const { error} = await supabase
+    // 소유권 검증
+    const { data: existing } = await supabase
+      .from('clients')
+      .select('branch_id')
+      .eq('id', clientId)
+      .single()
+
+    if (!existing) return { success: false, message: '거래처를 찾을 수 없습니다.' }
+
+    if (existing.branch_id === null && !canManageCommon) {
+      return { success: false, message: '공통 거래처는 관리자만 삭제할 수 있습니다.' }
+    }
+    if (existing.branch_id && existing.branch_id !== session.branch_id && !canManageCommon) {
+      return { success: false, message: '다른 지점의 거래처는 삭제할 수 없습니다.' }
+    }
+
+    const { error } = await supabase
       .from('clients')
       .delete()
       .eq('id', clientId)
-    
+
     if (error) {
       if (error.code === '23503') {
         return { success: false, message: '사용 중인 거래처는 삭제할 수 없습니다' }
       }
       throw error
     }
-    
+
     revalidatePath('/clients')
     return { success: true, message: '거래처가 삭제되었습니다' }
   } catch (error: any) {
