@@ -127,8 +127,10 @@ export async function saveProduct(formData: {
         message: result?.message ?? '품목이 수정되었습니다'
       }
     } else {
-      // 생성: 역할에 따라 branch_id 결정
-      const branchIdForCreate = canManageCommon ? null : session.branch_id
+      // 생성: 본사 관리자는 폼에서 선택한 branch_id 사용, 지점 사용자는 자기 지점
+      const branchIdForCreate = canManageCommon
+        ? (formData.branch_id || null)
+        : session.branch_id
 
       const { data, error } = await supabase.rpc('create_product', {
         p_code: formData.code,

@@ -16,12 +16,14 @@ interface ProductManagementProps {
     canUpdate: boolean
     canDelete: boolean
   }
+  branches?: { id: string; name: string }[]
 }
 
 export default function ProductManagement({
   initialProducts,
   userData,
-  permissions
+  permissions,
+  branches = [],
 }: ProductManagementProps) {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>(initialProducts)
@@ -70,6 +72,7 @@ export default function ProductManagement({
           onSuccess={handleSuccess}
           userId={userData.user_id}
           userData={userData}
+          branches={branches}
         />
       )}
     </>

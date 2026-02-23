@@ -16,14 +16,17 @@ interface ProductFormProps {
   onSuccess: () => void
   userId?: string
   userData: UserData
+  branches?: { id: string; name: string }[]
 }
 
-export default function ProductForm({ product, onClose, onSuccess, userId, userData }: ProductFormProps) {
+export default function ProductForm({ product, onClose, onSuccess, userId, userData, branches = [] }: ProductFormProps) {
   const isEdit = !!product
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [categories, setCategories] = useState<ProductCategory[]>([])
   const [loadingCategories, setLoadingCategories] = useState(true)
   
+  const canManageCommon = userData.is_headquarters && ['0000', '0001'].includes(userData.role)
+
   const [formData, setFormData] = useState({
     code: product?.code || '',
     name: product?.name || '',
@@ -35,7 +38,8 @@ export default function ProductForm({ product, onClose, onSuccess, userId, userD
     min_stock_level: product?.min_stock_level || 0,
     standard_purchase_price: product?.standard_purchase_price || 0,
     standard_sale_price: product?.standard_sale_price || 0,
-    is_active: product?.is_active ?? true
+    is_active: product?.is_active ?? true,
+    branch_id: product?.branch_id ?? (canManageCommon ? '' : '__self__'),
   })
 
   // 카테고리 목록 조회
@@ -76,6 +80,18 @@ export default function ProductForm({ product, onClose, onSuccess, userId, userD
     setIsSubmitting(true)
     
     try {
+      // branch_id 결정: '' = 공통, '__self__' = 자기 지점, uuid = 특정 지점
+      let branchIdToSave: string | null = null
+      if (isEdit) {
+        branchIdToSave = product?.branch_id ?? null
+      } else if (formData.branch_id === '') {
+        branchIdToSave = null // 공통
+      } else if (formData.branch_id === '__self__') {
+        branchIdToSave = userData.branch_id || null
+      } else {
+        branchIdToSave = formData.branch_id || null
+      }
+
       const result = await saveProduct({
         id: product?.id,
         code: formData.code.trim(),
@@ -90,7 +106,7 @@ export default function ProductForm({ product, onClose, onSuccess, userId, userD
         standard_sale_price: Number(formData.standard_sale_price) || 0,
         is_active: formData.is_active,
         created_by: userId || null,
-        branch_id: product?.branch_id ?? null
+        branch_id: branchIdToSave,
       })
 
       if (result.success) {
@@ -114,19 +130,27 @@ export default function ProductForm({ product, onClose, onSuccess, userId, userD
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* 품목 구분 안내 */}
-          {!isEdit && (
-            <div className={`p-3 rounded-lg text-sm font-medium ${
-              userData.is_headquarters && ['0000', '0001'].includes(userData.role)
-                ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                : 'bg-green-50 text-green-700 border border-green-200'
-            }`}>
-              {userData.is_headquarters && ['0000', '0001'].includes(userData.role)
-                ? '공통 품목으로 등록됩니다 (전 지점 공유)'
-                : `${userData.branch_name} 지점 품목으로 등록됩니다`
-              }
+          {/* 품목 구분 */}
+          {!isEdit && canManageCommon && branches.length > 0 ? (
+            <div className="space-y-2">
+              <Label htmlFor="branch_id">품목 구분 *</Label>
+              <select
+                id="branch_id"
+                value={formData.branch_id}
+                onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">공통 품목 (전 지점 공유)</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name} 전용</option>
+                ))}
+              </select>
             </div>
-          )}
+          ) : !isEdit ? (
+            <div className="p-3 rounded-lg text-sm font-medium bg-green-50 text-green-700 border border-green-200">
+              {`${userData.branch_name} 지점 품목으로 등록됩니다`}
+            </div>
+          ) : null}
           {isEdit && product && (
             <div className={`p-3 rounded-lg text-sm font-medium ${
               !product.branch_id
