@@ -169,6 +169,120 @@ export default function MovementDetailClient({ userSession, products, branches }
     setLoading(false)
   }
 
+  // 인쇄
+  const handlePrint = useCallback(() => {
+    if (groups.length === 0) return
+
+    const now = new Date()
+    const printTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
+    const branchLabel = !selectedBranchId
+      ? '전체 지점'
+      : (branches.find(b => b.id === selectedBranchId)?.name || userSession.branch_name || '')
+
+    // 품목별 테이블 생성
+    const sections = groups.map(group => {
+      const movements = group.movements.filter(m => m.movement_type !== '전일재고')
+      const totalIn = movements.reduce((s, m) => s + Number(m.incoming_qty), 0)
+      const totalOut = movements.reduce((s, m) => s + Number(m.outgoing_qty), 0)
+      const lastBalance = group.movements.length > 0 ? Number(group.movements[group.movements.length - 1].running_balance) : 0
+
+      // 월별 소계 포함 행 생성
+      let currentMonth = ''
+      let monthIn = 0, monthOut = 0, monthEndBalance = 0
+      const rows: string[] = []
+
+      group.movements.forEach(m => {
+        if (m.movement_type === '전일재고') {
+          rows.push(`<tr style="background:#eff6ff"><td></td><td></td><td style="font-weight:700;color:#1d4ed8;text-align:center">전일재고</td><td></td><td></td><td style="text-align:right;font-weight:700">${Number(m.running_balance).toLocaleString()}</td></tr>`)
+          return
+        }
+        const date = new Date(m.movement_date)
+        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+        if (currentMonth && month !== currentMonth) {
+          const [y, mo] = currentMonth.split('-')
+          rows.push(`<tr style="background:#fffbeb;font-weight:700;color:#92400e"><td></td><td></td><td style="text-align:center">${y}년 ${Number(mo)}월 소계</td><td style="text-align:right">${monthIn > 0 ? monthIn.toLocaleString() : '-'}</td><td style="text-align:right">${monthOut > 0 ? monthOut.toLocaleString() : '-'}</td><td style="text-align:right">${monthEndBalance.toLocaleString()}</td></tr>`)
+          monthIn = 0; monthOut = 0
+        }
+        currentMonth = month
+        monthIn += Number(m.incoming_qty)
+        monthOut += Number(m.outgoing_qty)
+        monthEndBalance = Number(m.running_balance)
+
+        const inQty = Number(m.incoming_qty)
+        const outQty = Number(m.outgoing_qty)
+        rows.push(`<tr><td>${date.toLocaleDateString('ko-KR')}</td><td>${m.party_name || '-'}</td><td>${m.remarks || '-'}</td><td style="text-align:right;${inQty > 0 ? 'color:#2563eb;font-weight:600' : 'color:#ccc'}">${inQty > 0 ? inQty.toLocaleString() : '-'}</td><td style="text-align:right;${outQty > 0 ? 'color:#dc2626;font-weight:600' : 'color:#ccc'}">${outQty > 0 ? outQty.toLocaleString() : '-'}</td><td style="text-align:right;font-weight:700">${Number(m.running_balance).toLocaleString()}</td></tr>`)
+      })
+      // 마지막 월 소계
+      if (currentMonth) {
+        const [y, mo] = currentMonth.split('-')
+        rows.push(`<tr style="background:#fffbeb;font-weight:700;color:#92400e"><td></td><td></td><td style="text-align:center">${y}년 ${Number(mo)}월 소계</td><td style="text-align:right">${monthIn > 0 ? monthIn.toLocaleString() : '-'}</td><td style="text-align:right">${monthOut > 0 ? monthOut.toLocaleString() : '-'}</td><td style="text-align:right">${monthEndBalance.toLocaleString()}</td></tr>`)
+      }
+
+      return `<div class="product-section">
+<div class="product-header"><span style="font-family:monospace;color:#2563eb;margin-right:8px">${group.productCode}</span>${group.productName} <span style="font-weight:400;color:#666;margin-left:4px">[${group.unit}]</span></div>
+<table><thead><tr><th style="width:80px">일자</th><th style="width:100px">거래처명</th><th>적요</th><th style="width:70px;text-align:right">입고수량</th><th style="width:70px;text-align:right">출고수량</th><th style="width:70px;text-align:right">재고수량</th></tr></thead>
+<tbody>${rows.join('')}</tbody></table>
+<table class="totals-table" style="margin-top:-1px"><tr><td style="width:80px">&nbsp;</td><td style="width:100px">&nbsp;</td><td style="text-align:right;font-weight:700">합계</td><td style="width:70px;text-align:right;font-weight:700;color:#2563eb">${totalIn.toLocaleString()}</td><td style="width:70px;text-align:right;font-weight:700;color:#dc2626">${totalOut.toLocaleString()}</td><td style="width:70px;text-align:right;font-weight:700">${lastBalance.toLocaleString()}</td></tr></table>
+</div>`
+    }).join('')
+
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>재고수불부</title>
+<style>
+  @page { size: A4 portrait; margin: 10mm; }
+  @media print { .no-print { display: none !important; } body { padding-bottom: 30px; } .page-continue { display: block; position: fixed; bottom: 0; left: 0; right: 0; text-align: center; font-size: 11px; color: #888; padding: 4px 0; background: #fff; } }
+  body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; font-size: 13px; color: #222; margin: 0; padding: 20px; }
+  h1 { font-size: 20px; margin: 0 0 4px; text-align: center; }
+  .info { font-size: 12px; color: #555; margin-bottom: 16px; text-align: center; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #ccc; padding: 5px 7px; font-size: 11px; }
+  th { background: #f3f4f6; font-weight: 600; }
+  .totals-table td { background: #f9fafb; }
+  .product-section { margin-bottom: 20px; page-break-inside: avoid; }
+  .product-header { font-size: 14px; font-weight: 700; padding: 6px 0; margin-bottom: 4px; border-bottom: 2px solid #3b82f6; }
+  .page-continue { display: none; }
+  .no-print { text-align: center; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .no-print button { padding: 8px 24px; font-size: 14px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+  .no-print select { padding: 7px 12px; font-size: 13px; border: 1px solid #ccc; border-radius: 6px; }
+</style>
+<script>
+function changeOrientation(val) {
+  var style = document.getElementById('page-style');
+  style.textContent = '@page { size: A4 ' + val + '; margin: 10mm; }';
+}
+</script>
+<style id="page-style">@page { size: A4 portrait; margin: 10mm; }</style>
+</head><body>
+<div class="no-print">
+  <span style="font-size:13px">인쇄방향</span>
+  <select onchange="changeOrientation(this.value)">
+    <option value="portrait">세로 (Portrait)</option>
+    <option value="landscape">가로 (Landscape)</option>
+  </select>
+  <button onclick="window.print()">인쇄하기</button>
+</div>
+<h1>재고수불부</h1>
+<div class="info">${branchLabel} | 기간: ${startDate} ~ ${endDate} | 조회일시: ${printTime} | ${groups.length}개 품목</div>
+${sections}
+<div class="page-continue">- 다음장에서 계속 -</div>
+<script>
+window.onload = function() {
+  if (document.body.scrollHeight <= 1000) {
+    var el = document.querySelector('.page-continue');
+    if (el) el.style.display = 'none';
+  }
+}
+</script>
+</body></html>`
+
+    const printWindow = window.open('', '_blank', 'width=1100,height=800')
+    if (printWindow) {
+      printWindow.document.write(html)
+      printWindow.document.close()
+    }
+  }, [groups, userSession, selectedBranchId, branches, startDate, endDate])
+
   // 지점명
   const branchName = useMemo(() => {
     if (!selectedBranchId) return '전체 지점'
@@ -318,14 +432,24 @@ export default function MovementDetailClient({ userSession, products, branches }
             </div>
           </div>
 
-          {/* 조회 버튼 */}
-          <button
-            onClick={handleSearch}
-            disabled={loading || selectedProducts.length === 0}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
-          >
-            {loading ? '조회 중...' : '조회'}
-          </button>
+          {/* 조회 / 인쇄 버튼 */}
+          <div className="flex gap-2">
+            <button
+              onClick={handleSearch}
+              disabled={loading || selectedProducts.length === 0}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+            >
+              {loading ? '조회 중...' : '조회'}
+            </button>
+            <button
+              onClick={handlePrint}
+              disabled={loading || groups.length === 0}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+              title="인쇄"
+            >
+              🖨️ 인쇄
+            </button>
+          </div>
         </div>
       </ContentCard>
 

@@ -205,17 +205,121 @@ export default function InventoryStatusClient({ userSession, products, branches 
     [branches]
   )
 
-  // 초기 로딩
-  useEffect(() => {
-    handleSearch()
-  }, [])
-
   // 합계 계산
   const totals = useMemo(() => ({
     totalQuantity: data.reduce((sum, r) => sum + r.current_quantity, 0),
     totalValue: data.reduce((sum, r) => sum + r.inventory_value, 0),
     stockProductCount: data.filter(r => r.current_quantity > 0).length,
   }), [data])
+
+  // 인쇄
+  const handlePrint = useCallback(() => {
+    if (data.length === 0) return
+
+    const branchLabel =
+      userSession.is_headquarters && ['0000', '0001'].includes(userSession.role)
+        ? (selectedBranch
+          ? branchOptions.find(([id]) => id === selectedBranch)?.[1] || '전체 지점'
+          : '전체 지점')
+        : userSession.branch_name
+
+    const now = new Date()
+    const printTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
+    const rows = data.map((item, i) => {
+      return `<tr>
+        <td style="text-align:center">${i + 1}</td>
+        <td style="font-family:monospace">${item.product_code}</td>
+        <td>${item.category || '미분류'}</td>
+        <td>${item.product_name}</td>
+        <td style="text-align:center">${item.unit}</td>
+        <td style="text-align:right;font-weight:600;font-size:14px">${item.current_quantity.toLocaleString()}</td>
+        <td style="text-align:right">\u20A9${item.weighted_avg_cost.toLocaleString()}</td>
+        <td style="text-align:right;font-weight:600">\u20A9${item.inventory_value.toLocaleString()}</td>
+      </tr>`
+    }).join('')
+
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>재고현황</title>
+<style>
+  @page { size: A4 portrait; margin: 10mm; }
+  @media print { .no-print { display: none !important; } }
+  body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; font-size: 13px; color: #222; margin: 0; padding: 20px; }
+  h1 { font-size: 20px; margin: 0 0 4px; text-align: center; }
+  .info { font-size: 12px; color: #555; margin-bottom: 12px; text-align: center; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #ccc; padding: 6px 8px; font-size: 12px; }
+  th { background: #f3f4f6; font-weight: 600; }
+  .totals-table td { background: #f9fafb; font-weight: 700; }
+  .page-continue { display: none; }
+  @media print {
+    thead { display: table-header-group; }
+    body { padding-bottom: 30px; }
+    .page-continue { display: block; position: fixed; bottom: 0; left: 0; right: 0; text-align: center; font-size: 11px; color: #888; padding: 4px 0; background: #fff; }
+  }
+  .no-print { text-align: center; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .no-print button { padding: 8px 24px; font-size: 14px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+  .no-print select { padding: 7px 12px; font-size: 13px; border: 1px solid #ccc; border-radius: 6px; }
+</style>
+<script>
+function changeOrientation(val) {
+  var style = document.getElementById('page-style');
+  style.textContent = '@page { size: A4 ' + val + '; margin: 10mm; }';
+}
+</script>
+<style id="page-style">@page { size: A4 portrait; margin: 10mm; }</style>
+</head><body>
+<div class="no-print">
+  <span style="font-size:13px">인쇄방향</span>
+  <select onchange="changeOrientation(this.value)">
+    <option value="portrait">세로 (Portrait)</option>
+    <option value="landscape">가로 (Landscape)</option>
+  </select>
+  <button onclick="window.print()">인쇄하기</button>
+</div>
+<h1>재고 현황</h1>
+<div class="info">${branchLabel} | 기준일: ${endDate} | 조회일시: ${printTime} | 총 ${data.length}개 품목</div>
+<table>
+  <thead><tr>
+    <th style="width:28px">No</th><th style="width:70px">품목코드</th><th style="width:90px">카테고리</th><th>품목명</th><th style="width:35px">단위</th>
+    <th style="width:60px;text-align:right">재고수량</th><th style="width:75px;text-align:right">입고단가</th>
+    <th style="width:85px;text-align:right">재고금액</th>
+  </tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+<table class="totals-table" style="width:100%;border-collapse:collapse;margin-top:-1px">
+  <tr>
+    <td style="width:28px;border:1px solid #ccc;padding:6px 8px;font-size:12px">&nbsp;</td>
+    <td style="width:70px;border:1px solid #ccc;padding:6px 8px;font-size:12px">&nbsp;</td>
+    <td style="width:90px;border:1px solid #ccc;padding:6px 8px;font-size:12px">&nbsp;</td>
+    <td style="border:1px solid #ccc;padding:6px 8px;font-size:12px;text-align:right;font-weight:700" colspan="2">합계</td>
+    <td style="width:60px;border:1px solid #ccc;padding:6px 8px;font-size:14px;text-align:right;font-weight:700">${totals.totalQuantity.toLocaleString()}</td>
+    <td style="width:75px;border:1px solid #ccc;padding:6px 8px;font-size:12px;text-align:right">-</td>
+    <td style="width:85px;border:1px solid #ccc;padding:6px 8px;font-size:12px;text-align:right;font-weight:700">\u20A9${totals.totalValue.toLocaleString()}</td>
+  </tr>
+</table>
+<div class="page-continue">- 다음장에서 계속 -</div>
+<script>
+window.onload = function() {
+  if (document.body.scrollHeight <= 1000) {
+    var el = document.querySelector('.page-continue');
+    if (el) el.style.display = 'none';
+  }
+}
+</script>
+</body></html>`
+
+    const printWindow = window.open('', '_blank', 'width=1100,height=800')
+    if (printWindow) {
+      printWindow.document.write(html)
+      printWindow.document.close()
+    }
+  }, [data, totals, userSession, selectedBranch, branchOptions, startDate, endDate])
+
+  // 초기 로딩
+  useEffect(() => {
+    handleSearch()
+  }, [])
 
   return (
     <>
@@ -390,14 +494,24 @@ export default function InventoryStatusClient({ userSession, products, branches 
               </div>
             </div>
 
-            {/* 조회 버튼 */}
-            <button
-              onClick={handleSearch}
-              disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
-            >
-              {loading ? '조회 중...' : '조회'}
-            </button>
+            {/* 조회 / 인쇄 버튼 */}
+            <div className="flex gap-2">
+              <button
+                onClick={handleSearch}
+                disabled={loading}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+              >
+                {loading ? '조회 중...' : '조회'}
+              </button>
+              <button
+                onClick={handlePrint}
+                disabled={loading || data.length === 0}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+                title="인쇄"
+              >
+                🖨️ 인쇄
+              </button>
+            </div>
           </div>
         </div>
       </ContentCard>
