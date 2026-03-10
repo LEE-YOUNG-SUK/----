@@ -8,7 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Badge } from '../../ui/Badge'
 import { Button } from '../../ui/Button'
 import { deleteUser } from '@/app/admin/users/actions'
+import { toggleManagerOrderPermission } from '@/app/b2b-orders/admin/actions'
 import { ROLE_LABELS } from '@/types/permissions'
+import { toast } from 'sonner'
 
 interface UserWithBranch {
   id: string
@@ -18,6 +20,7 @@ interface UserWithBranch {
   branch_id: string | null
   branch_name: string | null
   is_active: boolean
+  can_b2b_order?: boolean
   last_login_at: string | null
   created_at: string
 }
@@ -29,9 +32,10 @@ interface UserTableProps {
     canDelete: boolean
   }
   onEdit: (user: UserWithBranch) => void
+  currentUserRole?: string
 }
 
-export default function UserTable({ users, permissions, onEdit }: UserTableProps) {
+export default function UserTable({ users, permissions, onEdit, currentUserRole }: UserTableProps) {
   const router = useRouter()
   const { confirm, ConfirmDialogComponent } = useConfirm()
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -105,6 +109,7 @@ export default function UserTable({ users, permissions, onEdit }: UserTableProps
                 <TableHead>이름</TableHead>
                 <TableHead>권한</TableHead>
                 <TableHead>소속 지점</TableHead>
+                <TableHead>B2B 발주</TableHead>
                 <TableHead>상태</TableHead>
                 <TableHead>최근 로그인</TableHead>
                 <TableHead>생성일</TableHead>
@@ -122,6 +127,31 @@ export default function UserTable({ users, permissions, onEdit }: UserTableProps
                     </Badge>
                   </TableCell>
                   <TableCell>{user.branch_name || '-'}</TableCell>
+                  <TableCell>
+                    {user.role === '0002' && (currentUserRole === '0000' || currentUserRole === '0001') ? (
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!user.can_b2b_order}
+                          onChange={async (e) => {
+                            const result = await toggleManagerOrderPermission(user.id, e.target.checked)
+                            if (result.success) {
+                              toast.success(result.message)
+                              router.refresh()
+                            } else {
+                              toast.error(result.message)
+                            }
+                          }}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600" />
+                      </label>
+                    ) : user.role === '0001' ? (
+                      <span className="text-xs text-green-600">자동</span>
+                    ) : (
+                      <span className="text-xs text-gray-400">-</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={user.is_active ? 'default' : 'secondary'}>
                       {user.is_active ? '✅ 활성' : '❌ 비활성'}

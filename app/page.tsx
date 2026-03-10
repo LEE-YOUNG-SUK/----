@@ -21,7 +21,7 @@ export default async function DashboardPage() {
               {'환영합니다, '}{session.display_name}{'님! 👋'}
             </h2>
             <p className="text-gray-900">
-              DR.Evers ERP 시스템에 성공적으로 로그인하셨습니다.
+              {session.branch_name} | {session.role === '0000' ? '시스템관리자' : session.role === '0001' ? '원장' : session.role === '0002' ? '매니저' : '사용자'}
             </p>
           </ContentCard>
           
@@ -42,18 +42,12 @@ export default async function DashboardPage() {
                 <p className="text-sm text-blue-600 mb-1">이름</p>
                 <p className="text-lg font-medium text-blue-900">{session.display_name}</p>
               </div>
-              <div className="bg-purple-50 rounded-lg p-4">
-                <p className="text-sm text-purple-600 mb-1">역할</p>
-                <p className="text-lg font-medium text-purple-900">
-                  {ROLE_ICONS[session.role]} {ROLE_LABELS[session.role]}
-                </p>
-              </div>
             </div>
           </ContentCard>
           
           {/* 빠른 링크 */}
           <ContentCard title="🚀 빠른 시작">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               
               <a href="/purchases" className="block p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition border border-blue-200">
                 <div className="text-2xl mb-2">{'📥'}</div>
@@ -72,7 +66,13 @@ export default async function DashboardPage() {
                 <div className="font-medium text-purple-900">재고 현황</div>
                 <div className="text-sm text-purple-600">실시간 재고 조회</div>
               </a>
-              
+
+              <a href="/reports/surveys" className="block p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition border border-orange-200">
+                <div className="text-2xl mb-2">{'📊'}</div>
+                <div className="font-medium text-orange-900">고객만족도 조사</div>
+                <div className="text-sm text-orange-600">만족도 통계 및 분석</div>
+              </a>
+
             </div>
           </ContentCard>
           

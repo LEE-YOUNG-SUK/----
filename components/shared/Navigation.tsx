@@ -142,6 +142,42 @@ export function Navigation({ user, onLogout }: Props) {
     ],
   }
   
+  // B2B 발주 드롭다운 메뉴
+  const b2bMenu: DropdownMenu = {
+    label: 'B2B 발주',
+    icon: '🛒',
+    items: [
+      {
+        href: '/b2b-orders/new',
+        label: '발주하기',
+        icon: '📝',
+        resource: 'b2b_orders',
+        action: 'create',
+      },
+      {
+        href: '/b2b-orders',
+        label: '발주내역',
+        icon: '📋',
+        resource: 'b2b_orders',
+        action: 'read',
+      },
+      {
+        href: '/b2b-orders/admin',
+        label: '주문관리',
+        icon: '⚙️',
+        resource: 'b2b_order_processing',
+        action: 'read',
+      },
+      {
+        href: '/reports/b2b',
+        label: 'B2B 정산',
+        icon: '📈',
+        resource: 'b2b_settlements',
+        action: 'read',
+      },
+    ],
+  }
+
   // 레포트 드롭다운 메뉴
   const reportsMenu: DropdownMenu = {
     label: '레포트',
@@ -249,6 +285,9 @@ export function Navigation({ user, onLogout }: Props) {
   const visibleInventoryItems = filterByPermission(inventoryMenu.items)
   const visiblePurchasesItems = filterByPermission(purchasesMenu.items)
   const visibleSalesItems = filterByPermission(salesMenu.items)
+  // B2B 발주 기능 임시 숨김 (아직 미사용)
+  const B2B_ENABLED = false
+  const visibleB2bItems = B2B_ENABLED ? filterByPermission(b2bMenu.items) : []
   const visibleReportsItems = filterByPermission(reportsMenu.items)
   const visibleAdminItems = filterByPermission(adminMenu.items)
   const showSurvey = ['0000', '0001', '0002'].includes(user.role)
@@ -431,6 +470,50 @@ export function Navigation({ user, onLogout }: Props) {
               </div>
             )}
 
+            {/* B2B 발주 드롭다운 */}
+            {visibleB2bItems.length > 0 && (
+              <div className="relative" onMouseEnter={() => handleMouseEnter('b2b')} onMouseLeave={handleMouseLeave}>
+                <button
+                  onClick={() => toggleDropdown('b2b')}
+                  className={`
+                    px-3 py-2 rounded-lg text-sm font-medium transition flex items-center
+                    ${isDropdownActive(b2bMenu.items)
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
+                    }
+                  `}
+                >
+                  <span>{b2bMenu.icon}</span>
+                  <span className="ml-1 hidden lg:inline">{b2bMenu.label}</span>
+                  <svg className={`ml-1 h-4 w-4 transition-transform ${openDropdown === 'b2b' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {openDropdown === 'b2b' && (
+                  <div className="absolute top-full left-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    {visibleB2bItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setOpenDropdown(null)}
+                        className={`
+                          block px-4 py-2 text-sm transition
+                          ${pathname === item.href
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-gray-900 hover:bg-gray-100'
+                          }
+                        `}
+                      >
+                        <span className="mr-2">{item.icon}</span>
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* 레포트 드롭다운 */}
             {visibleReportsItems.length > 0 && (
               <div className="relative" onMouseEnter={() => handleMouseEnter('reports')} onMouseLeave={handleMouseLeave}>
@@ -439,7 +522,7 @@ export function Navigation({ user, onLogout }: Props) {
                   className={`
                     px-3 py-2 rounded-lg text-sm font-medium transition flex items-center
                     ${isDropdownActive(reportsMenu.items)
-                      ? 'bg-blue-100 text-blue-700' 
+                      ? 'bg-blue-100 text-blue-700'
                       : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
                     }
                   `}
@@ -693,6 +776,36 @@ export function Navigation({ user, onLogout }: Props) {
               </>
             )}
 
+            {/* B2B 발주 섹션 */}
+            {visibleB2bItems.length > 0 && (
+              <>
+                <div className="px-3 py-2 text-xs font-semibold text-gray-900 uppercase tracking-wider mt-4">
+                  {b2bMenu.icon} {b2bMenu.label}
+                </div>
+                {visibleB2bItems.map((item) => {
+                  const isActive = pathname === item.href
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`
+                        block px-3 py-2 pl-6 rounded-lg text-base font-medium transition-all
+                        ${isActive
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
+                        }
+                      `}
+                    >
+                      <span className="mr-2">{item.icon}</span>
+                      {item.label}
+                    </Link>
+                  )
+                })}
+              </>
+            )}
+
             {/* 레포트 섹션 */}
             {visibleReportsItems.length > 0 && (
               <>
@@ -701,7 +814,7 @@ export function Navigation({ user, onLogout }: Props) {
                 </div>
                 {visibleReportsItems.map((item) => {
                   const isActive = pathname === item.href
-                  
+
                   return (
                     <Link
                       key={item.href}
@@ -709,8 +822,8 @@ export function Navigation({ user, onLogout }: Props) {
                       onClick={() => setMobileMenuOpen(false)}
                       className={`
                         block px-3 py-2 pl-6 rounded-lg text-base font-medium transition-all
-                        ${isActive 
-                          ? 'bg-blue-100 text-blue-700' 
+                        ${isActive
+                          ? 'bg-blue-100 text-blue-700'
                           : 'text-gray-900 hover:bg-gray-100 hover:text-gray-900'
                         }
                       `}

@@ -11,6 +11,12 @@ export type PermissionResource =
   | 'audit_logs_view'       // 감사 로그 조회 (Phase 3)
   | 'reports_view'          // 레포트 조회 (Phase 6)
   | 'admin_settings'        // 관리자 설정 (카테고리 등)
+  // B2B 발주 시스템
+  | 'b2b_orders'            // B2B 발주 생성/조회
+  | 'b2b_order_processing'  // B2B 주문 처리 (본사)
+  | 'b2b_statements'        // B2B 거래명세서
+  | 'b2b_settlements'       // B2B 정산
+  | 'b2b_tax_invoices'      // B2B 세금계산서
 
 // 권한 액션 타입
 export type PermissionAction = 'read' | 'create' | 'update' | 'delete'
@@ -81,6 +87,18 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     { resource: 'admin_settings', action: 'create' },
     { resource: 'admin_settings', action: 'update' },
     { resource: 'admin_settings', action: 'delete' },
+
+    // B2B 발주 시스템 - 시스템관리자 전체 권한
+    { resource: 'b2b_orders', action: 'read' },
+    { resource: 'b2b_orders', action: 'create' },
+    { resource: 'b2b_order_processing', action: 'read' },
+    { resource: 'b2b_order_processing', action: 'update' },
+    { resource: 'b2b_statements', action: 'read' },
+    { resource: 'b2b_statements', action: 'create' },
+    { resource: 'b2b_settlements', action: 'read' },
+    { resource: 'b2b_settlements', action: 'create' },
+    { resource: 'b2b_tax_invoices', action: 'read' },
+    { resource: 'b2b_tax_invoices', action: 'create' },
   ],
   
   // 0001: 원장 - 본인 지점 전체 CRUD + 본인 지점 사용자 관리
@@ -128,8 +146,15 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     
     // 레포트 조회 (Phase 6)
     { resource: 'reports_view', action: 'read' },
+
+    // B2B 발주 시스템 - 원장: 발주 생성/조회 + 명세서/정산/세금계산서 조회
+    { resource: 'b2b_orders', action: 'read' },
+    { resource: 'b2b_orders', action: 'create' },
+    { resource: 'b2b_statements', action: 'read' },
+    { resource: 'b2b_settlements', action: 'read' },
+    { resource: 'b2b_tax_invoices', action: 'read' },
   ],
-  
+
   // 0002: 매니저 - 원장과 동일
   '0002': [
     { resource: 'clients_management', action: 'read' },
@@ -157,8 +182,13 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
 
     // 레포트 조회 (Phase 6)
     { resource: 'reports_view', action: 'read' },
+
+    // B2B 발주 시스템 - 매니저: 발주 생성/조회 + 명세서 조회 (런타임 can_b2b_order 검증)
+    { resource: 'b2b_orders', action: 'read' },
+    { resource: 'b2b_orders', action: 'create' },
+    { resource: 'b2b_statements', action: 'read' },
   ],
-  
+
   // 0003: 사용자 - CRU만 가능 (삭제 불가)
   '0003': [
     { resource: 'clients_management', action: 'read' },

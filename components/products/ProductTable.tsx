@@ -16,7 +16,9 @@ import type { Product, UserData } from '@/types'
 import { ContentCard } from '@/components/ui/Card'
 import { Button } from '../ui/Button'
 import { deleteProduct } from '@/app/products/actions'
+import { toggleProductOrderable, updateProductB2bPrice } from '@/app/b2b-orders/admin/actions'
 import ProductFilters from './ProductFilters'
+import { toast } from 'sonner'
 
 interface ProductTableProps {
   products: Product[]
@@ -34,9 +36,58 @@ interface ProductTableProps {
 
 const columnHelper = createColumnHelper<Product>()
 
-const formatPrice = (price: number | null) => {
-  if (price === null || price === 0) return '-'
+const formatPrice = (price: number | null | undefined) => {
+  if (price === null || price === undefined || price === 0) return '-'
   return `${price.toLocaleString('ko-KR')}원`
+}
+
+function B2bPriceCell({ product, onRefresh }: { product: Product; onRefresh: () => void }) {
+  const [editing, setEditing] = useState(false)
+  const [price, setPrice] = useState(String(product.b2b_price ?? ''))
+
+  if (!product.is_b2b_orderable) {
+    return <span className="text-sm text-gray-400">-</span>
+  }
+
+  if (editing) {
+    return (
+      <input
+        type="number"
+        min={0}
+        className="w-full px-2 py-1 text-sm border rounded"
+        value={price}
+        autoFocus
+        onChange={(e) => setPrice(e.target.value)}
+        onBlur={async () => {
+          const numPrice = parseFloat(price)
+          if (!isNaN(numPrice) && numPrice >= 0) {
+            const result = await updateProductB2bPrice(product.id, numPrice)
+            if (result.success) {
+              toast.success(result.message)
+              onRefresh()
+            } else {
+              toast.error(result.message)
+            }
+          }
+          setEditing(false)
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+          if (e.key === 'Escape') setEditing(false)
+        }}
+      />
+    )
+  }
+
+  return (
+    <span
+      className="text-sm text-gray-900 cursor-pointer hover:text-blue-600"
+      onClick={() => setEditing(true)}
+      title="클릭하여 B2B 단가 수정"
+    >
+      {product.b2b_price != null ? formatPrice(product.b2b_price) : '미설정'}
+    </span>
+  )
 }
 
 export default function ProductTable({
@@ -130,6 +181,43 @@ export default function ProductTable({
         <span className="text-sm text-gray-900">{formatPrice(info.getValue())}</span>
       ),
     }),
+    // B2B 컬럼 (본사 0000만 표시)
+    ...(userData.role === '0000' ? [
+      columnHelper.accessor('is_b2b_orderable', {
+        header: 'B2B',
+        size: 70,
+        enableSorting: false,
+        cell: (info) => {
+          const product = info.row.original
+          return (
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!product.is_b2b_orderable}
+                onChange={async (e) => {
+                  const result = await toggleProductOrderable(product.id, e.target.checked)
+                  if (result.success) {
+                    toast.success(result.message)
+                    router.refresh()
+                  } else {
+                    toast.error(result.message)
+                  }
+                }}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600" />
+            </label>
+          )
+        },
+      }),
+      columnHelper.accessor('b2b_price', {
+        header: 'B2B단가',
+        size: 120,
+        cell: (info) => (
+          <B2bPriceCell product={info.row.original} onRefresh={() => router.refresh()} />
+        ),
+      }),
+    ] : []),
     columnHelper.accessor('category_name', {
       header: '카테고리',
       size: 130,

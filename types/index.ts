@@ -90,6 +90,8 @@ export interface Product {
   standard_sale_price: number | null
   branch_id?: string | null
   branch_name?: string | null
+  is_b2b_orderable?: boolean
+  b2b_price?: number | null
   is_active: boolean
   created_at: string
   updated_at: string

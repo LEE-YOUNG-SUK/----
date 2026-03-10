@@ -17,6 +17,7 @@ interface UserWithBranch {
   branch_id: string | null
   branch_name: string | null
   is_active: boolean
+  can_b2b_order?: boolean
   last_login_at: string | null
   created_at: string
 }
@@ -117,6 +118,7 @@ export default function UserManagement({
         users={filteredUsers}
         permissions={permissions}
         onEdit={handleEdit}
+        currentUserRole={currentUser.role}
       />
 
       {/* 폼 모달 */}
