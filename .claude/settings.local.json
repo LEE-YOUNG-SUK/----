@@ -41,7 +41,10 @@
       "Bash(git mv:*)",
       "Bash(git status:*)",
       "Bash(npx next build:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__get_advisors",
+      "Bash(npm run supabase:db:pull:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

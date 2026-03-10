@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { InventoryLayerModal } from './InventoryLayerModal'
 import { ContentCard } from '@/components/ui/Card'
+import ProductSearchModal from '@/components/shared/ProductSearchModal'
 import { getInventoryStatus } from '@/app/inventory/actions'
 import {
   calculateStockStatus,
@@ -46,6 +47,7 @@ export default function InventoryStatusClient({ userSession, products, branches 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const dropdownListRef = useRef<HTMLDivElement>(null)
   const productInputRef = useRef<HTMLInputElement>(null)
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false)
 
   // 데이터 상태
   const [data, setData] = useState<InventoryStatusItem[]>([])
@@ -62,16 +64,11 @@ export default function InventoryStatusClient({ userSession, products, branches 
   )
 
   // 품목 검색 필터링 (이미 선택된 품목 제외)
-  const filteredProducts = useMemo(() => {
-    if (productSearch.length < 1) return []
-    const search = productSearch.toLowerCase()
-    return products
-      .filter(p =>
-        !selectedProductIds.has(p.id) &&
-        (p.code.toLowerCase().includes(search) || p.name.toLowerCase().includes(search))
-      )
-      .slice(0, 10)
-  }, [productSearch, products, selectedProductIds])
+  const openProductModal = useCallback(() => {
+    setIsProductModalOpen(true)
+  }, [])
+
+  const filteredProducts = useMemo<Product[]>(() => [], [])
 
   useEffect(() => {
     setShowDropdown(filteredProducts.length > 0 && productSearch.length >= 1)
@@ -100,10 +97,8 @@ export default function InventoryStatusClient({ userSession, products, branches 
 
   // 품목 선택 핸들러 (추가)
   const handleProductSelect = useCallback((product: Product) => {
-    setSelectedProducts(prev => [...prev, product])
+    setSelectedProducts(prev => prev.some((item) => item.id === product.id) ? prev : [...prev, product])
     setProductSearch('')
-    setShowDropdown(false)
-    productInputRef.current?.focus()
   }, [])
 
   // 품목 개별 제거
@@ -116,6 +111,24 @@ export default function InventoryStatusClient({ userSession, products, branches 
     setSelectedProducts([])
     setProductSearch('')
   }, [])
+
+  const handleProductModalClose = useCallback(() => {
+    setIsProductModalOpen(false)
+    requestAnimationFrame(() => {
+      productInputRef.current?.focus()
+    })
+  }, [])
+
+  const handleProductInputKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && productSearch === '' && selectedProducts.length > 0) {
+      setSelectedProducts(prev => prev.slice(0, -1))
+      return
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      openProductModal()
+    }
+  }, [openProductModal, productSearch, selectedProducts.length])
 
   // 조회 실행
   const handleSearch = useCallback(async () => {
@@ -138,6 +151,8 @@ export default function InventoryStatusClient({ userSession, products, branches 
     } else if (selectedIds.length > 0) {
       productIds = selectedIds
     }
+
+    productIds = selectedProducts.length > 0 ? selectedProducts.map(p => p.id) : null
 
     const result = await getInventoryStatus({
       branchId: selectedBranch || null,
@@ -452,11 +467,8 @@ window.onload = function() {
                     type="text"
                     value={productSearch}
                     onChange={(e) => setProductSearch(e.target.value)}
-                    onKeyDown={handleProductKeyDown}
-                    onFocus={() => {
-                      if (productSearch.length >= 1) setShowDropdown(true)
-                    }}
-                    placeholder={selectedProducts.length === 0 ? '품목코드 또는 품명 입력...' : '추가 검색...'}
+                    onKeyDown={handleProductInputKeyDown}
+                    placeholder={selectedProducts.length === 0 ? '품목코드 또는 품명 입력 후 Enter...' : '추가 검색 후 Enter...'}
                     className="flex-1 min-w-[120px] px-1 py-1 outline-none text-sm bg-transparent"
                   />
                   {selectedProducts.length > 0 && (
@@ -637,6 +649,15 @@ window.onload = function() {
           products={products}
         />
       )}
+
+      <ProductSearchModal
+        isOpen={isProductModalOpen}
+        onClose={handleProductModalClose}
+        onAdd={handleProductSelect}
+        products={products}
+        initialSearch={productSearch}
+        addedProductIds={selectedProductIds}
+      />
     </>
   )
 }

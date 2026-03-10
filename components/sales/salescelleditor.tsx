@@ -2,12 +2,15 @@
 
 /**
  * AG Grid용 품목 자동완성 셀 에디터 (판매용)
- * 입고용 ProductCellEditor와 100% 동일한 구조 + 재고 표시
+ * 입고용 ProductCellEditor와 동일한 구조 + 재고 표시
+ * 영타→한글 실시간 변환 지원 (useKoreanInput 훅)
  */
 
 import { forwardRef, useImperativeHandle, useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { ProductWithStock } from '@/types/sales'
+import { useKoreanInput } from '@/hooks/useKoreanInput'
+import { englishToKorean } from '@/lib/hangul-utils'
 
 interface ProductCellEditorProps {
   value: string
@@ -20,7 +23,7 @@ interface ProductCellEditorProps {
 export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref) => {
   const { value, products, onProductSelect, stopEditing, navigateToQuantity } = props
 
-  const [inputValue, setInputValue] = useState(value || '')
+  const korean = useKoreanInput({ initialValue: value || '' })
   const [filteredProducts, setFilteredProducts] = useState<ProductWithStock[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -33,7 +36,7 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
 
   useImperativeHandle(ref, () => ({
     getValue: () => {
-      return selectedProduct ? selectedProduct.code : inputValue;
+      return selectedProduct ? selectedProduct.code : korean.inputValue;
     },
     isCancelAfterEnd: () => false,
   }))
@@ -52,14 +55,19 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
     }
   }, [])
 
-  // 검색어 변경 시 필터링 및 드롭다운 위치 재계산
+  // 검색어 변경 시 필터링 (영타→한글 변환 포함)
   useEffect(() => {
-    if (inputValue.length >= 1) {
-      const search = inputValue.toLowerCase()
-      const filtered = products.filter((p) =>
-        p.code.toLowerCase().includes(search) ||
-        p.name.toLowerCase().includes(search)
-      )
+    if (korean.inputValue.length >= 1) {
+      const search = korean.inputValue.toLowerCase()
+      // 영타→한글 변환으로 추가 검색
+      const koreanConverted = englishToKorean(korean.inputValue)
+      const filtered = products.filter((p) => {
+        const code = p.code.toLowerCase()
+        const name = p.name.toLowerCase()
+        if (code.includes(search) || name.includes(search)) return true
+        if (koreanConverted && name.includes(koreanConverted.toLowerCase())) return true
+        return false
+      })
       setFilteredProducts(filtered.slice(0, 10))
       setShowDropdown(filtered.length > 0)
       setSelectedIndex(0)
@@ -75,18 +83,18 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
       setFilteredProducts([])
       setShowDropdown(false)
     }
-  }, [inputValue, products])
+  }, [korean.inputValue, products])
 
   // 품목 선택
   const handleSelect = (product: ProductWithStock) => {
     isSelectingRef.current = true
-    setInputValue(product.code)
+    korean.setInputValue(product.code)
     setSelectedProduct(product)
     setShowDropdown(false)
-    
+
     // 그리드에 값 반영
     onProductSelect(product)
-    
+
     // 편집 종료 후 수량 셀로 이동
     setTimeout(() => {
       stopEditing()
@@ -96,46 +104,56 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
   }
 
   // 키보드 이벤트
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showDropdown) {
-      if (e.key === 'Escape') {
-        stopEditing()
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // 한글 IME 조합 중이면 무시
+    if (e.nativeEvent.isComposing || e.key === 'Process') return
+
+    // 먼저 드롭다운 네비게이션 처리
+    if (showDropdown) {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault()
+          e.stopPropagation()
+          setSelectedIndex((prev) =>
+            prev < filteredProducts.length - 1 ? prev + 1 : prev
+          )
+          return
+        case 'ArrowUp':
+          e.preventDefault()
+          e.stopPropagation()
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0))
+          return
+        case 'Enter':
+          e.preventDefault()
+          e.stopPropagation()
+          if (filteredProducts[selectedIndex]) {
+            handleSelect(filteredProducts[selectedIndex])
+          }
+          return
+        case 'Tab':
+          if (filteredProducts[selectedIndex]) {
+            e.preventDefault()
+            e.stopPropagation()
+            handleSelect(filteredProducts[selectedIndex])
+          }
+          return
       }
+    }
+
+    // Escape 처리
+    if (e.key === 'Escape') {
+      if (showDropdown) {
+        e.preventDefault()
+        setShowDropdown(false)
+      }
+      stopEditing()
       return
     }
 
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault()
-        e.stopPropagation()
-        setSelectedIndex((prev) =>
-          prev < filteredProducts.length - 1 ? prev + 1 : prev
-        )
-        break
-      case 'ArrowUp':
-        e.preventDefault()
-        e.stopPropagation()
-        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0))
-        break
-      case 'Enter':
-        e.preventDefault()
-        e.stopPropagation()
-        if (filteredProducts[selectedIndex]) {
-          handleSelect(filteredProducts[selectedIndex])
-        }
-        break
-      case 'Escape':
-        e.preventDefault()
-        setShowDropdown(false)
-        stopEditing()
-        break
-      case 'Tab':
-        if (filteredProducts[selectedIndex]) {
-          e.preventDefault()
-          e.stopPropagation()
-          handleSelect(filteredProducts[selectedIndex])
-        }
-        break
+    // 영타→한글 변환 훅에 위임
+    const handled = korean.handleKeyDown(e)
+    if (handled) {
+      setSelectedProduct(null)
     }
   }
 
@@ -154,12 +172,15 @@ export const ProductCellEditor = forwardRef((props: ProductCellEditorProps, ref)
       <input
         ref={inputRef}
         type="text"
-        value={inputValue}
+        value={korean.inputValue}
         onChange={(e) => {
-          setInputValue(e.target.value)
+          korean.handleChange(e)
           setSelectedProduct(null)
         }}
         onKeyDown={handleKeyDown}
+        onCompositionStart={korean.handleCompositionStart}
+        onCompositionEnd={korean.handleCompositionEnd}
+        onPaste={korean.handlePaste}
         onBlur={() => {
           // 클릭 중이 아닐 때만 드롭다운 숨기기
           setTimeout(() => {

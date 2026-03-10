@@ -6,6 +6,7 @@ import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 import type { ColDef, ValueFormatterParams } from 'ag-grid-community'
 import { ContentCard } from '@/components/ui/Card'
+import ProductSearchModal from '@/components/shared/ProductSearchModal'
 import { getMovementHistory } from '@/app/inventory/movements/actions'
 import type { InventoryMovement } from '@/types/inventory'
 import type { ProductMovementGroup } from '@/app/inventory/movements/actions'
@@ -49,6 +50,7 @@ export default function MovementDetailClient({ userSession, products, branches }
   const dropdownRef = useRef<HTMLDivElement>(null)
   const dropdownListRef = useRef<HTMLDivElement>(null)
   const productInputRef = useRef<HTMLInputElement>(null)
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false)
 
   // 데이터 상태
   const [groups, setGroups] = useState<ProductMovementGroup[]>([])
@@ -62,16 +64,7 @@ export default function MovementDetailClient({ userSession, products, branches }
   )
 
   // 품목 검색 필터링 (이미 선택된 품목 제외)
-  const filteredProducts = useMemo(() => {
-    if (productSearch.length < 1) return []
-    const search = productSearch.toLowerCase()
-    return products
-      .filter(p =>
-        !selectedProductIds.has(p.id) &&
-        (p.code.toLowerCase().includes(search) || p.name.toLowerCase().includes(search))
-      )
-      .slice(0, 10)
-  }, [productSearch, products, selectedProductIds])
+  const filteredProducts = useMemo<Product[]>(() => [], [])
 
   useEffect(() => {
     setShowDropdown(filteredProducts.length > 0 && productSearch.length >= 1)
@@ -99,10 +92,8 @@ export default function MovementDetailClient({ userSession, products, branches }
 
   // 품목 선택 (추가)
   const handleProductSelect = useCallback((product: Product) => {
-    setSelectedProducts(prev => [...prev, product])
+    setSelectedProducts(prev => prev.some((item) => item.id === product.id) ? prev : [...prev, product])
     setProductSearch('')
-    setShowDropdown(false)
-    productInputRef.current?.focus()
   }, [])
 
   // 품목 개별 제거
@@ -116,33 +107,28 @@ export default function MovementDetailClient({ userSession, products, branches }
     setProductSearch('')
   }, [])
 
+  const openProductModal = useCallback(() => {
+    setIsProductModalOpen(true)
+  }, [])
+
+  const handleProductModalClose = useCallback(() => {
+    setIsProductModalOpen(false)
+    requestAnimationFrame(() => {
+      productInputRef.current?.focus()
+    })
+  }, [])
+
   // 키보드 네비게이션
-  const handleProductKeyDown = useCallback((e: React.KeyboardEvent) => {
+  const handleProductInputKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Backspace' && productSearch === '' && selectedProducts.length > 0) {
       setSelectedProducts(prev => prev.slice(0, -1))
       return
     }
-    if (!showDropdown) return
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault()
-        setSelectedIndex(prev => prev < filteredProducts.length - 1 ? prev + 1 : prev)
-        break
-      case 'ArrowUp':
-        e.preventDefault()
-        setSelectedIndex(prev => prev > 0 ? prev - 1 : 0)
-        break
-      case 'Enter':
-        e.preventDefault()
-        if (filteredProducts[selectedIndex]) {
-          handleProductSelect(filteredProducts[selectedIndex])
-        }
-        break
-      case 'Escape':
-        setShowDropdown(false)
-        break
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      openProductModal()
     }
-  }, [showDropdown, filteredProducts, selectedIndex, handleProductSelect, productSearch, selectedProducts.length])
+  }, [openProductModal, productSearch, selectedProducts.length])
 
   // 조회 실행
   const handleSearch = async () => {
@@ -390,11 +376,8 @@ window.onload = function() {
                   type="text"
                   value={productSearch}
                   onChange={(e) => setProductSearch(e.target.value)}
-                  onKeyDown={handleProductKeyDown}
-                  onFocus={() => {
-                    if (productSearch.length >= 1) setShowDropdown(true)
-                  }}
-                  placeholder={selectedProducts.length === 0 ? '품목코드 또는 품명 입력...' : '추가 검색...'}
+                  onKeyDown={handleProductInputKeyDown}
+                  placeholder={selectedProducts.length === 0 ? '품목코드 또는 품명 입력 후 Enter...' : '추가 검색 후 Enter...'}
                   className="flex-1 min-w-[120px] px-1 py-1 outline-none text-sm bg-transparent"
                 />
                 {selectedProducts.length > 0 && (
@@ -481,6 +464,15 @@ window.onload = function() {
           />
         ))
       )}
+
+      <ProductSearchModal
+        isOpen={isProductModalOpen}
+        onClose={handleProductModalClose}
+        onAdd={handleProductSelect}
+        products={products}
+        initialSearch={productSearch}
+        addedProductIds={selectedProductIds}
+      />
     </>
   )
 }

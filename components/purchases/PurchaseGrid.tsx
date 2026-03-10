@@ -2,19 +2,19 @@
 
 /**
  * 입고 관리 그리드 (AG Grid)
- * 품목 자동완성 통합 버전
+ * 품목 선택: 셀에 검색어 입력 → Enter → 모달에서 선택
  */
 
 import { useCallback, useRef, useState, useMemo, useEffect } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 
-// (isGridDestroyedRef.current는 useRef로 컴포넌트 내부에서 관리)
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
-import type { ColDef, ICellEditorParams } from 'ag-grid-community'
+import type { ColDef } from 'ag-grid-community'
 import type { Product } from '@/types'
 import type { PurchaseGridRow } from '@/types/purchases'
-import { ProductCellEditor } from './ProductCellEditor'
+import ProductSearchModal from '@/components/shared/ProductSearchModal'
+import { KoreanInputCellEditor } from '@/components/shared/KoreanInputCellEditor'
 
 const DeleteButtonRenderer = (props: any) => {
   return (
@@ -31,15 +31,14 @@ interface Props {
   products: Product[]
   onSave: (items: PurchaseGridRow[]) => void
   isSaving: boolean
-  taxIncluded: boolean // 부가세 포함 여부
+  taxIncluded: boolean
 }
 
 export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }: Props) {
   const gridRef = useRef<any>(null)
-  const isMountedRef = useRef(true)  // ✅ 컴포넌트 마운트 상태 추적
-  const isGridDestroyedRef = useRef(false)  // ✅ 인스턴스별 그리드 파괴 상태
+  const isMountedRef = useRef(true)
+  const isGridDestroyedRef = useRef(false)
 
-  // ✅ 컴포넌트 마운트/언마운트 시 플래그 설정
   useEffect(() => {
     isGridDestroyedRef.current = false
     isMountedRef.current = true
@@ -48,9 +47,13 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       isMountedRef.current = false
     }
   }, [])
-  
+
+  // 품목 검색 모달 상태
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false)
+  const [modalSearchText, setModalSearchText] = useState('')
+  const [nextInsertIndex, setNextInsertIndex] = useState<number>(0)
+
   const [rowData, setRowData] = useState<PurchaseGridRow[]>(() => {
-    // 기본 10개 행 생성
     return Array.from({ length: 10 }, (_, index) => ({
       id: `temp_${Date.now()}_${index}`,
       product_id: null,
@@ -68,38 +71,34 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     }))
   })
 
-  /**
-   * 자동계산 함수: 수량 * 단가 → 공급가, 부가세, 합계 계산
-   * @param row - 계산할 행 데이터
-   * @param isTaxIncluded - 부가세 포함 여부
-   */
+  // 이미 그리드에 추가된 품목 ID 추적
+  const addedProductIds = useMemo(() => {
+    const ids = new Set<string>()
+    rowData.forEach(r => { if (r.product_id) ids.add(r.product_id) })
+    return ids
+  }, [rowData])
+
   function calculatePrices(row: PurchaseGridRow, isTaxIncluded: boolean) {
     const quantity = row.quantity || 0
     const unitCost = row.unit_cost || 0
 
     if (isTaxIncluded) {
-      // 부가세 포함: 수량 * 단가 = 합계
       const totalPrice = quantity * unitCost
       const supplyPrice = Math.round(totalPrice / 1.1)
       const taxAmount = totalPrice - supplyPrice
-
       row.supply_price = supplyPrice
       row.tax_amount = taxAmount
       row.total_price = totalPrice
     } else {
-      // 부가세 미포함: 수량 * 단가 = 공급가
       const supplyPrice = quantity * unitCost
       const taxAmount = Math.round(supplyPrice * 0.1)
       const totalPrice = supplyPrice + taxAmount
-
       row.supply_price = supplyPrice
       row.tax_amount = taxAmount
       row.total_price = totalPrice
     }
-    // unit_cost는 사용자 입력값 그대로 유지
   }
 
-  // 빈 행 생성 (안정적인 참조를 위해 useMemo 사용)
   const createEmptyRow = useMemo(() => {
     return (): PurchaseGridRow => ({
       id: `temp_${Date.now()}_${Math.random()}`,
@@ -120,7 +119,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
 
   // 부가세 구분 변경 시 전체 행 재계산
   useEffect(() => {
-    if (!isMountedRef.current || isGridDestroyedRef.current) return  // ✅ 파괴 상태 체크
+    if (!isMountedRef.current || isGridDestroyedRef.current) return
     if (rowData.length > 0) {
       const updatedData = rowData.map(row => {
         const updatedRow = { ...row }
@@ -128,16 +127,12 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
         return updatedRow
       })
       setRowData(updatedData)
-      
-      // 그리드 새로고침
       setTimeout(() => {
         try {
           if (!isGridDestroyedRef.current && isMountedRef.current && gridRef.current?.api) {
             gridRef.current.api.refreshCells({ force: true })
           }
-        } catch (e) {
-          // 그리드 파괴 에러 무시
-        }
+        } catch (e) {}
       }, 0)
     }
   }, [taxIncluded])
@@ -146,47 +141,157 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     setRowData((prev) => prev.filter((_, index) => index !== rowIndex))
   }, [])
 
-  // RowNode 기반 불변 업데이트 패턴 (정렬/필터 안전)
-  const handleProductSelect = useCallback((rowNode: any, product: Product) => {
-    if (isGridDestroyedRef.current || !isMountedRef.current) return  // ✅ 파괴 상태 체크
-    const targetId = rowNode?.data?.id
-    if (!targetId) return
-    
-    setRowData(prev => prev.map(r => {
-      if (r.id !== targetId) return r
-      
-      // 전체 객체 새로 생성 (불변 업데이트)
-      const updated: PurchaseGridRow = {
-        ...r,
+  // 모달 열기 (검색어 포함)
+  const openProductModal = useCallback((rowIndex: number, searchText: string = '') => {
+    setNextInsertIndex(rowIndex)
+    setModalSearchText(searchText)
+    setIsProductModalOpen(true)
+  }, [])
+
+  // 모달에서 품목 1개 즉시 추가 (체크박스/행 클릭)
+  const handleAddProduct = useCallback((product: Product) => {
+    if (isGridDestroyedRef.current || !isMountedRef.current) return
+
+    setRowData(prev => {
+      const newData = [...prev]
+
+      // 빈 행 찾기 (nextInsertIndex부터)
+      let targetIndex = -1
+      for (let i = nextInsertIndex; i < newData.length; i++) {
+        if (!newData[i].product_id) {
+          targetIndex = i
+          break
+        }
+      }
+
+      // 빈 행이 없으면 새로 추가
+      if (targetIndex === -1) {
+        targetIndex = newData.length
+        newData.push(createEmptyRow())
+      }
+
+      // 품목 정보 채우기
+      newData[targetIndex] = {
+        ...newData[targetIndex],
         product_id: product.id,
         product_code: product.code,
         product_name: product.name,
         category: product.category || '',
         unit: product.unit,
         specification: product.specification || '',
-        unit_cost: product.standard_purchase_price || 0  // ✅ 표준 입고 단가 설정
+        unit_cost: product.standard_purchase_price || 0
       }
-      
-      // 자동계산 적용
-      calculatePrices(updated, taxIncluded)
-      return updated
-    }))
-    
-    // 선택한 행만 강제 리프레시
+      calculatePrices(newData[targetIndex], taxIncluded)
+
+      // 마지막 행 뒤에 빈 행 보장
+      const lastIndex = newData.length - 1
+      if (newData[lastIndex].product_id) {
+        newData.push(createEmptyRow())
+      }
+
+      return newData
+    })
+
+    // 다음 삽입 위치 업데이트
+    setNextInsertIndex(prev => prev + 1)
+
+    // 그리드 새로고침
     setTimeout(() => {
       try {
-        if (!isGridDestroyedRef.current && isMountedRef.current && gridRef.current?.api && rowNode) {
-          gridRef.current.api.refreshCells({
-            force: true,
-            rowNodes: [rowNode],
-            columns: ['product_code', 'product_name', 'unit', 'specification', 'supply_price', 'tax_amount', 'total_price']
-          })
+        if (!isGridDestroyedRef.current && isMountedRef.current && gridRef.current?.api) {
+          gridRef.current.api.refreshCells({ force: true })
         }
-      } catch (e) {
-        // 그리드 파괴 에러 무시
+      } catch (e) {}
+    }, 50)
+  }, [nextInsertIndex, taxIncluded, createEmptyRow])
+
+  // 모달 닫힌 후 첫 번째 추가 행의 수량 셀로 이동
+  const handleModalClose = useCallback(() => {
+    setIsProductModalOpen(false)
+    setTimeout(() => {
+      try {
+        if (!isGridDestroyedRef.current && isMountedRef.current && gridRef.current?.api) {
+          // 수량이 0인 첫 번째 품목 행 찾기 (수량 입력이 필요한 행)
+          let targetRow = -1
+          gridRef.current.api.forEachNode((node: any) => {
+            if (targetRow === -1 && node.data?.product_id && node.data?.quantity === 0) {
+              targetRow = node.rowIndex
+            }
+          })
+          if (targetRow >= 0) {
+            gridRef.current.api.startEditingCell({
+              rowIndex: targetRow,
+              colKey: 'quantity'
+            })
+          }
+        }
+      } catch (e) {}
+    }, 100)
+  }, [])
+
+  function resolveNextEditableColumn(api: any, currentCol: any, backwards = false) {
+    const allCols = api.getAllDisplayedColumns()
+    const curIdx = allCols.indexOf(currentCol)
+    const dir = backwards ? -1 : 1
+    for (let i = curIdx + dir; i >= 0 && i < allCols.length; i += dir) {
+      const colDef = allCols[i].getColDef()
+      if (colDef.field === 'product_code' || colDef.field === 'product_name') continue
+      if (colDef.editable) return allCols[i]
+    }
+    return null
+  }
+
+  const moveEditingCellByArrow = useCallback((params: any, key: string) => {
+    const currentRowIndex = params.node.rowIndex ?? 0
+    const displayedRowCount = params.api.getDisplayedRowCount()
+    let nextRowIndex = currentRowIndex
+    let nextColumn = params.column
+
+    if (key === 'ArrowLeft' || key === 'ArrowRight') {
+      const adjacentColumn = resolveNextEditableColumn(params.api, params.column, key === 'ArrowLeft')
+      if (!adjacentColumn) return true
+      nextColumn = adjacentColumn
+    } else if (key === 'ArrowUp') {
+      if (currentRowIndex <= 0) return true
+      nextRowIndex = currentRowIndex - 1
+    } else if (key === 'ArrowDown') {
+      nextRowIndex = currentRowIndex + 1
+      if (nextRowIndex >= displayedRowCount) {
+        setRowData((prev) => [...prev, createEmptyRow()])
       }
-    }, 0)
-  }, [taxIncluded])
+    } else {
+      return false
+    }
+
+    params.event.preventDefault()
+    params.event.stopPropagation()
+    params.api.stopEditing()
+
+    setTimeout(() => {
+      try {
+        if (!isMountedRef.current || isGridDestroyedRef.current || !gridRef.current?.api) return
+        gridRef.current.api.ensureIndexVisible(nextRowIndex)
+        gridRef.current.api.startEditingCell({
+          rowIndex: nextRowIndex,
+          colKey: nextColumn.getColId()
+        })
+      } catch (e) {}
+    }, 50)
+
+    return true
+  }, [createEmptyRow])
+
+  const suppressArrowNavigation = useCallback((params: any) => {
+    if (!params.editing) return false
+    if (params.event.isComposing) return false
+
+    const key = params.event.key
+    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
+      return false
+    }
+
+    return moveEditingCellByArrow(params, key)
+  }, [moveEditingCellByArrow])
 
   const columnDefs = useMemo<ColDef<PurchaseGridRow>[]>(() => [
     {
@@ -203,24 +308,20 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       width: 110,
       pinned: 'left',
       editable: true,
-      cellEditor: ProductCellEditor,
-      cellEditorParams: (params: ICellEditorParams) => ({
-        products: products,
-        onProductSelect: (product: Product) => {
-          handleProductSelect(params.node, product)
-        },
-        stopEditing: () => params.api.stopEditing(),
-        navigateToQuantity: () => {
-          params.api.startEditingCell({
-            rowIndex: params.node.rowIndex!,
-            colKey: 'quantity'
-          })
-        }
-      }),
+      cellEditor: KoreanInputCellEditor,
       suppressKeyboardEvent: (params) => {
         if (!params.editing) return false
-        const key = params.event.key
-        return key === 'Enter' || key === 'ArrowDown' || key === 'ArrowUp'
+        if (params.event.key === 'Enter') {
+          if (params.event.isComposing) return false
+          // stopEditing 전에 DOM input에서 직접 값을 캡처 (React 상태 클로저 문제 방지)
+          const searchText = (params.event.target as HTMLInputElement).value || ''
+          params.api.stopEditing()
+          setTimeout(() => {
+            openProductModal(params.node.rowIndex ?? 0, searchText)
+          }, 0)
+          return true
+        }
+        return false
       },
       cellClass: 'text-center font-medium text-blue-600'
     },
@@ -231,24 +332,20 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       minWidth: 200,
       pinned: 'left',
       editable: true,
-      cellEditor: ProductCellEditor,
-      cellEditorParams: (params: ICellEditorParams) => ({
-        products: products,
-        onProductSelect: (product: Product) => {
-          handleProductSelect(params.node, product)
-        },
-        stopEditing: () => params.api.stopEditing(),
-        navigateToQuantity: () => {
-          params.api.startEditingCell({
-            rowIndex: params.node.rowIndex!,
-            colKey: 'quantity'
-          })
-        }
-      }),
+      cellEditor: KoreanInputCellEditor,
       suppressKeyboardEvent: (params) => {
         if (!params.editing) return false
-        const key = params.event.key
-        return key === 'Enter' || key === 'ArrowDown' || key === 'ArrowUp'
+        if (params.event.key === 'Enter') {
+          if (params.event.isComposing) return false
+          // stopEditing 전에 DOM input에서 직접 값을 캡처
+          const searchText = (params.event.target as HTMLInputElement).value || ''
+          params.api.stopEditing()
+          setTimeout(() => {
+            openProductModal(params.node.rowIndex ?? 0, searchText)
+          }, 0)
+          return true
+        }
+        return false
       },
       cellClass: 'text-center'
     },
@@ -275,6 +372,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       minWidth: 80,
       editable: true,
       type: 'numericColumn',
+      suppressKeyboardEvent: suppressArrowNavigation,
       headerClass: 'ag-header-cell-center',
       cellClass: 'text-center',
       valueFormatter: (params) => {
@@ -289,6 +387,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       minWidth: 110,
       editable: true,
       type: 'numericColumn',
+      suppressKeyboardEvent: suppressArrowNavigation,
       headerClass: 'ag-header-cell-center',
       cellClass: 'text-right',
       valueFormatter: (params) => {
@@ -344,6 +443,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       width: 130,
       minWidth: 130,
       editable: true,
+      suppressKeyboardEvent: suppressArrowNavigation,
       cellClass: 'text-center text-sm'
     },
     {
@@ -355,23 +455,17 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
         handleDeleteRow: handleDeleteRow
       }
     }
-  ], [handleDeleteRow, handleProductSelect, products])
+  ], [handleDeleteRow, openProductModal, suppressArrowNavigation])
 
   const onCellValueChanged = useCallback((params: any) => {
-    if (isGridDestroyedRef.current || !isMountedRef.current) return  // ✅ 파괴 상태 체크
+    if (isGridDestroyedRef.current || !isMountedRef.current) return
     const { data } = params
     const updated = { ...data }
-
-    // 자동계산 적용 (불변 복사본에 적용)
     calculatePrices(updated, taxIncluded)
-
-    // rowData 상태 업데이트 (id 기반 불변 업데이트)
     setRowData(prev => {
-      if (!isMountedRef.current) return prev  // ✅ 추가 체크
+      if (!isMountedRef.current) return prev
       return prev.map(r => r.id === updated.id ? updated : r)
     })
-    
-    // 계산된 필드들 새로고침
     try {
       if (!isGridDestroyedRef.current && isMountedRef.current && params.api && params.node) {
         params.api.refreshCells({
@@ -379,12 +473,10 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
           columns: ['supply_price', 'tax_amount', 'total_price']
         })
       }
-    } catch (e) {
-      // 그리드 파괴 에러 무시
-    }
+    } catch (e) {}
   }, [taxIncluded])
 
-  // 마지막 행 편집 시 자동으로 새 행 추가 + 편집 모드 복원
+  // 마지막 행 편집 시 자동으로 새 행 추가
   const onCellEditingStarted = useCallback((params: any) => {
     const rowIndex = params.rowIndex
     const colKey = params.column.getColId()
@@ -401,20 +493,23 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     }
   }, [createEmptyRow])
 
-  // 다음 편집 가능 셀 찾기 (공통 유틸)
-  const findNextEditableColumn = useCallback((api: any, currentCol: any, backwards = false) => {
+  // 다음 편집 가능 셀 찾기
+  const _findNextEditableColumnUnused = useCallback((api: any, currentCol: any, backwards = false) => {
     const allCols = api.getAllDisplayedColumns()
     const curIdx = allCols.indexOf(currentCol)
     const dir = backwards ? -1 : 1
     for (let i = curIdx + dir; i >= 0 && i < allCols.length; i += dir) {
-      if (allCols[i].getColDef().editable) return allCols[i]
+      const colDef = allCols[i].getColDef()
+      // 품목코드/품목명은 건너뜀 (모달로만 입력)
+      if (colDef.field === 'product_code' || colDef.field === 'product_name') continue
+      if (colDef.editable) return allCols[i]
     }
     return null
   }, [])
 
   // Tab: 편집 불가 셀 건너뛰기
   const tabToNextCell = useCallback((params: any) => {
-    const nextCol = findNextEditableColumn(params.api, params.previousCellPosition.column, params.backwards)
+    const nextCol = resolveNextEditableColumn(params.api, params.previousCellPosition.column, params.backwards)
     if (nextCol) {
       return {
         rowIndex: params.previousCellPosition.rowIndex,
@@ -423,18 +518,20 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       }
     }
     return params.nextCellPosition
-  }, [findNextEditableColumn])
+  }, [])
 
   // Enter / Right Arrow: 다음 편집 가능 셀로 이동
   const onCellKeyDown = useCallback((params: any) => {
     const key = params.event.key
-    if (key !== 'Enter' && key !== 'ArrowRight') return
     const col = params.column
     const field = col.getColDef().field
-    // 품목코드/품목명은 자체 키보드 처리 사용
+
+    // 품목코드/품목명은 suppressKeyboardEvent에서 처리
     if (field === 'product_code' || field === 'product_name') return
 
-    const nextCol = findNextEditableColumn(params.api, col)
+    if (key !== 'Enter' && key !== 'ArrowRight') return
+
+    const nextCol = resolveNextEditableColumn(params.api, col)
     if (nextCol) {
       params.event.preventDefault()
       params.event.stopPropagation()
@@ -445,11 +542,10 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
         })
       }, 50)
     } else if (key === 'Enter') {
-      // 마지막 편집 셀(비고)에서 Enter → 다음 행 품목코드로 이동
+      // 마지막 편집 셀(비고)에서 Enter → 다음 행 품목코드 편집 시작
       const nextRowIndex = params.node.rowIndex + 1
       params.event.preventDefault()
       params.event.stopPropagation()
-      // 다음 행이 없으면 자동 생성
       if (nextRowIndex >= params.api.getDisplayedRowCount()) {
         setRowData((prev) => [...prev, createEmptyRow()])
       }
@@ -460,11 +556,10 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
         })
       }, 50)
     }
-  }, [findNextEditableColumn, createEmptyRow])
-
+  }, [createEmptyRow])
 
   const handleSave = useCallback(() => {
-    if (isGridDestroyedRef.current || !isMountedRef.current) return  // ✅ 파괴 상태 체크
+    if (isGridDestroyedRef.current || !isMountedRef.current) return
     const api = gridRef.current?.api
     if (!api) return
 
@@ -506,12 +601,11 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     onSave(data)
   }, [onSave])
 
-  // 실시간 합계 계산 - total_price 사용 (부가세 반영된 최종 금액)
-  const totalAmount = useMemo(() => 
+  const totalAmount = useMemo(() =>
     rowData.reduce((acc, row) => acc + (row.total_price || 0), 0),
   [rowData])
-  
-  const validRowCount = useMemo(() => 
+
+  const validRowCount = useMemo(() =>
     rowData.filter((row) => row.product_id).length,
     [rowData]
   )
@@ -572,11 +666,21 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
           <span className="text-lg">💡</span>
           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
             <span className="font-medium">사용 방법:</span>
-            <span className="hidden sm:inline">품목코드 셀을 <strong>더블클릭</strong> → 품목명 검색 → <strong>방향키</strong>로 선택 → <strong>Enter</strong>로 확정</span>
-            <span className="sm:hidden">품목코드 셀 <strong>더블클릭</strong> → 검색 → <strong>Enter</strong> 확정</span>
+            <span className="hidden sm:inline">품목코드/품목명에 검색어 입력 후 <strong>Enter</strong> → 모달에서 <strong>체크</strong>(다중 추가) 또는 <strong>클릭</strong>(단일 추가)</span>
+            <span className="sm:hidden">품목코드 입력 → <strong>Enter</strong> → 모달에서 선택</span>
           </div>
         </div>
       </div>
+
+      {/* 품목 검색 모달 */}
+      <ProductSearchModal
+        isOpen={isProductModalOpen}
+        onClose={handleModalClose}
+        onAdd={handleAddProduct}
+        products={products}
+        initialSearch={modalSearchText}
+        addedProductIds={addedProductIds}
+      />
     </div>
   )
 }
