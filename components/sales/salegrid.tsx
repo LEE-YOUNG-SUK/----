@@ -35,6 +35,7 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
   const gridRef = useRef<any>(null)
   const isMountedRef = useRef(true)  // ✅ 컴포넌트 마운트 상태 추적
   const isGridDestroyedRef = useRef(false)  // ✅ 인스턴스별 그리드 파괴 상태
+  const lastAddedRowIndexRef = useRef<number>(-1)
 
   // ✅ 컴포넌트 마운트/언마운트 시 플래그 설정
   useEffect(() => {
@@ -179,6 +180,9 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
       }
       calculatePrices(newData[targetIndex], taxIncluded)
 
+      // 마지막으로 추가된 행 위치 기록
+      lastAddedRowIndexRef.current = targetIndex
+
       if (newData[newData.length - 1].product_id) {
         newData.push(createEmptyRow())
       }
@@ -197,23 +201,25 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
     }, 50)
   }, [nextInsertIndex, taxIncluded, createEmptyRow])
 
+  // 모달 닫힌 후 마지막으로 추가된 행의 수량 셀로 이동
   const handleModalClose = useCallback(() => {
     setIsProductModalOpen(false)
+    const targetRow = lastAddedRowIndexRef.current
+    lastAddedRowIndexRef.current = -1
+
+    if (targetRow < 0) return
+
     setTimeout(() => {
       try {
         if (!isGridDestroyedRef.current && isMountedRef.current && gridRef.current?.api) {
-          let targetRow = -1
-          gridRef.current.api.forEachNode((node: any) => {
-            if (targetRow === -1 && node.data?.product_id && node.data?.quantity === 0) {
-              targetRow = node.rowIndex
-            }
+          // 마지막 행이면 아래 빈 행까지 보이도록, 아니면 해당 행만
+          const totalRows = gridRef.current.api.getDisplayedRowCount()
+          const visibleEnd = Math.min(targetRow + 2, totalRows - 1)
+          gridRef.current.api.ensureIndexVisible(visibleEnd)
+          gridRef.current.api.startEditingCell({
+            rowIndex: targetRow,
+            colKey: 'quantity'
           })
-          if (targetRow >= 0) {
-            gridRef.current.api.startEditingCell({
-              rowIndex: targetRow,
-              colKey: 'quantity'
-            })
-          }
         }
       } catch (e) {}
     }, 100)
@@ -513,16 +519,18 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
     }
   }, [taxIncluded])
 
-  // 마지막 행 편집 시 자동으로 새 행 추가 + 편집 모드 복원
+  // 마지막 행 편집 시 자동으로 새 행 2개 추가 + 편집 모드 복원
   const onCellEditingStarted = useCallback((params: any) => {
     const rowIndex = params.rowIndex
     const colKey = params.column.getColId()
     const totalRows = params.api.getDisplayedRowCount()
     if (rowIndex === totalRows - 1) {
-      setRowData((prev) => [...prev, createEmptyRow()])
+      setRowData((prev) => [...prev, createEmptyRow(), createEmptyRow()])
       setTimeout(() => {
         try {
           if (gridRef.current?.api) {
+            // 마지막 추가된 행까지 스크롤하여 새 행이 보이도록 처리
+            gridRef.current.api.ensureIndexVisible(rowIndex + 2)
             gridRef.current.api.startEditingCell({ rowIndex, colKey })
           }
         } catch (e) {}
@@ -667,6 +675,22 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
             </span>
           </div>
           <button
+            onClick={() => {
+              setRowData(prev => [...prev, createEmptyRow()])
+              setTimeout(() => {
+                try {
+                  if (gridRef.current?.api) {
+                    const lastIndex = gridRef.current.api.getDisplayedRowCount() - 1
+                    gridRef.current.api.ensureIndexVisible(lastIndex)
+                  }
+                } catch (e) {}
+              }, 50)
+            }}
+            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-bold shadow-lg"
+          >
+            + 행 추가
+          </button>
+          <button
             onClick={handleSave}
             disabled={isSaving}
             className="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold shadow-lg"
@@ -681,6 +705,7 @@ export default function SaleGrid({ products, onSave, isSaving, taxIncluded, tran
           ref={gridRef}
           rowData={rowData}
           columnDefs={columnDefs}
+          getRowId={(params) => params.data.id}
           defaultColDef={{
             sortable: true,
             resizable: true,

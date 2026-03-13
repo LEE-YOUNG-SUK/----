@@ -38,6 +38,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
   const gridRef = useRef<any>(null)
   const isMountedRef = useRef(true)
   const isGridDestroyedRef = useRef(false)
+  const lastAddedRowIndexRef = useRef<number>(-1)
 
   useEffect(() => {
     isGridDestroyedRef.current = false
@@ -183,6 +184,9 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
       }
       calculatePrices(newData[targetIndex], taxIncluded)
 
+      // 마지막으로 추가된 행 위치 기록
+      lastAddedRowIndexRef.current = targetIndex
+
       // 마지막 행 뒤에 빈 행 보장
       const lastIndex = newData.length - 1
       if (newData[lastIndex].product_id) {
@@ -205,25 +209,25 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     }, 50)
   }, [nextInsertIndex, taxIncluded, createEmptyRow])
 
-  // 모달 닫힌 후 첫 번째 추가 행의 수량 셀로 이동
+  // 모달 닫힌 후 마지막으로 추가된 행의 수량 셀로 이동
   const handleModalClose = useCallback(() => {
     setIsProductModalOpen(false)
+    const targetRow = lastAddedRowIndexRef.current
+    lastAddedRowIndexRef.current = -1
+
+    if (targetRow < 0) return
+
     setTimeout(() => {
       try {
         if (!isGridDestroyedRef.current && isMountedRef.current && gridRef.current?.api) {
-          // 수량이 0인 첫 번째 품목 행 찾기 (수량 입력이 필요한 행)
-          let targetRow = -1
-          gridRef.current.api.forEachNode((node: any) => {
-            if (targetRow === -1 && node.data?.product_id && node.data?.quantity === 0) {
-              targetRow = node.rowIndex
-            }
+          // 마지막 행이면 아래 빈 행까지 보이도록, 아니면 해당 행만
+          const totalRows = gridRef.current.api.getDisplayedRowCount()
+          const visibleEnd = Math.min(targetRow + 2, totalRows - 1)
+          gridRef.current.api.ensureIndexVisible(visibleEnd)
+          gridRef.current.api.startEditingCell({
+            rowIndex: targetRow,
+            colKey: 'quantity'
           })
-          if (targetRow >= 0) {
-            gridRef.current.api.startEditingCell({
-              rowIndex: targetRow,
-              colKey: 'quantity'
-            })
-          }
         }
       } catch (e) {}
     }, 100)
@@ -482,10 +486,12 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
     const colKey = params.column.getColId()
     const totalRows = params.api.getDisplayedRowCount()
     if (rowIndex === totalRows - 1) {
-      setRowData((prev) => [...prev, createEmptyRow()])
+      setRowData((prev) => [...prev, createEmptyRow(), createEmptyRow()])
       setTimeout(() => {
         try {
           if (gridRef.current?.api) {
+            // 마지막 추가된 행까지 스크롤하여 새 행이 보이도록 처리
+            gridRef.current.api.ensureIndexVisible(rowIndex + 2)
             gridRef.current.api.startEditingCell({ rowIndex, colKey })
           }
         } catch (e) {}
@@ -628,6 +634,22 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
             </span>
           </div>
           <button
+            onClick={() => {
+              setRowData(prev => [...prev, createEmptyRow()])
+              setTimeout(() => {
+                try {
+                  if (gridRef.current?.api) {
+                    const lastIndex = gridRef.current.api.getDisplayedRowCount() - 1
+                    gridRef.current.api.ensureIndexVisible(lastIndex)
+                  }
+                } catch (e) {}
+              }, 50)
+            }}
+            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-bold shadow-lg"
+          >
+            + 행 추가
+          </button>
+          <button
             onClick={handleSave}
             disabled={isSaving}
             className="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold shadow-lg"
@@ -642,6 +664,7 @@ export default function PurchaseGrid({ products, onSave, isSaving, taxIncluded }
           ref={gridRef}
           rowData={rowData}
           columnDefs={columnDefs}
+          getRowId={(params) => params.data.id}
           defaultColDef={{
             sortable: true,
             resizable: true,

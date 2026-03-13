@@ -109,14 +109,15 @@ export const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
 export interface DialogContentProps {
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export const DialogContent = ({ children, className = '' }: DialogContentProps) => {
+export const DialogContent = ({ children, className = '', style }: DialogContentProps) => {
   const hasFlex = className.includes('flex');
   return (
     <div
       className={`bg-white rounded-lg shadow-xl border-2 border-gray-900 w-full mx-auto ${className}`}
-      style={{ resize: 'both', overflow: 'auto', minWidth: 320, minHeight: 200 }}
+      style={{ resize: 'both', overflow: 'auto', minWidth: 320, minHeight: 200, ...style }}
     >
       <div className={`px-6 py-4${hasFlex ? ' flex flex-col flex-1 min-h-0 overflow-hidden' : ''}`}>
         {children}

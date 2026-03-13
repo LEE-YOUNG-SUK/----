@@ -2,7 +2,7 @@
 
 /**
  * 품목 검색 모달
- * - 체크박스 클릭: 해당 품목 즉시 그리드에 추가, 모달 유지 (계속 추가 가능)
+ * - [추가] 클릭: 해당 품목 즉시 그리드에 추가, 모달 유지 (같은 품목 중복 추가 가능)
  * - 행 직접 클릭: 해당 품목 1개 그리드에 추가, 모달 자동 닫힘
  * - 닫기: 모달만 닫힘, 이미 추가된 품목은 유지
  * - 영타→한글 실시간 변환 지원
@@ -78,11 +78,10 @@ export default function ProductSearchModal<T extends SearchableProduct>({
       .slice(0, 50)
   }, [korean.inputValue, products])
 
-  // 체크박스 클릭 → 즉시 추가, 모달 유지
-  const handleCheckboxAdd = useCallback((e: React.MouseEvent, product: T) => {
+  // [추가] 클릭 → 즉시 추가, 모달 유지 (같은 품목 중복 추가 가능)
+  const handleInlineAdd = useCallback((e: React.MouseEvent, product: T) => {
     e.stopPropagation()
     onAdd(product)
-    // 모달은 열린 상태 유지
   }, [onAdd])
 
   // 행 직접 클릭 → 즉시 추가 + 모달 닫힘
@@ -102,7 +101,7 @@ export default function ProductSearchModal<T extends SearchableProduct>({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent style={{ width: 768, maxWidth: 'calc(100vw - 2rem)' }}>
         <DialogHeader>
           <DialogTitle>품목 검색</DialogTitle>
         </DialogHeader>
@@ -128,76 +127,64 @@ export default function ProductSearchModal<T extends SearchableProduct>({
           검색 결과: {filtered.length}건
         </div>
 
-        {/* 품목 목록 */}
+        {/* 품목 목록 (테이블) */}
         <div ref={listRef} className="max-h-[400px] overflow-y-auto border rounded-lg">
           {filtered.length === 0 ? (
             <div className="p-8 text-center text-gray-500">검색 결과가 없습니다.</div>
           ) : (
-            filtered.map((product) => {
-              const isAdded = addedProductIds?.has(product.id) ?? false
-              return (
-                <div
-                  key={product.id}
-                  onClick={() => handleRowClick(product)}
-                  className={`px-4 py-3 cursor-pointer border-b border-gray-100 hover:bg-blue-50 transition select-none ${
-                    isAdded ? 'bg-green-50' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {/* 체크박스: 클릭 시 추가 (모달 유지) */}
-                    <input
-                      type="checkbox"
-                      checked={isAdded}
-                      onChange={() => {}}
-                      onClick={(e) => handleCheckboxAdd(e, product)}
-                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 flex-shrink-0 cursor-pointer"
-                    />
-
-                    {/* 품목 정보 */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-bold text-sm text-blue-600">
-                          {product.code}
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 sticky top-0 z-10">
+                <tr className="border-b border-gray-200">
+                  <th className="w-14 px-2 py-2">{' '}</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-600 whitespace-nowrap">품목코드</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-600">품목명</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-600 whitespace-nowrap">규격</th>
+                  <th className="px-2 py-2 text-center text-xs font-semibold text-gray-600 whitespace-nowrap">단위</th>
+                  <th className="px-2 py-2 text-right text-xs font-semibold text-gray-600 whitespace-nowrap">단가</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((product) => {
+                  const isAdded = addedProductIds?.has(product.id) ?? false
+                  return (
+                    <tr
+                      key={product.id}
+                      onClick={() => handleRowClick(product)}
+                      className={`border-b border-gray-100 cursor-pointer hover:bg-blue-50 transition select-none ${
+                        isAdded ? 'bg-green-50' : ''
+                      }`}
+                    >
+                      <td
+                        className="px-2 py-1.5 text-center cursor-pointer hover:bg-blue-100 transition"
+                        onClick={(e) => handleInlineAdd(e, product)}
+                      >
+                        <span className="text-blue-600 underline font-medium text-xs whitespace-nowrap">
+                          추가
                         </span>
-                        {product.category && (
-                          <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-900 rounded">
-                            {product.category}
-                          </span>
-                        )}
+                      </td>
+                      <td className="px-2 py-1.5 whitespace-nowrap">
+                        <span className="font-bold text-blue-600">{product.code}</span>
                         {isAdded && (
-                          <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded font-medium">
-                            추가됨
-                          </span>
+                          <span className="ml-1 text-xs px-1 py-0.5 bg-green-100 text-green-700 rounded font-medium">추가됨</span>
                         )}
-                      </div>
-                      <div className="text-sm font-medium text-gray-900">
+                      </td>
+                      <td className="px-2 py-1.5 font-medium text-gray-900 truncate max-w-[200px]">
                         {product.name}
-                      </div>
-                      {(product.specification || product.manufacturer) && (
-                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-600">
-                          {product.specification && (
-                            <span>규격: {product.specification}</span>
-                          )}
-                          {product.manufacturer && (
-                            <span>• 제조사: {product.manufacturer}</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 가격 정보 */}
-                    <div className="text-right flex-shrink-0">
-                      <div className="text-xs text-gray-600 mb-1">
+                      </td>
+                      <td className="px-2 py-1.5 text-gray-600 truncate max-w-[120px]">
+                        {product.specification || '-'}
+                      </td>
+                      <td className="px-2 py-1.5 text-center text-gray-600 whitespace-nowrap">
                         {product.unit}
-                      </div>
-                      <div className="text-sm font-bold text-green-600">
+                      </td>
+                      <td className="px-2 py-1.5 text-right font-bold text-green-600 whitespace-nowrap">
                         ₩{(product.standard_purchase_price ?? product.standard_sale_price ?? 0).toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           )}
         </div>
 
