@@ -635,6 +635,24 @@ export default function SaleDetailModal({
             합계: <span className="font-bold text-red-600">₩{totalAmount.toLocaleString()}</span>
           </div>
           <div className="flex items-center gap-2">
+            {!readOnly && canEdit && (
+              <button
+                onClick={() => {
+                  setRowData(prev => [...prev, createEmptyRow()])
+                  setTimeout(() => {
+                    try {
+                      if (gridRef.current?.api) {
+                        const lastIndex = gridRef.current.api.getDisplayedRowCount() - 1
+                        gridRef.current.api.ensureIndexVisible(lastIndex)
+                      }
+                    } catch (e) {}
+                  }, 50)
+                }}
+                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-bold shadow-lg"
+              >
+                + 행 추가
+              </button>
+            )}
             <Button variant="outline" onClick={onClose}>
               닫기
             </Button>
