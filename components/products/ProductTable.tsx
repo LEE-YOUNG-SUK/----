@@ -162,7 +162,7 @@ export default function ProductTable({
     }),
     columnHelper.accessor('specification', {
       header: '규격',
-      size: 200,
+      size: 170,
       cell: (info) => (
         <span className="text-sm text-gray-900 truncate block">{info.getValue() || '-'}</span>
       ),
@@ -235,7 +235,7 @@ export default function ProductTable({
     columnHelper.display({
       id: 'actions',
       header: '관리',
-      size: 160,
+      size: 200,
       enableSorting: false,
       cell: (info) => {
         const product = info.row.original
@@ -244,7 +244,7 @@ export default function ProductTable({
         const isOwnBranch = product.branch_id === userData.branch_id
         const canEditThis = isCommon ? canManageCommon : (isOwnBranch || userData.role === '0000')
         return (
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 whitespace-nowrap">
             {permissions.canUpdate && canEditThis && (
               <button
                 onClick={() => onEdit(product)}
