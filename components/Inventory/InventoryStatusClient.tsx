@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { InventoryLayerModal } from './InventoryLayerModal'
 import { ContentCard } from '@/components/ui/Card'
 import ProductSearchModal from '@/components/shared/ProductSearchModal'
+import { englishToKorean } from '@/lib/hangul-utils'
 import { getInventoryStatus } from '@/app/inventory/actions'
 import {
   calculateStockStatus,
@@ -141,18 +142,21 @@ export default function InventoryStatusClient({ userSession, products, branches 
 
     if (productSearch.trim().length > 0) {
       const search = productSearch.trim().toLowerCase()
+      const koreanConverted = englishToKorean(productSearch.trim())
       const matchedIds = products
-        .filter(p =>
-          p.code.toLowerCase().includes(search) || p.name.toLowerCase().includes(search)
-        )
+        .filter(p => {
+          const code = p.code.toLowerCase()
+          const name = p.name.toLowerCase()
+          if (code.includes(search) || name.includes(search)) return true
+          if (koreanConverted && name.includes(koreanConverted.toLowerCase())) return true
+          return false
+        })
         .map(p => p.id)
       const merged = new Set([...selectedIds, ...matchedIds])
       productIds = merged.size > 0 ? Array.from(merged) : null
     } else if (selectedIds.length > 0) {
       productIds = selectedIds
     }
-
-    productIds = selectedProducts.length > 0 ? selectedProducts.map(p => p.id) : null
 
     const result = await getInventoryStatus({
       branchId: selectedBranch || null,

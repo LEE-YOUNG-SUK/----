@@ -188,14 +188,28 @@ export default function ProductSearchModal<T extends SearchableProduct>({
           )}
         </div>
 
-        {/* 하단 닫기 버튼 */}
+        {/* 하단 버튼 */}
         <DialogFooter>
-          <button
-            onClick={onClose}
-            className="px-6 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition font-medium"
-          >
-            닫기
-          </button>
+          <div className="flex gap-2">
+            {filtered.length > 0 && (() => {
+              const notAdded = filtered.filter(p => !addedProductIds?.has(p.id))
+              return (
+                <button
+                  onClick={() => { notAdded.forEach(p => onAdd(p)); onClose() }}
+                  disabled={notAdded.length === 0}
+                  className="px-6 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  전체 추가 ({notAdded.length})
+                </button>
+              )
+            })()}
+            <button
+              onClick={onClose}
+              className="px-6 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition font-medium"
+            >
+              닫기
+            </button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
